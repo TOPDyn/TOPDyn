@@ -1,0 +1,77 @@
+# TOPDyn: Python-based Topology Optimization procedure for time-harmonic vibration problems
+
+Based on the works:
+
+A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems.
+https://www.sciencedirect.com/science/article/abs/pii/S0022460X18308563
+
+On the use of active and reactive input power in topology optimization of one-material structures considering steady-state forced vibration problems.
+https://www.sciencedirect.com/science/article/abs/pii/S0022460X19305516
+
+## Prerequisites
+
+You will need python 3.6.8 and the pip package manager.
+
+It's recommended to use a [virtual environment](https://towardsdatascience.com/why-you-should-use-a-virtual-environment-for-every-python-project-c17dab3b0fd0). To do this, run the following commands:
+
+- Linux/macos:
+
+	Install 
+
+		pip install virtualenv
+
+	Create 
+
+		virtualenv ../venv -p python3
+
+	Activate
+
+		source ../venv/bin/activate
+
+- Windows:
+
+	Install 
+	
+		python -m pip install virtualenv
+
+	Create 
+
+		virtualenv ../venv -p python3
+
+	Activate
+
+		../venv/Scripts/activate
+
+To install the requirements execute
+
+	pip install -r requirements.txt
+
+When finished you can execute the command `deactivate` to leave the virtual environment.
+
+Update your video card drivers.
+
+## APIs
+
+- SolverFEM2D: Finite element method in 2D. 
+
+- SolverFEM3D: Finite element method in 3D. 
+
+- Optimization algoritm: Based on MMA and GCMMA implemented by [Arjen Deetman](https://github.com/arjendeetman/GCMMA-MMA-Python). 
+
+- More about MMA and GCMMA: [Krister Svanberg](https://people.kth.se/~krille/).
+
+Each API has a main file with an usage example.
+	
+## Authors
+
+The authors are members of MOPT - Multidisciplinary Optimization Group, from Federal University of Santa Catarina (Florianópolis, SC, Brazil).
+
+    Ana P. Rocha, 
+    Olavo M. Silva.
+
+##
+    
+
+![alt text](https://open-pulse.github.io/OpenPulse/doc/MOPT.JPG?raw=true)
+
+**
