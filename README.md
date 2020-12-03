@@ -64,7 +64,7 @@ Update your video card drivers.
 
 - SolverFEM2D: Finite element method in 2D. 
 
-- SolverFEM3D: Finite element method in 3D (not integrated to Topology Optimization).
+- SolverFEM3D: Finite element method in 3D (not integrated into Topology Optimization).
 
 - Optimization algoritm: Based on MMA and GCMMA implemented by [Arjen Deetman](https://github.com/arjendeetman/GCMMA-MMA-Python). 
 

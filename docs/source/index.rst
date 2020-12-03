@@ -4,13 +4,13 @@ TOPDyn Documentation
 
 **Python-based Topology Optimization procedure for time-harmonic vibration problems**
 
+Check out the **Git repository** here: https://github.com/TOPDyn/TOPDyn
+
 Based on the works:
 
-A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems.
-https://www.sciencedirect.com/science/article/abs/pii/S0022460X18308563
+- A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems. https://www.sciencedirect.com/science/article/abs/pii/S0022460X18308563
 
-On the use of active and reactive input power in topology optimization of one-material structures considering steady-state forced vibration problems.
-https://www.sciencedirect.com/science/article/abs/pii/S0022460X19305516
+- On the use of active and reactive input power in topology optimization of one-material structures considering steady-state forced vibration problems. https://www.sciencedirect.com/science/article/abs/pii/S0022460X19305516
 
 - A strategy based on the strain‐to‐kinetic energy ratio to ensure stability and convergence in topology optimization of globally resonating one‐material structures. https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.6374
 
@@ -26,10 +26,11 @@ Some features to be implemented:
 **Authors**
 
 The authors are members of MOPT - Multidisciplinary Optimization Group, from Federal University of Santa Catarina (Florianópolis, SC, Brazil).
-
-|   Ana P. Rocha, 
+ 
+|   `Ana P. Rocha <https://www.linkedin.com/in/ana-paula-da-rocha/>`_,
 |   Olavo M. Silva.
 
+**The authors are thankful to Jacson G. Vargas and Arjen Deetman.**
 
 .. toctree::
    :caption: Project
