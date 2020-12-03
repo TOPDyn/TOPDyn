@@ -10,6 +10,14 @@ https://www.sciencedirect.com/science/article/abs/pii/S0022460X19305516
 
 - A strategy based on the strain‐to‐kinetic energy ratio to ensure stability and convergence in topology optimization of globally resonating one‐material structures. https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.6374
 
+Some features to be implemented:
+
+- Projection filters;
+
+- New convergence criteria;
+
+- Passive elements.
+
 ## Prerequisites
 
 You will need python 3.6.8 and the pip package manager.
