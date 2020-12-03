@@ -76,8 +76,8 @@ Each API has a main file with an usage example.
 
 The authors are members of MOPT - Multidisciplinary Optimization Group, from Federal University of Santa Catarina (Florianópolis, SC, Brazil).
 
-    [Ana P. Rocha](https://www.linkedin.com/in/ana-paula-da-rocha/), 
-    Olavo M. Silva.
+[Ana P. Rocha](https://www.linkedin.com/in/ana-paula-da-rocha/) and
+Olavo M. Silva.
 
 ##
     
