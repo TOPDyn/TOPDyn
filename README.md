@@ -71,7 +71,13 @@ Update your video card drivers.
 - More about MMA and GCMMA: [Krister Svanberg](https://people.kth.se/~krille/).
 
 Each API has a main file with an usage example.
-	
+
+## Documentation 
+
+Can be found `here <https://topdyn.readthedocs.io/en/latest/>`_).
+
+Need help? Have any question, or wish to ask for a missing feature? Open a issue (or send an `email <ana.rocha@mopt.com.br>`_).
+
 ## Authors
 
 The authors are members of MOPT - Multidisciplinary Optimization Group, from Federal University of Santa Catarina (Florianópolis, SC, Brazil):
