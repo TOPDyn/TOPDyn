@@ -1,12 +1,22 @@
 # TOPDyn: Python-based Topology Optimization procedure for time-harmonic vibration problems
 
-Based on the works:
+TOPDyn is a numerical procedure written in Python for academic purposes. The procedure is under development, focused on 2D-problems, and is based on the works:
 
-A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems.
+- A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems.
 https://www.sciencedirect.com/science/article/abs/pii/S0022460X18308563
 
-On the use of active and reactive input power in topology optimization of one-material structures considering steady-state forced vibration problems.
+- On the use of active and reactive input power in topology optimization of one-material structures considering steady-state forced vibration problems.
 https://www.sciencedirect.com/science/article/abs/pii/S0022460X19305516
+
+- A strategy based on the strain‐to‐kinetic energy ratio to ensure stability and convergence in topology optimization of globally resonating one‐material structures. https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.6374
+
+Some features to be implemented:
+
+- Projection filters;
+
+- New convergence criteria;
+
+- Passive elements.
 
 ## Prerequisites
 
@@ -54,7 +64,7 @@ Update your video card drivers.
 
 - SolverFEM2D: Finite element method in 2D. 
 
-- SolverFEM3D: Finite element method in 3D. 
+- SolverFEM3D: Finite element method in 3D. (Not integrated to Topology Optimization)
 
 - Optimization algoritm: Based on MMA and GCMMA implemented by [Arjen Deetman](https://github.com/arjendeetman/GCMMA-MMA-Python). 
 
