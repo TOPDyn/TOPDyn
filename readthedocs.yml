@@ -1,13 +1,11 @@
 version: 2
 
+sphinx:
+configuration: docs/conf.py
+
+formats: []
+
 python:
-  version: 3.6
-  install:
-    - requirements: requirements.txt
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
-    - method: setuptools
-      path: another/package
-  system_packages: true
+version: 3.8
+install:
+- requirements: docs/requirements.txt
