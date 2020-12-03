@@ -10,9 +10,9 @@ if __name__ == "__main__":
     v = 0.3
     rho = 7860
     alpha, beta, eta = 0, 0, 0
-    factor = 1 
+    factor = 100000000
     freq = 200
-    freq_rsp = [400, 5]
+    freq_rsp = [0, 400, 5]
     coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely)
     matrix_F = np.array([[1, 0.25, 0, -1, 1]])
     # Create matrix of loads 
@@ -25,8 +25,10 @@ if __name__ == "__main__":
     restri_matrix = np.empty((len(restricted_nodes), 3), dtype='int')
     restri_matrix[:, 0] = restricted_nodes
     restri_matrix[:, [1, 2]] = np.ones((restricted_nodes.shape[0], 2))  
+    #
+    save = False
 
-    fem.main(nelx, nely, lx, ly, force_matrix, None, E, v, rho, alpha, beta, eta, factor, freq, freq_rsp=freq_rsp)
+    fem.main(nelx, nely, lx, ly, force_matrix, restri_matrix, E, v, rho, alpha, beta, eta, factor, freq, freq_rsp=freq_rsp, save=save)
 
 
 

@@ -6,8 +6,15 @@ import vtkplotter as vt
 import pyqtgraph as pg
 
 def all_faces(coord, connect):
-    ''' Get vertices of all faces of the mesh '''
+    """ Get vertice of all faces of the mesh.
+
+    Args:
+        coord (numpy.array): Coordinates of the element.
+        connect (numpy.array): Element connectivity.
     
+    Returns:
+        Corresponding nodes.
+    """   
     nodes_per_face = np.array([connect[:, [1,2,3,4]], connect[:, [5,6,7,8]], \
                                 connect[:, [6,7,3,2]], connect[:, [7,8,4,3]], \
                                 connect[:, [6,5,1,2]], connect[:, [5,8,4,1]]]).reshape(-1,4)
@@ -17,8 +24,15 @@ def all_faces(coord, connect):
     return ind_faces
 
 def free_faces(coord, connect):
-    ''' Get vertices of external faces of the mesh '''
-
+    """ Get vertices of external faces of the mesh.
+    
+    Args:
+        coord (numpy.array): Coordinates of the element.
+        connect (numpy.array): Element connectivity.
+    
+    Returns:
+        Corresponding nodes.
+    """
     nodes_per_face = np.array([connect[:, [1,2,3,4]], connect[:, [5,6,7,8]], \
                                 connect[:, [6,7,3,2]], connect[:, [7,8,4,3]], \
                                 connect[:, [6,5,1,2]], connect[:, [5,8,4,1]]]).reshape(-1,4)
@@ -30,7 +44,17 @@ def free_faces(coord, connect):
     return ind_faces
 
 def build_mesh(verts, ind_faces, scalars=None, timing=False):
-    ''' Build the polygonal Mesh '''
+    """ Build the polygonal Mesh.
+    
+    Args:
+        verts (): Vertices of the elements.
+        ind_faces (): Connectivity of the faces of the elements.
+        scalars (:obj:`int`, optional): Values to add the scalar bar. Defaults to None.
+        timing (:obj:`bool`, optional): If True shows the time to build the mesh. Defaults to False.
+    
+    Returns:
+        Build an instance of the Mesh object from the Vedo library.
+    """
     t0 = time()
     mesh = vt.Mesh([verts, ind_faces])
     if scalars is not None:
@@ -44,7 +68,15 @@ def build_mesh(verts, ind_faces, scalars=None, timing=False):
     return mesh
 
 def plot_mesh(mesh, arrows, cones, complete=True, mesh2=None):
-    
+    """ Plot mesh.
+
+    Args:
+        mesh (): Mesh object
+        arrows ():, 
+        cones (), 
+        complete=True, 
+        mesh2=None
+    """
     if mesh2 is not None:
         if complete:
             vt.show(mesh, arrows, cones, mesh2, __doc__, viewup='z', axes=4)
@@ -57,8 +89,13 @@ def plot_mesh(mesh, arrows, cones, complete=True, mesh2=None):
             vt.show(mesh, __doc__, viewup='z', axes=4)
 
 def animation(coord, connect, amp, disp_vector):
-    '''
-    amp: amplitude
+    ''' Plot deformed mesh animation.
+
+    Args:
+        coord (numpy.array): Coordinates of the element.
+        connect (numpy.array): Element connectivity.
+        amp (int): Amplitude. 
+        disp_vector (numpy.array): Displacement.
     '''
     vt.printc("Press F1 to exit.", c="red", invert=1)
     vp = vt.Plotter(axes=0, interactive=0)
@@ -75,10 +112,20 @@ def animation(coord, connect, amp, disp_vector):
             vp.add(mesh)
             vp.show()
 
-def build_arrows(load_matrix, normalized_coord, timing=False):
+def build_arrows(load_matrix, normal_coord, timing=False):
+    """ Load arrows.
+        
+    Args:  
+        load_matrix (numpy.array): The columns are respectively node, x direction, y direction, force value.   
+        normal_coord (numpy.array): mesh coordinates.
+        timing (:obj:`bool`, optional): If True shows the time to build the load arrows. Defaults to False.
+       
+    Returns:
+        List with the load arrows.
+    """
     t0 = time()
-    force_coord = get_normalized_coord(load_matrix[:, 0], normalized_coord)
-    delta = 0.2 * normalized_coord.max()
+    force_coord = get_normalized_coord(load_matrix[:, 0], normal_coord)
+    delta = 0.2 * normal_coord.max()
     arrows_start, arrows_end = [], []
 
     for i in range(load_matrix.shape[0]):
@@ -126,25 +173,35 @@ def build_arrows(load_matrix, normalized_coord, timing=False):
 
     return all_arrows
 
-def build_cones(restricted, normalized_coord, timing=False):
+def build_cones(restri_nodes, normal_coord, timing=False):
+    """ Cones to indicate constrain nodes.
+        
+    Args:  
+        restri_nodes (numpy.array): Constrain nodes.  
+        normal_coord (numpy.array): mesh coordinates.
+        timing (:obj:`bool`, optional): If True shows the time to build the load arrows. Defaults to False.
+       
+    Returns:
+        List with the cones.
+    """
     t0 = time()
-    restri_coord = get_normalized_coord(restricted[:, 0], normalized_coord)
-    max_value = normalized_coord.max()
+    restri_coord = get_normalized_coord(restri_nodes[:, 0], normal_coord)
+    max_value = normal_coord.max()
     ratio = 0.02 * max_value
     height = 0.05 * max_value
     delta = height/2
     cones = []
 
-    for i in range(restricted.shape[0]):
-        if restricted[i, 1] == 1:
+    for i in range(restri_nodes.shape[0]):
+        if restri_nodes[i, 1] == 1:
             cone = vt.Cone([restri_coord[i, 0] - delta, restri_coord[i, 1], restri_coord[i, 2]], r=ratio, height=height, axis=[1, 0, 0], c='red', alpha=1, res=48)
             cones.append(cone)
 
-        if restricted[i, 2] == 1:
+        if restri_nodes[i, 2] == 1:
             cone = vt.Cone([restri_coord[i, 0], restri_coord[i, 1] - delta, restri_coord[i, 2]], r=ratio, height=height, axis=[0, 1, 0], c='green', alpha=1, res=48)
             cones.append(cone)
 
-        if restricted[i, 3] == 1:
+        if restri_nodes[i, 3] == 1:
             cone = vt.Cone([restri_coord[i, 0], restri_coord[i, 1], restri_coord[i, 2] - delta], r=ratio, height=height, axis=[0, 0, 1], c='blue', alpha=1, res=48)
             cones.append(cone)
     tf = time()
@@ -153,14 +210,34 @@ def build_cones(restricted, normalized_coord, timing=False):
 
     return cones
 
-def get_normalized_coord(node, normalized_coord):
+def get_normalized_coord(nodes, normal_coord):
+    """ Normalized coordinates.
 
-    idx_node = (node - 1).astype('int')
-    coord = normalized_coord[idx_node, :]
+    Args:
+        nodes (numpy.array): External face nodes.
+        normal_coord (numpy.array): Normalized coordinate.
+
+    Returns:
+       Normalized coordinate of the external face nodes.
+    """
+    idx_node = (nodes - 1).astype('int')
+    coord = normal_coord[idx_node, :]
+
     return coord
 
 def plot_freqresponse(freq_range, delta, disp_vector):
-
+    """ Plot the frequency response.
+            
+    Args:    
+        freq_range (list): Range of frequencies analyzed.
+            First value is the minimum frequency.
+            Second value is the maximum frequency.
+        delta (int): Step between each calculation of the function. 
+        disp_vector (numpy.array): Displacement.
+       
+    Returns:
+        Window with the graph.
+    """
     win = pg.GraphicsLayoutWidget(show=True, title="MMA")
     win.resize(1000,600)
     #p = win.addPlot(title="Convergence")
@@ -175,10 +252,19 @@ def plot_freqresponse(freq_range, delta, disp_vector):
 
     return win
 
-def select_nodes(coord, connect, elements):
-    ''' Select nodes to build the mesh '''
-    elements = np.array(elements) - 1
-    nodes = connect[elements, 1:].flatten()
+def select_nodes(coord, connect, nodes):
+    ''' Select unique nodes to build the mesh.
+    
+    Args:
+        coord (numpy.array): mesh coordinates.
+        connect (numpy.array): Element connectivity.
+        nodes (numpy.array): Nodes to select.
+
+    Returns:
+        A tuple with coordinates and connectivity for the selected nodes.
+    '''
+    nodes = np.array(nodes) - 1
+    nodes = connect[nodes, 1:].flatten()
     index = npi.indices(coord[:, 0], np.unique(nodes))
     
-    return coord[index, :], connect[elements,:]
+    return coord[index, :], connect[nodes,:]

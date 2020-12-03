@@ -8,9 +8,13 @@ def freqresponse(freq_range, delta, obj_func, func_name, save=False):
 
     Args:
         freq_range (list): Range of frequencies analyzed.
-        delta (int): Steps between 1 and the parameter freq_range.
-        obj_func (list): Objective function.
-        
+            First value is the minimum frequency.
+            Second value is the maximum frequency.
+        delta (int): Step between each calculation of the function. 
+        obj_func (list): Objective function values.
+        func_name (str): Objective function name.
+            It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
+        save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
     """
     freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
     plt.plot(freq, obj_func.real)
@@ -26,13 +30,17 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
 
     Args:
         freq_range (list): Range of frequencies analyzed.
-        delta (int): Steps between 1 and the parameter freq_range.
+            First value is the minimum frequency.
+            Second value is the maximum frequency.
+        delta (int): Step between each calculation of the function. 
         newf (array): Optimized function.
         oldf (array): Original function.
-        func_name (str): Objective function used.
+        func_name (str): Objective function name.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
-        save (bool, optional): True for save the graphic in PNG.
+        save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
 
+    Returns:
+        A single Axes object from matplotlib.pyplot.
     """
     freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
     fig, ax = plt.subplots()
@@ -48,7 +56,21 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
     return ax
 
 def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx, nely, func_name):
+    """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
 
+    Args:
+        constr_func (list): Restriction functions applied.
+        list_iter (list): All iteration values.
+        list_f0val (list): All objective function values.
+        list_fvals (list): All constraint function values.
+        xval (numpy.array): Indicates where there is mass.
+        nelx (int): Number of elements on the X-axis.
+        nely (int): Number of elements on the Y-axis.
+        func_name (str): Objective function name.
+
+    Returns:
+        Principal window, convergece graph, optimezed part.
+    """
     win = pg.GraphicsLayoutWidget(show=True)
     win.resize(900,600)
     win.setWindowTitle('MMA')
@@ -84,6 +106,16 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx,
     return win, p2, image
 
 def simple_window(xval, nelx, nely):
+    """ Generate a window to plot the optimized mesh.
+
+    Args:
+        xval (numpy.array): Indicates where there is mass.
+        nelx (int): Number of elements on the X-axis.
+        nely (int): Number of elements on the Y-axis.
+
+    Returns:
+        Principal window, optimezed part.
+    """
     gv = pg.GraphicsView()
     gv.setWindowTitle('MMA')
     gv.resize(1000,600)
@@ -102,7 +134,18 @@ def simple_window(xval, nelx, nely):
     return gv, image
 
 def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
+    """ Generate a window to plot the convergence graph.
 
+    Args:
+        constr_func (list): Restriction functions applied.
+        list_iter (list): All iteration values.
+        list_f0val (list): All objective function values.
+        list_fvals (list): All constraint function values.
+        func_name (str): Objective function name.
+
+    Returns:
+        Principal window, convergece graph.
+    """
     win = pg.GraphicsLayoutWidget(show=True, title="MMA")
     win.resize(1000,600)
     #p = win.addPlot(title="Convergence")
@@ -123,6 +166,18 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
     return win, p
 
 def convergence(constr_func, p, list_iter, list_f0val, list_fvals):
+    """ Update the values of the objective function and the constraint function to plot the convergence graph.
+
+    Args:
+        constr_func (list): Restriction functions applied.
+        p (pyqtgraph.graphicsItems.PlotItem): Convergence graph window
+        list_iter (list): All iteration values.
+        list_f0val (list): All objective function values.
+        list_fvals (list): All constraint function values.
+
+    Returns:
+        Convergence graph window.
+    """
     p.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2})
     colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
     if 'Area' in constr_func:
@@ -135,9 +190,14 @@ def convergence(constr_func, p, list_iter, list_f0val, list_fvals):
 
     return p
 
-def save_fig(imagewindow, convergence):
-    
-    exporter = pg.exporters.ImageExporter(imagewindow)
+def save_fig(opt_part, convergence):
+    """ Save the optimized part and the convergence graph.
+
+    Args:
+        opt_part (pyqtgraph.graphicsItems.PlotItem): Optimized part window. 
+        convergence (pyqtgraph.graphicsItems.PlotItem): Convergence graph window.
+    """   
+    exporter = pg.exporters.ImageExporter(opt_part)
     exporter.export('optimization.png')
 
     exporter2 = pg.exporters.ImageExporter(convergence)
