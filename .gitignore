@@ -2,3 +2,7 @@
 trash/
 venv/
 __pycache__/
+
+build/
+_static/
+_templates/
