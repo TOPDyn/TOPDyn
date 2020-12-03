@@ -1,5 +1,5 @@
 Constrain nodes displacements in 3D
-================
+=======================================
 
 
 Figure 10 shows a mesh with *nelx = 2*, *nely = 2*, *nelz = 1*, and how the nodes are numbered. 
@@ -12,7 +12,7 @@ Figure 10 shows a mesh with *nelx = 2*, *nely = 2*, *nelz = 1*, and how the node
    Figure 10: Mesh 3D with numbered nodes.
 
 Constrain X, Y and Z displacements of the nodes in the plane X = 0
---------------------
+----------------------------------------------------------------------
 
 A mask is created that returns an array with False and True values to select the nodes whose X coordinates in the coordinate matrix (column = 1) are equal to zero.
 
@@ -36,7 +36,7 @@ The resulting mesh is shown in figure 11.
    Figure 11: Mesh with X, Y and Z axes constrained of the nodes in the plane X=0.
 
 Constrain X displacement of the nodes in the plane Z = 0.3
---------------------
+---------------------------------------------------------------
 
 In this example, the second column is equal to 1, and the third and fourth columns are equal to 0. The number of rows is defined seeing that the objective is to constrain all nodes of a rectangle face with a fixed Z value. It will be :math:`(nely + 1) * (nelz + 1)`.
 
@@ -58,7 +58,7 @@ The resulting mesh is shown in figure 12.
    Figure 12: Mesh with X-axis constrained of the nodes in the plane Z=0.3.
 
 Constrain X, Y and Z displacements of the nodes at coordinates: A = (1, 0.5, 0.3) and B = (1, 0.5, 0)
---------------------
+---------------------------------------------------------------------------------------------------------
 
 Function :meth:`SolverFEM3D.functions3D.get_nodes_by_coord` works like 2D, but in 3D the Z-axis is added. The second, third, and fourth columns of the constrained nodes matrix are equal to 1.
 
@@ -81,7 +81,7 @@ The resulting mesh is shown in figure 13.
 
 
 Constrain Z displacement of the sixth node
-------------------------------
+-----------------------------------------------
 
 Create a matrix with the constrained node. In this example, the second and third columns are equal to 0 and the fourth is equal to 1.
 

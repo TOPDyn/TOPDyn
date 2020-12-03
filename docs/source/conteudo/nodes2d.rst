@@ -1,5 +1,5 @@
 Constrain nodes displacements in 2D
-================
+=======================================
 
 Figure 6 shows a mesh with *nelx = 4*, *nely = 3*, and how the nodes are numbered. The nodes are numbered from left to right and from bottom to top.
 
@@ -11,7 +11,8 @@ Figure 6 shows a mesh with *nelx = 4*, *nely = 3*, and how the nodes are numbere
 
 
 Constrain X displacement of the nodes with Y = 0.2
---------------------
+-------------------------------------------------------
+
 It is necessary to find the nodes with Y = 0.2 with function :meth:`SolverFEM2D.functions2D.get_nodes1d`. Then a matrix with three columns is created with the constrained nodes. The first column is the node number, the second column designates whether the node is constrained on X displacement (*1: True*, *0: False*), and the third column designates whether the node is constrained on Y displacement (*1: True*, *0: False*). In this example, the second column is equal to 1, and the third is equal to 0.
 
 .. code-block:: python
@@ -31,7 +32,7 @@ The resulting mesh is shown in figure 7.
    Figure 7: Mesh with X-axis nodes constrained with Y = 0.2.
 
 Constrain X and Y displacements of the nodes with X = 0
---------------------
+-------------------------------------------------------------
 
 The objective is to obtain the nodes whose X-axis (column = 1) is equal to 0 with a margin :math:`\epsilon` = 0.001. The second and third columns of the constrained nodes matrix are equal to 1.
 
@@ -51,7 +52,8 @@ The resulting mesh is shown in figure 8.
    Figure 8: Mesh with all X and Y axes elements constrained with X = 0.
 
 Constrain X and Y displacements of the node at coordinate (1, 0.23)
---------------------
+----------------------------------------------------------------------
+
 This example shows how the rounding of function :meth:`SolverFEM2D.functions2D.get_nodes_by_coord` works. Unique values on the Y-axis don't include 0.23:
 
 .. code-block:: python
@@ -81,10 +83,9 @@ The resulting mesh is shown in figure 9.
    Figure 9: Mesh with X and Y axes constrained of the node at coordinate (1, 0.23).
 
 Constrain the eighth node displacement
-------------------------
+------------------------------------------
+
 Create a matrix with the constrained node. In this example, the second and third columns are equal to 1.
-
-
 
 .. code-block:: python
 

@@ -1,9 +1,9 @@
 Add loads in 2D
-================
+===================
 
 
 Add loads by node number
-----------------
+--------------------------
 
 Create a matrix with the loads. The first column is the node number, second and third columns indicate how the load is applied in X and Y axes, respectively. The values can be:
 
@@ -31,7 +31,7 @@ The resulting mesh is shown in figure 3.
 
 
 Add loads by coordinate
-------------------
+--------------------------
 
 Firstly, it's necessary to find the nodes which correspond to the coordinates provided. Function :meth:`SolverFEM2D.functions2D.get_nodes_by_coord` obtains the coordinate nodes passed in the second argument that are the same as the coordinate matrix generate by function :meth:`SolverFEM2D.functions2D.regularmeshQ4`. 
 
@@ -57,7 +57,7 @@ The resulting mesh is shown in figure 4.
 
 
 Add loads in nodes with Y = 0.1
-------------------
+---------------------------------
 
 Function :meth:`SolverFEM2D.functions2D.get_nodes1d` obtains the nodes of the coordinate matrix whose Y-axis (column = 2) is equal to 0.1 with a margin :math:`\epsilon` (in the code is 0.001). The more discretized the mesh, the smaller the acceptable :math:`\epsilon` margin must be.
 

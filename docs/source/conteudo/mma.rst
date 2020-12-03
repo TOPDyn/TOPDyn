@@ -1,5 +1,5 @@
 MMA optimization 
-=================
+===================
 .. automodule:: TopDyn_MMA.MMA_BEAM2
    :members:
 

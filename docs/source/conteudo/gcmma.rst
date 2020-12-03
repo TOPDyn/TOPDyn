@@ -1,5 +1,5 @@
 GCMMA optimization
-=================
+======================
 .. automodule:: TopDyn_GCMMA.GCMMA_BEAM2
    :members:
 

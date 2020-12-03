@@ -1,5 +1,6 @@
 Finite element method in 3D
-=================
+==============================
+
 .. automodule:: SolverFEM3D.FEM3D
    :members:
 

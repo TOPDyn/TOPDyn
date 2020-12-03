@@ -13,18 +13,20 @@
 import sphinx_rtd_theme
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
-
+sys.path.insert(0,  'D:/TOPDyn/')
+sys.path.append('D:/TOPDyn/SolverFEM2D')
+sys.path.append('D:/TOPDyn/SolverFEM3D')
+sys.path.append('D:/TOPDyn/SolverFEM3D')
+sys.path.append('D:/TOPDyn/TopDyn_MMA')
+sys.path.append('D:/TOPDyn/TopDyn_GCMMA')
 
 # -- Project information -----------------------------------------------------
-
 project = 'TOPDyn'
 copyright = '2020, Ana P Rocha and Olavo M Silva'
 author = 'Ana P Rocha and Olavo M Silva'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0'
-
 
 # -- General configuration ---------------------------------------------------
 

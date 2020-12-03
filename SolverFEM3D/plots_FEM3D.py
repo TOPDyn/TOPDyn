@@ -47,8 +47,8 @@ def build_mesh(verts, ind_faces, scalars=None, timing=False):
     """ Build the polygonal Mesh.
     
     Args:
-        verts (): Vertices of the elements.
-        ind_faces (): Connectivity of the faces of the elements.
+        verts (numpy.array): Vertices of the elements.
+        ind_faces (numpy.array): Connectivity of the faces of the elements.
         scalars (:obj:`int`, optional): Values to add the scalar bar. Defaults to None.
         timing (:obj:`bool`, optional): If True shows the time to build the mesh. Defaults to False.
     
@@ -71,11 +71,11 @@ def plot_mesh(mesh, arrows, cones, complete=True, mesh2=None):
     """ Plot mesh.
 
     Args:
-        mesh (): Mesh object
-        arrows ():, 
-        cones (), 
-        complete=True, 
-        mesh2=None
+        mesh (vedo.pointcloud.Points): Mesh object.
+        arrows (vedo.shapes.Arrows): Load arrows.
+        cones (vedo.shapes.Cones): Cones to represent constrain nodes.
+        complete (:obj:`bool`, optional): If true plot mesh with loads and constrain nodes. Defaults to True.
+        mesh2 (:obj:`vedo.pointcloud.Points`, optional): Mesh without faces. Defaults to None.
     """
     if mesh2 is not None:
         if complete:

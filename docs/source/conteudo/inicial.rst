@@ -9,7 +9,7 @@ Figure 1 shows a diagram with the structure of TOPDyn.
    Figure 1: TOPDyn structure.
 
 Box constraint to Area and R ratio
-================
+======================================
 An interval is defined for the Area value or R Ratio. For that, put a positive value that is the upper limit and a negative value that is the lower limit. Figure 2 reproduces the constrain of the code below.
 
 .. code-block:: python
