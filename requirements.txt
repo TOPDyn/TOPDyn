@@ -1,7 +1,7 @@
 numpy==1.18.4
 scipy==1.5.4
 numpy_indexed==0.3.5
-vtk==9.0.0
+vtk==8.2.0
 vtkplotter==2020.3.0
 matplotlib==3.2.1
 PyQt5==5.15.0
