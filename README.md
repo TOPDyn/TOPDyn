@@ -1,6 +1,6 @@
 # TOPDyn: Python-based Topology Optimization procedure for time-harmonic vibration problems
 
-TOPDyn is a numerical procedure written in Python for academic purposes. The procedure is under development and is based on the works:
+TOPDyn is a numerical procedure written in Python for academic purposes. The procedure is under development, focused on 2D-problems, and is based on the works:
 
 - A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems.
 https://www.sciencedirect.com/science/article/abs/pii/S0022460X18308563
