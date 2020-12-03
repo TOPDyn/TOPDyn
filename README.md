@@ -2,11 +2,13 @@
 
 Based on the works:
 
-A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems.
+- A critical analysis of using the dynamic compliance as objective function in topology optimization of one-material structures considering steady-state forced vibration problems.
 https://www.sciencedirect.com/science/article/abs/pii/S0022460X18308563
 
-On the use of active and reactive input power in topology optimization of one-material structures considering steady-state forced vibration problems.
+- On the use of active and reactive input power in topology optimization of one-material structures considering steady-state forced vibration problems.
 https://www.sciencedirect.com/science/article/abs/pii/S0022460X19305516
+
+- A strategy based on the strain‐to‐kinetic energy ratio to ensure stability and convergence in topology optimization of globally resonating one‐material structures. https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.6374
 
 ## Prerequisites
 
