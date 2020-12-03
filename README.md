@@ -20,7 +20,7 @@ Some features to be implemented:
 
 ## Prerequisites
 
-You will need python 3.6.8 and the pip package manager.
+You will need Python 3.6.8 and the pip package manager.
 
 It's recommended to use a [virtual environment](https://towardsdatascience.com/why-you-should-use-a-virtual-environment-for-every-python-project-c17dab3b0fd0). To do this, run the following commands:
 
@@ -64,7 +64,7 @@ Update your video card drivers.
 
 - SolverFEM2D: Finite element method in 2D. 
 
-- SolverFEM3D: Finite element method in 3D. (Not integrated to Topology Optimization)
+- SolverFEM3D: Finite element method in 3D (not integrated to Topology Optimization).
 
 - Optimization algoritm: Based on MMA and GCMMA implemented by [Arjen Deetman](https://github.com/arjendeetman/GCMMA-MMA-Python). 
 
@@ -74,10 +74,12 @@ Each API has a main file with an usage example.
 	
 ## Authors
 
-The authors are members of MOPT - Multidisciplinary Optimization Group, from Federal University of Santa Catarina (Florianópolis, SC, Brazil).
+The authors are members of MOPT - Multidisciplinary Optimization Group, from Federal University of Santa Catarina (Florianópolis, SC, Brazil):
 
-    Ana P. Rocha, 
-    Olavo M. Silva.
+[Ana P. Rocha](https://www.linkedin.com/in/ana-paula-da-rocha/) and
+Olavo M. Silva.
+
+*The authors are thankful to Jacson G. Vargas and Arjen Deetman.
 
 ##
     
