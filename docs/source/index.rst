@@ -4,7 +4,7 @@ TOPDyn Documentation
 
 **Python-based Topology Optimization procedure for time-harmonic vibration problems**
 
-Check out the **Git repository** here: https://github.com/TOPDyn/TOPDyn
+Check out the **Git repository**: https://github.com/TOPDyn/TOPDyn
 
 Based on the works:
 
