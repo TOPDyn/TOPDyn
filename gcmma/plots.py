@@ -7,12 +7,12 @@ def freqresponse(freq_range, delta, obj_func, func_name, save=False):
     """ Plot the frequency response.
 
     Args:
-        freq_range (list): Range of frequencies analyzed.
+        freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (int): Step between each calculation of the function. 
-        obj_func (list): Objective function values.
-        func_name (str): Objective function name.
+        delta (:obj:`int`): Step between each calculation of the function. 
+        obj_func (:obj:`list`): Objective function values.
+        func_name (:obj:`str`): Objective function name.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
         save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
     """
@@ -29,13 +29,13 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
     """ Plot the frequency response of the original and the optimized function.
 
     Args:
-        freq_range (list): Range of frequencies analyzed.
+        freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (int): Step between each calculation of the function. 
+        delta (:obj:`int`): Step between each calculation of the function. 
         newf (array): Optimized function.
         oldf (array): Original function.
-        func_name (str): Objective function used.
+        func_name (:obj:`str`): Objective function used.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
         save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
 
@@ -59,14 +59,14 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx,
     """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
 
     Args:
-        constr_func (list): Restriction functions applied.
-        list_iter (list): All iteration values.
-        list_f0val (list): All objective function values.
-        list_fvals (list): All constraint function values.
-        xval (numpy.array): Indicates where there is mass.
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
-        func_name (str): Objective function name.
+        constr_func (:obj:`list`): Restriction functions applied.
+        list_iter (:obj:`list`): All iteration values.
+        list_f0val (:obj:`list`): All objective function values.
+        list_fvals (:obj:`list`): All constraint function values.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+        func_name (:obj:`str`): Objective function name.
 
     Returns:
         Principal window, convergece graph, optimezed part.
@@ -109,9 +109,9 @@ def simple_window(xval, nelx, nely):
     """ Generate a window to plot the optimized mesh.
 
     Args:
-        xval (numpy.array): Indicates where there is mass.
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
 
     Returns:
         Principal window, optimezed part.
@@ -137,11 +137,11 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
     """ Generate a window to plot the convergence graph.
 
     Args:
-        constr_func (list): Restriction functions applied.
-        list_iter (list): All iteration values.
-        list_f0val (list): All objective function values.
-        list_fvals (list): All constraint function values.
-        func_name (str): Objective function name.
+        constr_func (:obj:`list`): Restriction functions applied.
+        list_iter (:obj:`list`): All iteration values.
+        list_f0val (:obj:`list`): All objective function values.
+        list_fvals (:obj:`list`): All constraint function values.
+        func_name (:obj:`str`): Objective function name.
 
     Returns:
         Principal window, convergece graph.
@@ -169,11 +169,11 @@ def convergence(constr_func, p, list_iter, list_f0val, list_fvals):
     """ Update the values of the objective function and the constraint function to plot the convergence graph.
 
     Args:
-        constr_func (list): Restriction functions applied.
+        constr_func (:obj:`list`): Restriction functions applied.
         p (pyqtgraph.graphicsItems.PlotItem): Convergence graph window
-        list_iter (list): All iteration values.
-        list_f0val (list): All objective function values.
-        list_fvals (list): All constraint function values.
+        list_iter (:obj:`list`): All iteration values.
+        list_f0val (:obj:`list`): All objective function values.
+        list_fvals (:obj:`list`): All constraint function values.
 
     Returns:
         Convergence graph window.

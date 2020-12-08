@@ -1,6 +1,6 @@
 import numpy as np
-import FEM3D as fem
-import functions3D as fc
+import fem_3d as fem
+import functions_3d as fc
 
 if __name__ == "__main__":
 

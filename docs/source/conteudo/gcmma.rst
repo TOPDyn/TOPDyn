@@ -1,10 +1,10 @@
 GCMMA optimization
 ======================
-.. automodule:: TopDyn_GCMMA.GCMMA_BEAM2
+.. automodule:: gcmma.beam2
    :members:
 
-.. automodule:: TopDyn_GCMMA.functions
+.. automodule:: gcmma.functions
    :members:
 
-.. automodule:: TopDyn_GCMMA.plots
+.. automodule:: gcmma.plots
    :members:

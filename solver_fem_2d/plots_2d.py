@@ -9,7 +9,7 @@ def show_nodes(coord):
     """ Plot nodes of mesh.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
+        coord (:obj:`numpy.array`): Coordinates of the element.
     """
     ax = plt.axes()
     ax.scatter(coord[:,1], coord[:,2])
@@ -25,9 +25,9 @@ def build_collection(coord, connect, disp_vector=None, timing=False):
     """ Build quad mesh.
     
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        disp_vector (numpy.array): Displacement.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        disp_vector (:obj:`numpy.array`): Displacement.
         timing (:obj:`bool`, optional): If True shows the time to build the mesh. Defaults to False.
      
     Returns:
@@ -55,9 +55,9 @@ def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None, sav
     """ Plot mesh, force arrows and constrain nodes. 
 
     Args:
-        lx (int): X-axis length.
-        ly (int): Y-axis length.
-        coord (numpy.array): Coordinates of the element.
+        lx (:obj:`int`): X-axis length.
+        ly (:obj:`int`): Y-axis length.
+        coord (:obj:`numpy.array`): Coordinates of the element.
         pc (matplotlib.collections): Matplotlib collection object.
         load_matrix (:obj:`numpy.array`, optional): The columns are respectively node, x direction, y direction, force value. 
         restri_matrix (:obj:`numpy.array`, optional)= The columns are respectively node, x direction, y direction. Defaults to None. 
@@ -94,8 +94,8 @@ def get_size(lx, ly):
     """ Get columns with maximum and minimum length.
 
     Args:
-        lx (int): X-axis length.
-        ly (int): Y-axis length.
+        lx (:obj:`int`): X-axis length.
+        ly (:obj:`int`): Y-axis length.
 
     Returns:
         Column indexes with maximum and minimum length, respectively.
@@ -114,10 +114,10 @@ def plot_force(ax, coord, load_matrix, min_size, size):
         
     Args:    
         ax (matplotlib.axes.Axes): Matplotlib axes object.
-        coord (numpy.array): mesh coordinates.
-        load_matrix (numpy.array): The columns are respectively node, x direction, y direction, force value. 
-        min_size (float): Value to define the width of load arrow.
-        size (float): Load arrow length.
+        coord (:obj:`numpy.array`): mesh coordinates.
+        load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value. 
+        min_size (:obj:`float`): Value to define the width of load arrow.
+        size (:obj:`float`): Load arrow length.
     
     Returns:
         Matplotlib axes object.
@@ -144,7 +144,7 @@ def plot_restr_nodes(ax, coord, restri_matrix):
         
     Args:    
         ax (matplotlib.axes.Axes): Matplotlib axes object.
-        coord (numpy.array): mesh coordinates.
+        coord (:obj:`numpy.array`): mesh coordinates.
         restri_matrix (numpy.array)= The columns are respectively node, x direction, y direction.
        
     Returns:
@@ -170,11 +170,11 @@ def plot_freqresponse(freq_range, delta, disp_vector, save=False):
     """ Plot the frequency response.
             
     Args:    
-        freq_range (list): Range of frequencies analyzed.
+        freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (int): Step between each calculation of the function. 
-        disp_vector (numpy.array): Displacement.
+        delta (:obj:`int`): Step between each calculation of the function. 
+        disp_vector (:obj:`numpy.array`): Displacement.
         save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
        
     Returns:
@@ -197,13 +197,13 @@ def many_disp(freq_range, delta, disp_vector1, disp_vector2, disp_vector3):
     """ Plot the frequency response of three displacement vectors.
             
     Args:    
-        freq_range (list): Range of frequencies analyzed.
+        freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (int): Step between each calculation of the function. 
-        disp_vector1 (numpy.array): Displacement 1.
-        disp_vector2 (numpy.array): Displacement 2.
-        disp_vector3 (numpy.array): Displacement 3.
+        delta (:obj:`int`): Step between each calculation of the function. 
+        disp_vector1 (:obj:`numpy.array`): Displacement 1.
+        disp_vector2 (:obj:`numpy.array`): Displacement 2.
+        disp_vector3 (:obj:`numpy.array`): Displacement 3.
     """
     x = np.arange(freq_range[0], freq_range[1] + 1, delta)
     y1 = 10 * np.log10(abs(disp_vector1))

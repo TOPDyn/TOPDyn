@@ -1,10 +1,10 @@
 MMA optimization 
 ===================
-.. automodule:: TopDyn_MMA.MMA_BEAM2
+.. automodule:: mma.beam2
    :members:
 
-.. automodule:: TopDyn_MMA.functions
+.. automodule:: mma.functions
    :members:
 
-.. automodule:: TopDyn_MMA.plots
+.. automodule:: mma.plots
    :members:

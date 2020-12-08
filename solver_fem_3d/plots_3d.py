@@ -1,5 +1,5 @@
 from time import time
-import functions3D as fc
+import functions_3d as fc
 import numpy as np
 import numpy_indexed as npi
 import vtkplotter as vt
@@ -9,8 +9,8 @@ def all_faces(coord, connect):
     """ Get vertice of all faces of the mesh.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
     
     Returns:
         Corresponding nodes.
@@ -27,8 +27,8 @@ def free_faces(coord, connect):
     """ Get vertices of external faces of the mesh.
     
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
     
     Returns:
         Corresponding nodes.
@@ -47,8 +47,8 @@ def build_mesh(verts, ind_faces, scalars=None, timing=False):
     """ Build the polygonal Mesh.
     
     Args:
-        verts (numpy.array): Vertices of the elements.
-        ind_faces (numpy.array): Connectivity of the faces of the elements.
+        verts (:obj:`numpy.array`): Vertices of the elements.
+        ind_faces (:obj:`numpy.array`): Connectivity of the faces of the elements.
         scalars (:obj:`int`, optional): Values to add the scalar bar. Defaults to None.
         timing (:obj:`bool`, optional): If True shows the time to build the mesh. Defaults to False.
     
@@ -92,10 +92,10 @@ def animation(coord, connect, amp, disp_vector):
     ''' Plot deformed mesh animation.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        amp (int): Amplitude. 
-        disp_vector (numpy.array): Displacement.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        amp (:obj:`int`): Amplitude. 
+        disp_vector (:obj:`numpy.array`): Displacement.
     '''
     vt.printc("Press F1 to exit.", c="red", invert=1)
     vp = vt.Plotter(axes=0, interactive=0)
@@ -116,8 +116,8 @@ def build_arrows(load_matrix, normal_coord, timing=False):
     """ Load arrows.
         
     Args:  
-        load_matrix (numpy.array): The columns are respectively node, x direction, y direction, force value.   
-        normal_coord (numpy.array): mesh coordinates.
+        load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.   
+        normal_coord (:obj:`numpy.array`): mesh coordinates.
         timing (:obj:`bool`, optional): If True shows the time to build the load arrows. Defaults to False.
        
     Returns:
@@ -177,8 +177,8 @@ def build_cones(restri_nodes, normal_coord, timing=False):
     """ Cones to indicate constrain nodes.
         
     Args:  
-        restri_nodes (numpy.array): Constrain nodes.  
-        normal_coord (numpy.array): mesh coordinates.
+        restri_nodes (:obj:`numpy.array`): Constrain nodes.  
+        normal_coord (:obj:`numpy.array`): mesh coordinates.
         timing (:obj:`bool`, optional): If True shows the time to build the load arrows. Defaults to False.
        
     Returns:
@@ -214,8 +214,8 @@ def get_normalized_coord(nodes, normal_coord):
     """ Normalized coordinates.
 
     Args:
-        nodes (numpy.array): External face nodes.
-        normal_coord (numpy.array): Normalized coordinate.
+        nodes (:obj:`numpy.array`): External face nodes.
+        normal_coord (:obj:`numpy.array`): Normalized coordinate.
 
     Returns:
        Normalized coordinate of the external face nodes.
@@ -229,11 +229,11 @@ def plot_freqresponse(freq_range, delta, disp_vector):
     """ Plot the frequency response.
             
     Args:    
-        freq_range (list): Range of frequencies analyzed.
+        freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (int): Step between each calculation of the function. 
-        disp_vector (numpy.array): Displacement.
+        delta (:obj:`int`): Step between each calculation of the function. 
+        disp_vector (:obj:`numpy.array`): Displacement.
        
     Returns:
         Window with the graph.
@@ -256,9 +256,9 @@ def select_nodes(coord, connect, nodes):
     ''' Select unique nodes to build the mesh.
     
     Args:
-        coord (numpy.array): mesh coordinates.
-        connect (numpy.array): Element connectivity.
-        nodes (numpy.array): Nodes to select.
+        coord (:obj:`numpy.array`): mesh coordinates.
+        connect (:obj:`numpy.array`): Element connectivity.
+        nodes (:obj:`numpy.array`): Nodes to select.
 
     Returns:
         A tuple with coordinates and connectivity for the selected nodes.

@@ -1,11 +1,9 @@
 import numpy as np
 import sys
 import os
-sys.path.insert(1, os.getcwd() + '\SolverFEM2D')
-import functions2D as fc
-import GCMMA_BEAM2 as gcmma_beam 
-import functions as fc_opt
-import plots as plt_opt
+sys.path.append(os.getcwd())
+import solver_fem_2d.functions_2d as fc
+import beam2 as beam 
 
 if __name__ == "__main__":
 
@@ -22,8 +20,8 @@ if __name__ == "__main__":
     p_par = 3
     q_par = 1
     const_func = 100
-    matrix_F = np.array([[0.8, 0.25, 0, -1, 10000]])
     # Create matrix of loads 
+    matrix_F = np.array([[0.8, 0.25, 0, -1, 10000]])
     nodes_apply_F = fc.get_nodes_by_coord(coord, matrix_F[:, [0,1]])
     force_matrix = np.empty((nodes_apply_F.shape[0], 4))
     force_matrix[:, 0] = nodes_apply_F
@@ -53,15 +51,15 @@ if __name__ == "__main__":
     dens_filter = True
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
-    # Constrain - The first value in the list is used to define the initial value of xval
+    # Constraint - The first value in the list is used to define the initial value of xval
     constr_func = ['Area']
     constr_values = [50]
-    # Plot deformed mesh  
+    # Plot mesh  
     mesh_deform = True 
     factor = 10000
     # Save plots
     save = False
-    # Get code execution time
+    #
     timing = False
 
-    gcmma_beam.main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_k, x_min_m, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, mesh_deform=mesh_deform, factor=factor, max_iter=max_iter, save=save, timing=timing)
+    beam.main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_k, x_min_m, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, mesh_deform=mesh_deform, factor=factor, max_iter=max_iter, save=save, timing=timing)

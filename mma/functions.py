@@ -5,32 +5,32 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import eigs, spsolve
 import sys
 import os
-sys.path.insert(1, os.getcwd() + '\SolverFEM2D')
-import functions2D as fc
+sys.path.append(os.getcwd())
+import solver_fem_2d.functions_2d as fc
 
 def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega, xval, x_min_k, x_min_m, p_par, q_par):
     """ Assembly matrices.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        ind_rows (numpy.array): Node indexes to make the assembly.
-        ind_cols (numpy.array): Node indexes to make the assembly.
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
-        ngl (int): Degrees of freedom.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.  
-        rho (float): Density.  
-        alpha (float): Damping coefficient proportional to mass. 
-        beta (float): Damping coefficient proportional to stiffness.  
-        eta (float): Damping coefficient. 
-        omega (float): 2 pi frequency
-        xval (numpy.array): Indicates where there is mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        p_par (int): Penalization power to stiffness.
-        q_par (int): Penalization power to mass. 
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
+        ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+        ngl (:obj:`int`): Degrees of freedom.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.  
+        rho (:obj:`float`): Density.  
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
+        eta (:obj:`float`): Damping coefficient. 
+        omega (:obj:`float`): 2 pi frequency
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        p_par (:obj:`int`): Penalization power to stiffness.
+        q_par (:obj:`int`): Penalization power to mass. 
 
     Returns:
         A tuple with stiffnes, mass and dynamic matrices and time to assembly the matrices.
@@ -61,17 +61,6 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, a
     return stif_matrix, mass_matrix, dyna_stif, t_assembly
 
 def harmonic_problem(ngl, dyna_stif, load_vector, free_ind=None):
-    """ Harmonic solution.
-
-    Args:
-        ngl (int): Degrees of freedom.
-        dyna_stif (numpy.array): Dynamic stiffness matrix. 
-        load_vector (numpy.array): Force.
-        free_ind (:obj:`numpy.array`, optional): Free dofs. Defaults to None.
-
-    Returns:
-        A tuple with displacement vector and time to solve the problem.
-    """
     t02 = time()
     if free_ind is not None:
         disp_vector = np.zeros((ngl), dtype=complex)
@@ -88,8 +77,8 @@ def modal_analysis(stif_matrix, mass_matrix, modes=20, which='LM', sigma=0.01):
     """ Modal Analysis. Use eigs Scipy function.
 
     Args:
-        stif_matrix (numpy.array): Stiffness matrix.
-        mass_matrix (numpy.array): Mass matrix.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
         modes (:obj:`int`, optional): The number of eigenvalues and eigenvectors desired.
         which (:obj:`str`, optional): Which k eigenvectors and eigenvalues to find. 
         sigma (:obj:`float`, optional): Find eigenvalues near sigma using shift-invert mode.
@@ -109,7 +98,6 @@ def modal_analysis(stif_matrix, mass_matrix, modes=20, which='LM', sigma=0.01):
 
     return natural_frequencies, modal_shape
 
-
 def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega, alpha, beta, eta, free_ind):    
     """ Perform an harmonic analysis through superposition method and returns the response of
         all nodes due the external or internal equivalent load. It has been implemented two
@@ -118,15 +106,15 @@ def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega, alph
         Entries for Hyteretic Proportional Model Damping: (alpha_h, beta_h)
     
     Args:
-        stif_matrix (numpy.array): Stiffness matrix.
-        mass_matrix (numpy.array): Mass matrix.
-        load_vector (numpy.array): Force.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        load_vector (:obj:`numpy.array`): Force.
         modes (:obj:`int`, optional): The number of eigenvalues and eigenvectors desired.
-        omega (float): 2 pi frequency
-        alpha (float): Damping coefficient proportional to mass. 
-        beta (float): Damping coefficient proportional to stiffness.
-        eta (float): Damping coefficient. 
-        free_ind (numpy.array): Free dofs. 
+        omega (:obj:`float`): 2 pi frequency
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        eta (:obj:`float`): Damping coefficient. 
+        free_ind (:obj:`numpy.array`): Free dofs. 
 
     Returns:
         A tuple with displacement and time to solve the problem.
@@ -154,39 +142,39 @@ def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega, alph
     
     return disp_vector, t_superp
 
-def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_k, x_min_m, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, **kwargs):
+def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_k, x_min_m, p_par, q_par, freq_range, delta, function_name, const_func, modes, load_vector, **kwargs):
     """ Calculates the objective function for a range of frequencies.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        ind_rows ()
-        ind_cols ()
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
-        ngl (int): Degrees of freedom.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.  
-        rho (float): Density.  
-        alpha (float): Damping coefficient proportional to mass. 
-        beta (float): Damping coefficient proportional to stiffness.  
-        eta (float): Damping coefficient. 
-        xval (numpy.array): Indicates where there is mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        p_par (int): Penalization power to stiffness. 
-        q_par (int): Penalization power to mass.
-        freq_range (list): Frequency range.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
+        ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+        ngl (:obj:`int`): Degrees of freedom.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.  
+        rho (:obj:`float`): Density.  
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
+        eta (:obj:`float`): Damping coefficient. 
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        p_par (:obj:`int`): Penalization power to stiffness. 
+        q_par (:obj:`int`): Penalization power to mass.
+        freq_range (:obj:`list`): Frequency range.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (int): Step between each calculation of the objective function. 
-        func_name (str): Objective function used.
+        delta (:obj:`int`): Step between each calculation of the objective function. 
+        func_name (:obj:`str`): Objective function used.
         const_func ()
-        modes (int): The number of eigenvalues and eigenvectors desired.
-        load_vector (numpy.array): Force.
+        modes (:obj:`int`): The number of eigenvalues and eigenvectors desired.
+        load_vector (:obj:`numpy.array`): Force.
 
     Returns:
-        A array with the objective function values.
+        Objective function values.
     """
     free_ind = None
     if kwargs.get('unrestricted_ind') is not None:
@@ -202,15 +190,15 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
             disp_vector, _ = mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega, alpha, beta, eta, free_ind)
         else: 
             disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
-        if func_name == "Compliance":
+        if function_name == "Compliance":
             abs(disp_vector@load_vector)
-        elif func_name == "Elastic Potential Energy":
+        elif function_name == "Elastic Potential Energy":
             _, func_vector[n] = elastic_potential_energy(disp_vector, stif_matrix, const_func) 
-        elif func_name == "Input Power":
+        elif function_name == "Input Power":
             _, func_vector[n] = func_input_power(disp_vector, load_vector, omega, const_func)
-        elif func_name == "Kinetic Energy":
+        elif function_name == "Kinetic Energy":
             _, func_vector[n] = kinetic_energy(disp_vector, mass_matrix, omega, const_func)
-        elif func_name == 'R Ratio':
+        elif function_name == 'R Ratio':
             _, func_vector[n], _, _ = R_ratio(disp_vector, stif_matrix, mass_matrix, omega, const_func) 
 
         print('It.', n)
@@ -220,11 +208,11 @@ def func_compliance(disp_vector, load_vector):
     """ Calculates the compliance function.
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        load_vector (numpy.array): Force.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        load_vector (:obj:`numpy.array`): Force.
         
     Returns:
-        The function value.
+        Function value.
     """
     f = abs(np.dot(disp_vector, load_vector))
  
@@ -234,10 +222,10 @@ def func_input_power(disp_vector, load_vector, omega, const_func):
     """ Calculates the input power function.
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        load_vector (numpy.array): Force.
-        omega (float): 2 * pi * frequency
-        const_func (float):
+        disp_vector (:obj:`numpy.array`): Displacement.
+        load_vector (:obj:`numpy.array`): Force.
+        omega (:obj:`float`): 2 * pi * frequency
+        const_func (:obj:`float`):
 
     Returns:
         A tuple with the values of the input power on the logarithmic scale and the 'virgin' input power.
@@ -255,9 +243,9 @@ def elastic_potential_energy(disp_vector, stif_matrix, const_func):
     """ Calculates the elastic potential energy.
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        stif_matrix (numpy.array): Stiffness matrix.
-        const_func (float): 
+        disp_vector (:obj:`numpy.array`): Displacement.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        const_func (:obj:`float`): 
 
     Returns:
         A tuple with the values of the potential elastic energy on the logarithmic scale and the 'virgin' potential elastic energy.
@@ -273,10 +261,10 @@ def kinetic_energy(disp_vector, mass_matrix, omega, const_func):
     """ Calculates the kinetic energy.
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        mass_matrix (numpy.array): Mass matrix.
-        omega (float): 2 * pi * frequency
-        const_func (float):
+        disp_vector (:obj:`numpy.array`): Displacement.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        omega (:obj:`float`): 2 * pi * frequency
+        const_func (:obj:`float`):
 
     Returns:
         A tuple with the values of the kinetic energy on the logarithmic scale and the 'virgin' kinetic energy.
@@ -294,11 +282,11 @@ def R_ratio(disp_vector, stif_matrix, mass_matrix, omega, const_func):
     """ Calculates the strain-to-kinetic energy ratio R.
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        stif_matrix (numpy.array): Stiffness matrix.
-        mass_matrix (numpy.array): Mass matrix.
-        omega (float): 2 * pi * frequency
-        const_func (float):
+        disp_vector (:obj:`numpy.array`): Displacement.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        omega (:obj:`float`): 2 * pi * frequency
+        const_func (:obj:`float`):
 
     Returns:
         R, Rvrig Ep and Ek
@@ -318,9 +306,9 @@ def lambda_parameter(disp_vector, load_vector, function):
     """ Calculates the lambda parameter of the function.
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        load_vector (numpy.array): Force vector.
-        function (float): Function value.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        load_vector (:obj:`numpy.array`): Force vector.
+        function (:obj:`float`): Function value.
 
     Returns:
         Lambda parameter.
@@ -332,10 +320,10 @@ def lambda_parameter_ep(disp_vector, stif_matrix, dyna_stif, free_ind):
     """ Calculates the lambda solution of the elastic potential energy.
 
     Args:
-        stif_matrix (numpy.array): Stiffness matrix.
-        dyna_stif (numpy.array): Dynamic stiffness matrix. 
-        disp_vector (numpy.array): Displacement.
-        free_ind (numpy.array): Free dofs.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix. 
+        disp_vector (:obj:`numpy.array`): Displacement.
+        free_ind (:obj:`numpy.array`): Free dofs.
 
     Returns:
         Lambda parameter solution.
@@ -352,11 +340,11 @@ def lambda_parameter_ek(disp_vector, mass_matrix, dyna_stif, omega, free_ind):
     """ Calculates the lambda solution of the kinetic energy.
 
     Args:
-        mass_matrix (numpy.array): Mass matrix.
-        disp_vector (numpy.array): Displacement.
-        dyna_stif (array): 
-        omega (float): 2 * pi * frequency
-        free_ind (numpy.array): Free dofs.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        dyna_stif (array): Stifness matrix.
+        omega (:obj:`float`): 2 * pi * frequency
+        free_ind (:obj:`numpy.array`): Free dofs.
 
     Returns:
         Lambda parameter solution.
@@ -374,14 +362,14 @@ def lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega, 
     """ Calculates the lambda solution of R.
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        Kd_matrix (numpy.array): 
-        stif_matrix (numpy.array): Stiffness matrix.
-        mass_matrix (numpy.array): Mass matrix.
-        omega (float): 2 * pi * frequency.
-        fvirg (float): 'virgin' function value.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        Kd_matrix (:obj:`numpy.array`): 
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        omega (:obj:`float`): 2 * pi * frequency.
+        fvirg (:obj:`float`): 'virgin' function value.
         kinetic_e: Kinetic energy.
-        free_ind (numpy.array): Free dofs.
+        free_ind (:obj:`numpy.array`): Free dofs.
 
     Returns:
         Lambda parameter solution.
@@ -400,21 +388,21 @@ def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega, p_par, 
     """ calculates the derivative of the compliance function.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.
-        rho (float): Density.
-        alpha (float): Damping coefficient proportional to mass.
-        beta (float): Damping coefficient proportional to stiffness.
-        omega (float): 2 * pi * frequency
-        p_par (float): Penalization power to stiffness. 
-        q_par (float): Penalization power to mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        xval (numpy.array): Indicates where there is mass.
-        disp_vector (numpy.array): Displacement.
-        lam (complex): Lambda parameter.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.
+        rho (:obj:`float`): Density.
+        alpha (:obj:`float`): Damping coefficient proportional to mass.
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        omega (:obj:`float`): 2 * pi * frequency
+        p_par (:obj:`float`): Penalization power to stiffness. 
+        q_par (:obj:`float`): Penalization power to mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        lam (:obj:`float`): Lambda parameter.
 
     Returns:
         Derivative values.
@@ -441,21 +429,21 @@ def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega, p_par,
     """ calculates the derivative of the input power function.
     
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.
-        rho (float): Density.
-        alpha (float): Damping coefficient proportional to mass.
-        beta (float): Damping coefficient proportional to stiffness.
-        omega (float): 2 * pi * frequency
-        p_par (float): Penalization power to stiffness. 
-        q_par (float): Penalization power to mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        xval (numpy.array): Indicates where there is mass.
-        disp_vector (numpy.array): Displacement.
-        fvirg (float): Input power function value.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.
+        rho (:obj:`float`): Density.
+        alpha (:obj:`float`): Damping coefficient proportional to mass.
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        omega (:obj:`float`): 2 * pi * frequency
+        p_par (:obj:`float`): Penalization power to stiffness. 
+        q_par (:obj:`float`): Penalization power to mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        fvirg (:obj:`float`): Input power function value.
 
     Returns:
         Derivative values.
@@ -485,22 +473,22 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
     """ calculates the derivative of the elastic potential energy function.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.
-        rho (float): Density.
-        alpha (float): Damping coefficient proportional to mass.
-        beta (float): Damping coefficient proportional to stiffness.
-        omega (float): 2 * pi * frequency
-        p_par (float): Penalization power to stiffness. 
-        q_par (float): Penalization power to mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        xval (numpy.array): Indicates where there is mass.
-        disp_vector (numpy.array): Displacement.
-        lam (complex): Lambda parameter.
-        fvirg (float): Elastic potential energy function value.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.
+        rho (:obj:`float`): Density.
+        alpha (:obj:`float`): Damping coefficient proportional to mass.
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        omega (:obj:`float`): 2 * pi * frequency
+        p_par (:obj:`float`): Penalization power to stiffness. 
+        q_par (:obj:`float`): Penalization power to mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        lam (:obj:`float`): Lambda parameter.
+        fvirg (:obj:`float`): Elastic potential energy function value.
 
     Returns:
         Derivative values.
@@ -532,22 +520,22 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
     """ calculates the derivative of the kinetic energy function.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.
-        rho (float): Density.
-        alpha (float): Damping coefficient proportional to mass.
-        beta (float): Damping coefficient proportional to stiffness.
-        omega (float): 2 * pi * frequency
-        p_par (float): Penalization power to stiffness. 
-        q_par (float): Penalization power to mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        xval (numpy.array): Indicates where there is mass.
-        disp_vector (numpy.array): Displacement.
-        lam (complex): Lambda parameter.
-        fvirg (float): Kinetic energy function value.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.
+        rho (:obj:`float`): Density.
+        alpha (:obj:`float`): Damping coefficient proportional to mass.
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        omega (:obj:`float`): 2 * pi * frequency
+        p_par (:obj:`float`): Penalization power to stiffness. 
+        q_par (:obj:`float`): Penalization power to mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        lam (:obj:`float`): Lambda parameter.
+        fvirg (:obj:`float`): Kinetic energy function value.
 
     Returns:
         Derivative values.
@@ -558,6 +546,7 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
                             dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
     
     for el in range(len(connect)):
+    
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
         dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
@@ -577,24 +566,24 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_
     """ calculates the derivative of the kinetic energy function.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.
-        rho (float): Density.
-        alpha (float): Damping coefficient proportional to mass.
-        beta (float): Damping coefficient proportional to stiffness.
-        omega (float): 2 * pi * frequency
-        p_par (float): Penalization power to stiffness. 
-        q_par (float): Penalization power to mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        xval (numpy.array): Indicates where there is mass.
-        disp_vector (numpy.array): Displacement.
-        lam (complex): Lambda parameter.
-        fvirg (float): R Ratio function value.
-        elastic_p (float): Elastic potential energy function value.
-        kinetic_e (float): Kinetic energy function value.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.
+        rho (:obj:`float`): Density.
+        alpha (:obj:`float`): Damping coefficient proportional to mass.
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        omega (:obj:`float`): 2 * pi * frequency
+        p_par (:obj:`float`): Penalization power to stiffness. 
+        q_par (:obj:`float`): Penalization power to mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        lam (:obj:`float`): Lambda parameter.
+        fvirg (:obj:`float`): R Ratio function value.
+        elastic_p (:obj:`float`): Elastic potential energy function value.
+        kinetic_e (:obj:`float`): Kinetic energy function value.
 
     Returns:
         Derivative values.
@@ -626,9 +615,9 @@ def dfAt_density(deriv_At, H, neighbors):
     """ Apply the density filter to the derivative of the area.
 
     Args:
-        deriv_At (numpy.array): Derivative of total area.
-        H (csc_matrix): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (csc_matrix): Neighbors of each element.
+        deriv_At (:obj:`numpy.array`): Derivative of total area.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
 
     Returns:
         Density filter applied to the derivative values.
@@ -651,9 +640,9 @@ def density_filter(deriv_f, H, neighbors):
     """ Apply the density filter to the derivative of the function.
 
     Args:
-        deriv_f (numpy.array): Derivative of the function.
-        H (csc_matrix): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (csc_matrix): Neighbors of each element.
+        deriv_f (:obj:`numpy.array`): Derivative of the function.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
 
     Returns:
         Density filter applied to the derivative values.
@@ -676,11 +665,11 @@ def sensitivity_filter(deriv_f, H, neighbors, xval, radius):
     """ Apply the sensitivity filter to the derivative of the function.
 
     Args:
-        deriv_f (numpy.array): Derivative of the function.
-        H (csc_matrix): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (csc_matrix): Neighbors of each element.
-        xval (numpy.array): Indicates where there is mass.
-        radius (float): Radius to get elements in the vicinity of each element. 
+        deriv_f (:obj:`numpy.array`): Derivative of the function.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element. 
 
     Returns:
         Sensitivity filter applied to the derivative values.
@@ -697,12 +686,12 @@ def dens_dconstr(dfdx, constr_func, H, neighbors, radius):
     """ Apply the density filter to the derivative of the constraint.
 
     Args:
-        dfdx (numpy.array): Derivative of the constraint.
-        constr_func (list): Restriction functions applied.
-        H (csc_matrix): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (csc_matrix): Neighbors of each element.
-        xval (numpy.array): Indicates where there is mass.
-        radius (float): Radius to get elements in the vicinity of each element.
+        dfdx (:obj:`numpy.array`): Derivative of the constraint.
+        constr_func (:obj:`list`): Restriction functions applied.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
 
     Returns:
         Density filter applied to the derivative values.
@@ -720,12 +709,12 @@ def sens_dconst(dfdx, constr_func, H, neighbors, xval, radius):
     """ Apply the sensitivity filter to the derivative of the constraint.
 
     Args:
-        dfdx (numpy.array): Derivative of the constraint.
-        constr_func (list): Restriction functions applied.
-        H (csc_matrix): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (csc_matrix): Neighbors of each element.
-        xval (numpy.array): Indicates where there is mass.
-        radius (float): Radius to get elements in the vicinity of each element.
+        dfdx (:obj:`numpy.array`): Derivative of the constraint.
+        constr_func (:obj:`list`): Restriction functions applied.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
 
     Returns:
         Sensitivity filter applied to the derivative values.
@@ -736,183 +725,136 @@ def sens_dconst(dfdx, constr_func, H, neighbors, xval, radius):
 
     return dfdx
 
-def farea_constr(fval, ind, constr_values, lx, ly, area, xval):
-    """ Calculates the function of the area.
+def area_constr(fval, dfdx, ind, constr_values, lx, ly, area, xval):
+    """ Calculates the function and derivative of the area.
 
     Args:
-        fval (numpy.array): Value of the constraint function.
-        ind (int): Function index in the constr_func list.
-        constr_values (list): Values of restriction functions applied. 
-        lx (int): X-axis length.
-        ly (int): X-axis length.
-        area (float): Total area.
-        xval (numpy.array): Indicates where there is mass.
+        fval (:obj:`numpy.array`): Value of the constraint function.
+        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
+        ind (:obj:`int`): Function index in the constr_func list.
+        constr_values (:obj:`list`): Values of restriction functions applied. 
+        lx (:obj:`int`): x-axis length.
+        ly (:obj:`int`): x-axis length.
+        area (:obj:`float`): Total area.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
        
     Returns:
-        Function values.         
+        A tuple of numpy.array with function and derivative values.         
     """
     fval[ind, 0] = total_area(lx, ly, area, xval)
     fval[ind, 0] -= constr_values[ind]
-
-    if constr_values[ind] < 0:
-        fval[ind, 0] *= -1 
-
-    return fval
-
-def darea_constr(dfdx, ind, constr_values, lx, ly, area):
-    """ Calculates the derivative of the area.
-
-    Args:
-        dfdx (numpy.array): Value of the constraint derivative.
-        ind (int): Function index in the constr_func list.
-        constr_values (list): Values of restriction functions applied. 
-        lx (int): X-axis length.
-        ly (int): X-axis length.
-        area (float): Total area.
-       
-    Returns:
-        Derivative values.         
-    """
     dfdx[ind, :] = 100/(lx * ly) * area.reshape(1, -1)
  
     if constr_values[ind] < 0:
+        fval[ind, 0] *= -1 
         dfdx[ind, :] *= -1
 
-    return dfdx
+    return fval, dfdx
 
-def fratio_constr(fval, ind, constr_values, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func):
-    """ Calculates the function of the R Ratio.
+def ratio_constr(fval, dfdx, ind, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind):
+    """ Calculates the function and derivative of the R Ratio.
 
     Args:
-        fval (numpy.array): Value of the constraint function.
-        ind (int): Function index in the constr_func list.
-        constr_values (list): Values of restriction functions applied.
-        disp_vector (numpy.array): Displacement.
-        dyna_stif (numpy.array): Dynamic stiffness matrix.
-        stif_matrix (numpy.array): Stiffness matrix.
-        mass_matrix (numpy.array): Mass matrix.
-        omega1_par (float): 2 * pi * frequency
-        const_func (float):
-      
+        fval (:obj:`numpy.array`): Value of the constraint function.
+        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
+        ind (:obj:`int`): Function index in the constr_func list.
+        constr_func (:obj:`list`): Restriction functions applied.
+        constr_values (:obj:`list`): Values of restriction functions applied. 
+        nelx (:obj:`int`): Number of elements on the x-axis.
+        nely (:obj:`int`): Number of elements on the y-axis.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio. 
+        rho (:obj:`float`): Density.
+        alpha_par (:obj:`float`): Damping coefficient proportional to mass.
+        beta_par (:obj:`float`): Damping coefficient proportional to stiffness.  
+        p_par (:obj:`int`): Penalization power to stiffness.
+        q_par (:obj:`int`): Penalization power to mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        omega1_par (:obj:`float`): 2 * pi * frequency
+        const_func (:obj:`float`):
+        free_ind (:obj:`numpy.array`): DOFs free.
+       
     Returns:
-        Function values.         
+        A tuple of numpy.array with function and derivative values.         
     """
     fval[ind, 0], fvirg, elastic_p, kinetic_e = R_ratio(disp_vector, stif_matrix, mass_matrix, omega1_par, const_func)
     fval[ind, 0] -= constr_values[ind]
-
-    if constr_values[ind] < 0:
-        fval[ind, 0] *= -1 
-
-    return fval, fvirg, elastic_p, kinetic_e
-
-def dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, ind, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par,  free_ind):
-    """ Calculates the derivative of the R Ratio.
-
-    Args:
-        fvirg (float): R Ratio function value.
-        elastic_p (float): Elastic potential energy function value.
-        kinetic_e (float): Kinetic energy function value.
-        dfdx (numpy.array): Value of the constraint derivative.
-        ind (int): Function index in the constr_func list.
-        constr_func (list): Restriction functions applied.
-        constr_values (list): Values of restriction functions applied. 
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the y axis.
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio. 
-        rho (float): Density.
-        alpha_par (float): Damping coefficient proportional to mass.
-        beta_par (float): Damping coefficient proportional to stiffness.  
-        p_par (int): Penalization power to stiffness.
-        q_par (int): Penalization power to mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        xval (numpy.array): Indicates where there is mass.
-        disp_vector (numpy.array): Displacement.
-        dyna_stif (numpy.array): Dynamic stiffness matrix.
-        stif_matrix (numpy.array): Stiffness matrix.
-        mass_matrix (numpy.array): Mass matrix.
-        omega1_par (float): 2 * pi * frequency
-        const_func (float):
-        free_ind (numpy.array): DOFs free.
-       
-    Returns:
-        Derivative values.         
-    """
     lam_par = lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, fvirg, kinetic_e, free_ind)
     dfdx[ind, :] = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, lam_par, fvirg, elastic_p, kinetic_e).reshape(nelx*nely)
 
     if constr_values[ind] < 0:
-       
+        fval[ind, 0] *= -1 
         dfdx[ind, :] *= -1 
 
-    return dfdx
+    return fval, dfdx
 
-def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, area, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind, gradients=True):
+def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, area, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind):
     """ Calculates the function and derivative of the constraint functions.
 
     Args:
-        fval (numpy.array): Value of the constraint function.
-        dfdx (numpy.array): Value of the constraint derivative.
-        ind (int): Function index in the constr_func list.
-        constr_func (list): Restriction functions applied.
-        constr_values (list): Values of restriction functions applied. 
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the y axis.
-        lx (int): X-axis length.
-        ly (int): X-axis length.
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio. 
-        rho (float): Density.
-        alpha_par (float): Damping coefficient proportional to mass.
-        beta_par (float): Damping coefficient proportional to stiffness.  
-        p_par (int): Penalization power to stiffness.
-        q_par (int): Penalization power to mass.
-        x_min_k (float): Minimum relative densities to stiffness. 
-        x_min_m (float): Minimum relative densities to mass. 
-        area (float): Total area.
-        xval (numpy.array): Indicates where there is mass.
-        disp_vector (numpy.array): Displacement.
-        dyna_stif (numpy.array): Dynamic stiffness matrix.
-        stif_matrix (numpy.array): Stiffness matrix.
-        mass_matrix (numpy.array): Mass matrix.
-        omega1_par (float): 2 * pi * frequency
-        const_func (float):
-        free_ind (numpy.array): DOFs free.
-        gradients (:obj:`float`, optional): If True calculates the derivatives. Defaults to True. 
-        
+        fval (:obj:`numpy.array`): Value of the constraint function.
+        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
+        ind (:obj:`int`): Function index in the constr_func list.
+        constr_func (:obj:`list`): Restriction functions applied.
+        constr_values (:obj:`list`): Values of restriction functions applied. 
+        nelx (:obj:`int`): Number of elements on the x-axis.
+        nely (:obj:`int`): Number of elements on the y-axis.
+        lx (:obj:`int`): x-axis length.
+        ly (:obj:`int`): x-axis length.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio. 
+        rho (:obj:`float`): Density.
+        alpha_par (:obj:`float`): Damping coefficient proportional to mass.
+        beta_par (:obj:`float`): Damping coefficient proportional to stiffness.  
+        p_par (:obj:`int`): Penalization power to stiffness.
+        q_par (:obj:`int`): Penalization power to mass.
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        x_min_m (:obj:`float`): Minimum relative densities to mass.  
+        area (:obj:`float`): Total area.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        omega1_par (:obj:`float`): 2 * pi * frequency
+        const_func (:obj:`float`):
+        free_ind (:obj:`numpy.array`): DOFs free.
+       
     Returns:
         A tuple of numpy.array with function and derivative values.         
     """
     for i in range(len(constr_func)):
         if constr_func[i] == 'Area':
-            fval = farea_constr(fval, i, constr_values, lx, ly, area, xval)
-            if gradients:
-                dfdx = darea_constr(dfdx, i, constr_values, lx, ly, area)
+            fval, dfdx = area_constr(fval, dfdx, i, constr_values, lx, ly, area, xval)
+        
         if constr_func[i] == 'R Ratio':
-            fval, fvirg, elastic_p, kinetic_e = fratio_constr(fval, i, constr_values, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func)
-            if gradients:
-                dfdx = dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, i, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, free_ind)
-
+            fval, dfdx = ratio_constr(fval, dfdx, i, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind)
+        
     return fval, dfdx
 
 def update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values):
     """ Add new values to list of functions to plot convergence
 
     Args:
-        outit (int): Iteration.
-        fval (numpy.array): Constraint function.
-        f0val (numpy.array): Objective function.
-        list_iter (list): All iteration values.
-        list_fvals (list): All constraint function values.
-        list_f0val (list): All objective function values.
-        constr_func (list): Restriction functions applied.
-        constr_values (list): Values of restriction functions applied.
-    
+        outit (:obj:`int`): Iteration.
+        fval (:obj:`numpy.array`): Constraint function.
+        f0val (:obj:`numpy.array`): Objective function.
+        list_iter (:obj:`list`): All iteration values.
+        list_fvals (:obj:`list`): All constraint function values.
+        list_f0val (:obj:`list`): All objective function values.
+        constr_func (:obj:`list`): Restriction functions applied.
+        constr_values (:obj:`list`): Values of restriction functions applied.
+
     Returns:
         A tuple of lists with iterations, objective and constraint function.
     """
@@ -930,8 +872,8 @@ def calc_A(coord, ind):
     """ Calculates the total area.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        ind (numpy.array): Element connectivity.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        ind (:obj:`numpy.array`): Element connectivity.
 
     Returns:
         The element area.
@@ -947,15 +889,15 @@ def calc_A(coord, ind):
     
     area *= 0.5 
     return area
-
+    
 def total_area(lx, ly, area, xval):
     """ Calculates the total element area.
 
     Args:
-        lx (int): X-axis length.
-        ly (int): Y-axis length.
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
+        lx (:obj:`int`): X-axis length.
+        ly (:obj:`int`): Y-axis length.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
 
     Returns:
         Total element area.
@@ -966,11 +908,11 @@ def get_neighbors_radius(nelx, nely, coord, connect, radius):
     """ Check neighboring elements that have the centroid within the predetermined radius.
 
     Args:
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        radius (float): Radius to get elements in the vicinity of each element.
+        nelx (:obj:`int`): Number of elements on the x axis.
+        nely (:obj:`int`): Number of elements on the x axis
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
 
     Returns:
         A tuple of sparse matrices with neighbors and H (radius - distance).
@@ -1012,9 +954,9 @@ def calc_xnew(H, neighbors, xval):
     """ Recalculate xval.
 
     Args:
-        H (csc_matrix): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (csc_matrix): Neighbors of each element.
-        xval (numpy.array): Indicates where there is mass.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
         
     Returns:
         New xval values.
@@ -1030,9 +972,9 @@ def get_natural_freq(range_freq, delta, disp_vector):
     """ Get the frequency with the maximum displacement.
 
     Args:
-        range_freq (list): The initial and final frequency.
-        delta (int): The step between each calculation of the displacement.
-        disp_vector (numpy.array): Displacement.
+        range_freq (:obj:`list`): The initial and final frequency.
+        delta (:obj:`int`): The step between each calculation of the displacement.
+        disp_vector (:obj:`numpy.array`): Displacement.
     
     Returns:
         A tuple with the minimum and maximum frequency.
@@ -1045,8 +987,8 @@ def set_initxval(constr_func, constr_values):
     """ Calculate the initial value of xval.
 
     Args:
-        constr_func (list): Restriction functions applied.
-        constr_values (list): Values of restriction functions applied.
+        constr_func (:obj:`list`): Restriction functions applied.
+        constr_values (:obj:`list`): Values of restriction functions applied.
     
     Returns:
         A tuple with the minimum and maximum frequency.

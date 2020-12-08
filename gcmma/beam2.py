@@ -6,25 +6,25 @@ import pyqtgraph as pg
 import logging
 import sys
 import os
-
-import functions2D as fc
-import plots_FEM2D as plt_fem
+sys.path.append(os.getcwd())
+import solver_fem_2d.functions_2d as fc
+import solver_fem_2d.plots_2d as plt_fem
 import functions as opt
 import plots as plt_opt
 # Import MMA functions
-from MMA import gcmmasub, subsolv, kktcheck, asymp, concheck, raaupdate
+from mma_opt import gcmmasub, subsolv, kktcheck, asymp, concheck, raaupdate
 
 def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_k=1e-8, x_min_m=1e-12, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     """ 
     Args:
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
-        lx (int): X-axis length.
-        ly (int): Y-axis length.
-        func_name (str): Objective function used.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+        lx (:obj:`int`): X-axis length.
+        ly (:obj:`int`): Y-axis length.
+        func_name (:obj:`str`): Objective function used.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
             If the multiobjective function is being calculated, weight n1 is assigned.
-        force_matrix (numpy.array): The columns are respectively node, x direction, y direction, force value.
+        force_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
         restri_matrix (:obj:`numpy.array`, optional): The columns are respectively node, x direction, y direction. Defaults to None. 
         freq1 (:obj:`int`, optional): Optimized frequency. Defaults to 180.
         constr_func (:obj:`list`, optional): Restriction functions applied. Defaults to 'Area'.
@@ -40,8 +40,8 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
             First value is the second function of the multiobjective function. The assigned weight is (1 - n1).
             Second value is the frequency that func_name2 is being optimized.            
         const_func (:obj:`float`, optional): Defaults to 100. 
-        fac_ratio(:obj:'float', optional): Factor applied in the radius to get elements in the vicinity of each element. Defaults to 2.1.
-        modes (:obj:'int', optional): If not None is used the Mode Superposition Method to calculate the displacement. Defaults to None.
+        fac_ratio(:obj:`float`, optional): Factor applied in the radius to get elements in the vicinity of each element. Defaults to 2.1.
+        modes (:obj:`int`, optional): If not None is used the Mode Superposition Method to calculate the displacement. Defaults to None.
         rho (:obj:`float`, optional): Density. Defaults to 7860. 
         E (:obj:`float`, optional): Elastic modulus. Defaults to 210e9.
         v (:obj:`float`, optional): Poisson's ratio. Defaults to 0.3. 

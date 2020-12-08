@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
-import functions3D as fc
-import plots_FEM3D as plt
+import functions_3d as fc
+import plots_3d as plt
 
 def main(nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=None, E=210e9, v=0.3, rho=7860, alpha=1e-1, beta=1e-7, eta=1e-8, factor=1e9, freq=180, freq_rsp=[], plot_type='deformed', complete=True, amp=1e9, node_plot=None, timing=False):
     '''

@@ -1,16 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import plots_FEM2D as plt_fem
-import functions2D as fc
+import plots_2d as plt_fem
+import functions_2d as fc
 
 def main(nelx, nely, lx, ly, load_matrix, restri_matrix=None, E=210e9, v=0.3, rho=7860, alpha=0, beta=0, eta=0, factor=1000, freq=180, node_plot=None, freq_rsp=[], save=False, timing=False):
     """ 
     Args:
-        nelx (int): Number of elements on the x-axis.
-        nely (int): Number of elements on the y-axis.
-        lx (int): x-axis length.
-        ly (int): y-axis length.
-        load_matrix (numpy.array): The columns are respectively node, x direction, y direction, force value.
+        nelx (:obj:`int`): Number of elements on the x-axis.
+        nely (:obj:`int`): Number of elements on the y-axis.
+        lx (:obj:`int`): x-axis length.
+        ly (:obj:`int`): y-axis length.
+        load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
         restri_matrix (:obj:`numpy.array`, optional)= The columns are respectively node, x direction, y direction. Defaults to None. 
         E (:obj:`float`, optional): Elastic modulus. Defaults to 210e9.
         v (:obj:`float`, optional): Poisson's ratio. Defaults to 0.3. 

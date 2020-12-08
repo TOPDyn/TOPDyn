@@ -9,8 +9,8 @@ def shapeQ4(ssx, ttx):
     """ Linear Shape Functions and Derivatives.
 
     Args:
-        ssx (float): Local coordinate of the element on the X-axis.
-        ttx (float): Local coordinate of the element on the Y-axis.
+        ssx (:obj:`float`): Local coordinate of the element on the X-axis.
+        ttx (:obj:`float`): Local coordinate of the element on the Y-axis.
     
     Returns:
         Tuple with the shape function and its derivative.
@@ -28,12 +28,12 @@ def matricesQ4(ee, coord, connect, E, v, rho):
     """ Q4 stiffness and mass matrices.
 
     Args:
-        ee (int): Element.
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.
-        rho (float): Density.
+        ee (:obj:`int`): Element.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.
+        rho (:obj:`float`): Density.
 
     Returns:
         Tuple with stiffness and mass matrices.
@@ -75,10 +75,10 @@ def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     """ Create a regular Q4 mesh.
 
     Args:
-        lx (int): X-axis length.
-        ly (int): Y-axis length.
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
+        lx (:obj:`int`): X-axis length.
+        ly (:obj:`int`): Y-axis length.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
     
     Returns:
@@ -119,19 +119,19 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha,
     """ Assembly and solution.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        ind_rows (numpy.array): Node indexes to make the assembly.
-        ind_cols (numpy.array): Node indexes to make the assembly.
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.  
-        rho (float): Density.  
-        alpha (float): Damping coefficient proportional to mass. 
-        beta (float): Damping coefficient proportional to stiffness.  
-        eta (float): Damping coefficient. 
-        freq (int): Analyzed frequency.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
+        ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.  
+        rho (:obj:`float`): Density.  
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
+        eta (:obj:`float`): Damping coefficient. 
+        freq (:obj:`int`): Analyzed frequency.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
 
     Returns:
@@ -188,8 +188,8 @@ def get_nodes_by_coord(coord, coord_user):
     ''' Get node number by coordinate.
 
     Args:
-        coord (numpy.array): mesh coordinates.
-        coord_user (numpy.array): user coordinates.
+        coord (:obj:`numpy.array`): mesh coordinates.
+        coord_user (:obj:`numpy.array`): user coordinates.
         
     Returns:
         Nodes of the coordinates provided.
@@ -203,10 +203,10 @@ def get_nodes1d(coord, coord_user, eps, column):
     ''' Get node numbers that are equal to coord.
 
     Args:
-        coord (numpy.array): mesh coordinates.
-        coord_user (numpy.array): coordinates in one direction (x or y).
-        eps (float): Acceptable margin of difference.
-        column (int): Direction to compare (x or y).
+        coord (:obj:`numpy.array`): mesh coordinates.
+        coord_user (:obj:`numpy.array`): coordinates in one direction (x or y).
+        eps (:obj:`float`): Acceptable margin of difference.
+        column (:obj:`int`): Direction to compare (x or y).
             x = 1 and y = 2.
 
     Returns:
@@ -221,7 +221,7 @@ def get_dofs(nodes_dir):
     ''' Get DOFs that meet the specified direction.
 
     Args:
-        nodes_dir (numpy.array): [nodes numbers, x_direction, y_direction].
+        nodes_dir (:obj:`numpy.array`): [nodes numbers, x_direction, y_direction].
             x_direction and y_direction can be -1, 0 or 1
     
     Returns: 
@@ -243,9 +243,9 @@ def get_load_vector(nelx, nely, force_matrix):
     """ Creates the force vector.
 
     Args:
-        nelx (int): Number of elements on the x-axis.
-        nely (int): Number of elements on the y-axis.
-        force_matrix (numpy.array): The columns are respectively node, x direction, y direction, force value.
+        nelx (:obj:`int`): Number of elements on the x-axis.
+        nely (:obj:`int`): Number of elements on the y-axis.
+        force_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
 
     Returns:
         Loading vector.
@@ -263,7 +263,7 @@ def duplicate_force(force_matrix):
     """ Doubled force value for x direction = y direction = 1.
 
     Args:
-        force_matrix (numpy.array): The columns are respectively node, x direction, y direction, force value.
+        force_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
     
     Returns:
         Force values.
@@ -284,9 +284,9 @@ def remove_dofs(nelx, nely, del_dofs):
     """ Delete specific DOFs from all DOFs.
     
     Args: 
-        nelx (int): Number of elements on the x-axis.
-        nely (int): Number of elements on the y-axis.
-        del_dofs (numpy.array): Array with DOFs to be removed.
+        nelx (:obj:`int`): Number of elements on the x-axis.
+        nely (:obj:`int`): Number of elements on the y-axis.
+        del_dofs (:obj:`numpy.array`): Array with DOFs to be removed.
     
     Returns:
         Array without the DOFs removed.
@@ -298,7 +298,7 @@ def change_U_shape(disp_vector):
     ''' Transform displacement vector in matrix.
     
     Args:
-        disp_vector (numpy.array): Displacement.
+        disp_vector (:obj:`numpy.array`): Displacement.
     
     Returns: 
         Displacement of each axis.
@@ -312,9 +312,9 @@ def apply_U(disp_vector, coord, factor):
     ''' Apply displacement to coordinates. 
 
     Args:
-        disp_vector (numpy.array): Displacement.
-        coord (numpy.array): mesh coordinates.
-        factor (float): Factor to deform the mesh.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        coord (:obj:`numpy.array`): mesh coordinates.
+        factor (:obj:`float`): Factor to deform the mesh.
     
     Returns: 
         Displaced mesh coordinates.
@@ -327,24 +327,24 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alph
     """ Get the displacement values for a specific node.
 
     Args:
-        coord (numpy.array): Coordinates of the element.
-        connect (numpy.array): Element connectivity.
-        ind_rows (numpy.array): Node indexes to make the assembly.
-        ind_cols (numpy.array): Node indexes to make the assembly.
-        nelx (int): Number of elements on the X-axis.
-        nely (int): Number of elements on the Y-axis.
-        E (float): Elastic modulus.
-        v (float): Poisson's ratio.  
-        rho (float): Density.  
-        alpha (float): Damping coefficient proportional to mass. 
-        beta (float): Damping coefficient proportional to stiffness.  
-        eta (float): Damping coefficient. 
-        freq_rsp (list): Frequency range.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
+        ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio.  
+        rho (:obj:`float`): Density.  
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
+        eta (:obj:`float`): Damping coefficient. 
+        freq_rsp (:obj:`list`): Frequency range.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (int): Step between each calculation of the objective function. 
-        node_plot (int): Node to salve the displacement.
-        load_vector (numpy.array): Force.
+        delta (:obj:`int`): Step between each calculation of the objective function. 
+        node_plot (:obj:`int`): Node to salve the displacement.
+        load_vector (:obj:`numpy.array`): Force.
 
     Returns:
         Displacement array.        

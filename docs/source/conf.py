@@ -15,10 +15,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath('../..'))
-sys.path.append(os.path.abspath('../../SolverFEM2D'))
-sys.path.append(os.path.abspath('../../SolverFEM3D'))
-sys.path.append(os.path.abspath('../../TopDyn_MMA'))
-sys.path.append(os.path.abspath('../../TopDyn_GCMMA'))
+sys.path.append(os.path.abspath('../../solver_fem_2d'))
+sys.path.append(os.path.abspath('../../solver_fem_3d'))
+sys.path.append(os.path.abspath('../../mma'))
+sys.path.append(os.path.abspath('../../gcmma'))
 
 # -- Project information -----------------------------------------------------
 project = 'TOPDyn'
