@@ -74,9 +74,9 @@ Each API has a main file with an usage example.
 
 ## Documentation 
 
-Can be found `here <https://topdyn.readthedocs.io/en/latest/>`_).
+Can be found [here](https://topdyn.readthedocs.io/en/latest/).
 
-Need help? Have any question, or wish to ask for a missing feature? Open a issue (or send an `email <ana.rocha@mopt.com.br>`_).
+Need help? Have any question, or wish to ask for a missing feature? Open a issue.
 
 ## Authors
 
