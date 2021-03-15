@@ -8,7 +8,7 @@ import os
 sys.path.append(os.getcwd())
 import solver_fem_2d.functions_2d as fc
 
-def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega, xval, x_min_k, x_min_m, p_par, q_par):
+def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega, xval, x_min, p_par, q_par):
     """ Assembly matrices.
 
     Args:
@@ -27,8 +27,7 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, a
         eta (:obj:`float`): Damping coefficient. 
         omega (:obj:`float`): 2 pi frequency
         xval (:obj:`numpy.array`): Indicates where there is mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities. 
         p_par (:obj:`int`): Penalization power to stiffness.
         q_par (:obj:`int`): Penalization power to mass. 
 
@@ -42,11 +41,11 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, a
     #
     for el in range(nelx * nely):
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        data_k[el, :] = (x_min_k + (xval[el]**p_par)*(1-x_min_k))* Ke.flatten()
+        data_k[el, :] = (x_min + (xval[el]**p_par)*(1-x_min))* Ke.flatten()
         if xval[el]>0.1:
-            data_m[el, :] = (x_min_m + (xval[el]**q_par)*(1-x_min_m)) * Me.flatten()
+            data_m[el, :] = (x_min + (xval[el]**q_par)*(1-x_min)) * Me.flatten()
         else:
-            data_m[el, :] =  (x_min_m + (3.512e7*xval[el]**9 - 2.081e8*xval[el]**10)*(1-x_min_m) ) * Me.flatten() 
+            data_m[el, :] =  (x_min + (3.512e7*xval[el]**9 - 2.081e8*xval[el]**10)*(1-x_min) ) * Me.flatten() 
     #
     data_k = data_k.flatten()
     data_m = data_m.flatten()
@@ -154,7 +153,7 @@ def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega, alph
     
     return disp_vector, t_superp
 
-def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_k, x_min_m, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, **kwargs):
+def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, **kwargs):
     """ Calculates the objective function for a range of frequencies.
 
     Args:
@@ -172,8 +171,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
         beta (:obj:`float`): Damping coefficient proportional to stiffness.  
         eta (:obj:`float`): Damping coefficient. 
         xval (:obj:`numpy.array`): Indicates where there is mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities.
         p_par (:obj:`int`): Penalization power to stiffness. 
         q_par (:obj:`int`): Penalization power to mass.
         freq_range (:obj:`list`): Frequency range.
@@ -197,7 +195,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
 
     for n in range(len(interval)):
         omega = 2 * np.pi * interval[n]
-        stif_matrix, mass_matrix, dyna_stif, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega, xval, x_min_k, x_min_m, p_par, q_par)
+        stif_matrix, mass_matrix, dyna_stif, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega, xval, x_min, p_par, q_par)
         if modes is not None:
             disp_vector, _ = mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega, alpha, beta, eta, free_ind)
         else: 
@@ -396,7 +394,7 @@ def lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega, 
 
     return lam
 
-def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, lam):
+def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min, xval, disp_vector, lam):
     """ calculates the derivative of the compliance function.
 
     Args:
@@ -410,8 +408,7 @@ def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega, p_par, 
         omega (:obj:`float`): 2 * pi * frequency
         p_par (:obj:`float`): Penalization power to stiffness. 
         q_par (:obj:`float`): Penalization power to mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities.
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
         lam (:obj:`float`): Lambda parameter.
@@ -426,18 +423,18 @@ def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega, p_par, 
     for el in range(len(connect)):
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
+        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min) * Ke
         dCe = alpha * Me + beta * dKe
         if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
+            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min) * Me
         else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me        
+            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min) ) * Me        
         dKed = dKe + omega * 1j * dCe - (omega**2) * dMe
         deriv_f[el, 0] = (-lam *(disp_vector[ind].reshape(1, 8)@dKed@disp_vector[ind].reshape(8, 1)))[0,0].real
 
     return deriv_f
 
-def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, fvirg):
+def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min, xval, disp_vector, fvirg):
     """ calculates the derivative of the input power function.
     
     Args:
@@ -451,8 +448,7 @@ def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega, p_par,
         omega (:obj:`float`): 2 * pi * frequency
         p_par (:obj:`float`): Penalization power to stiffness. 
         q_par (:obj:`float`): Penalization power to mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities.
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
         fvirg (:obj:`float`): Input power function value.
@@ -468,12 +464,12 @@ def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega, p_par,
     for el in range(len(connect)):
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
+        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min) * Ke
         dCe = alpha * Me + beta * dKe
         if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
+            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min) * Me
         else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me   
+            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min) ) * Me   
         dKed = dKe + omega * 1j * dCe - (omega**2) * dMe
         a = 1j * (disp_vector[ind].reshape(1, 8)@dKed@disp_vector[ind].reshape(8, 1))[0,0]
         deriv_f[el, 0] = -0.5 * omega * a.real
@@ -481,7 +477,7 @@ def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega, p_par,
         deriv_f[el, 0] = 10.0*deriv_f[el, 0]*np.log10(np.exp(1))/fvirg  
     return deriv_f
 
-def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, lam, fvirg):
+def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min, xval, disp_vector, lam, fvirg):
     """ calculates the derivative of the elastic potential energy function.
 
     Args:
@@ -495,8 +491,7 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
         omega (:obj:`float`): 2 * pi * frequency
         p_par (:obj:`float`): Penalization power to stiffness. 
         q_par (:obj:`float`): Penalization power to mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities.
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
         lam (:obj:`float`): Lambda parameter.
@@ -514,13 +509,13 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
     
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
-        #dKe1 = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke.conjugate()
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
+        #dKe1 = p_par * (xval[el]**(p_par - 1))*(1-x_min) * Ke.conjugate()
+        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min) * Ke
         dCe = alpha * Me + beta * dKe
         if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
+            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min) * Me
         else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
+            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min) ) * Me 
         dKed = dKe + omega * 1j * dCe - (omega**2) * dMe             
         deriv_ep[el, 0] = (1/4) * (disp_vector[ind].conjugate()@dKe@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
         #Log Scale
@@ -528,7 +523,7 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
 
     return deriv_ep.real
 
-def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, lam, fvirg):
+def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min, xval, disp_vector, lam, fvirg):
     """ calculates the derivative of the kinetic energy function.
 
     Args:
@@ -542,8 +537,7 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
         omega (:obj:`float`): 2 * pi * frequency
         p_par (:obj:`float`): Penalization power to stiffness. 
         q_par (:obj:`float`): Penalization power to mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities. 
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
         lam (:obj:`float`): Lambda parameter.
@@ -560,12 +554,12 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
     for el in range(len(connect)):
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
+        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min) * Ke
         dCe = alpha * Me + beta * dKe
         if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
+            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min) * Me
         else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
+            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min) ) * Me 
         dKed = dKe + omega * 1j * dCe - (omega**2) * dMe             
         deriv_ek[el, 0] = ((omega**2)/4) * (disp_vector[ind].conjugate()@dMe@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
         #Log Scale
@@ -573,7 +567,7 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x
 
     return deriv_ek.real
 
-def derivative_R(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, lam, fvirg, elastic_p, kinetic_e):
+def derivative_R(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_min, xval, disp_vector, lam, fvirg, elastic_p, kinetic_e):
     """ calculates the derivative of the kinetic energy function.
 
     Args:
@@ -587,8 +581,7 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_
         omega (:obj:`float`): 2 * pi * frequency
         p_par (:obj:`float`): Penalization power to stiffness. 
         q_par (:obj:`float`): Penalization power to mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities.
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
         lam (:obj:`float`): Lambda parameter.
@@ -608,12 +601,12 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega, p_par, q_par, x_
     
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
+        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min) * Ke
         dCe = alpha * Me + beta * dKe
         if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
+            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min) * Me
         else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
+            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min) ) * Me 
         dKed = dKe + omega * 1j * dCe - (omega**2) * dMe        
         #
         deriv_R[el, 0] = 1/(4*kinetic_e) * (disp_vector[ind].conjugate()@(dKe - (omega**2)*fvirg*dMe)@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
@@ -805,7 +798,7 @@ def fratio_constr(fval, ind, constr_values, disp_vector, dyna_stif, stif_matrix,
 
     return fval, fvirg, elastic_p, kinetic_e
 
-def dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, ind, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par,  free_ind):
+def dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, ind, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par,  free_ind):
     """ Calculates the derivative of the R Ratio.
 
     Args:
@@ -827,8 +820,7 @@ def dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, ind, constr_values, nelx, n
         beta_par (:obj:`float`): Damping coefficient proportional to stiffness.  
         p_par (:obj:`int`): Penalization power to stiffness.
         q_par (:obj:`int`): Penalization power to mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities.
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
         dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
@@ -842,7 +834,7 @@ def dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, ind, constr_values, nelx, n
         Derivative values.         
     """
     lam_par = lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, fvirg, kinetic_e, free_ind)
-    dfdx[ind, :] = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, lam_par, fvirg, elastic_p, kinetic_e).reshape(nelx*nely)
+    dfdx[ind, :] = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xval, disp_vector, lam_par, fvirg, elastic_p, kinetic_e).reshape(nelx*nely)
 
     if constr_values[ind] < 0:
        
@@ -850,7 +842,7 @@ def dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, ind, constr_values, nelx, n
 
     return dfdx
 
-def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, area, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind, gradients=True):
+def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, area, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind, gradients=True):
     """ Calculates the function and derivative of the constraint functions.
 
     Args:
@@ -872,8 +864,7 @@ def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coo
         beta_par (:obj:`float`): Damping coefficient proportional to stiffness.  
         p_par (:obj:`int`): Penalization power to stiffness.
         q_par (:obj:`int`): Penalization power to mass.
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min (:obj:`float`): Minimum relative densities. 
         area (:obj:`float`): Total area.
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
@@ -896,7 +887,7 @@ def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coo
         if constr_func[i] == 'R Ratio':
             fval, fvirg, elastic_p, kinetic_e = fratio_constr(fval, i, constr_values, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func)
             if gradients:
-                dfdx = dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, i, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, free_ind)
+                dfdx = dratio_constr(fvirg, elastic_p, kinetic_e, dfdx, i, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, free_ind)
 
     return fval, dfdx
 
@@ -1059,7 +1050,7 @@ def set_initxval(constr_func, constr_values):
 
     return initial_xval
 
-def get_first_freq(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq_rsp=[0, 400, 5], constr_func=['Area'], constr_values=[50], const_func=100, modes=None, rho=7860, E=210e9, v=0.3, x_min_k=1e-8, x_min_m=1e-12, alpha=0, beta=5e-6, eta=0, p_par=3, q_par=1, save=True):
+def get_first_freq(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq_rsp=[0, 400, 5], constr_func=['Area'], constr_values=[50], const_func=100, modes=None, rho=7860, E=210e9, v=0.3, x_min=0.001, alpha=0, beta=5e-6, eta=0, p_par=3, q_par=1, save=True):
         
     coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely)
     initial_xval = set_initxval(constr_func, constr_values)
@@ -1071,7 +1062,7 @@ def get_first_freq(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=No
     ngl = 2 * ((nelx + 1) * (nely + 1))
 
     disp_vector = fc_opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, 
-                xval, x_min_k, x_min_m, p_par, q_par, freq_rsp[:2], freq_rsp[2], func_name, const_func, modes,
+                xval, x_min, p_par, q_par, freq_rsp[:2], freq_rsp[2], func_name, const_func, modes,
                 load_vector, unrestricted_ind=free_ind)
 
     freq = get_natural_freq(freq_rsp[:2], freq_rsp[2], disp_vector)

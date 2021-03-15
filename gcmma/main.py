@@ -16,8 +16,7 @@ if __name__ == "__main__":
     rho = 7860
     E = 210e9
     v = 0.3
-    x_min_k = 1e-8
-    x_min_m = 1e-12
+    x_min = 0.001
     alpha_par, beta_par, eta_par = 0, 1e-6, 0
     alpha_plot, beta_plot, eta_plot = 0, 1e-6, 0
     p_par = 3
@@ -41,7 +40,7 @@ if __name__ == "__main__":
     # Factor applied in the radius
     fac_ratio = 2.1
     # If not None is used mode superposition method
-    modes = None
+    modes = 20
     # Tuple with func_name2 and frequency optimized for func_name2. Associated with weight (1 - n1)
     multiobjective = (None, 0)
     # It can be 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'
@@ -65,4 +64,4 @@ if __name__ == "__main__":
     # Get code execution time
     timing = False
 
-    beam.main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_k, x_min_m, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, mesh_deform=mesh_deform, factor=factor, max_iter=max_iter, save=save, timing=timing)
+    beam.main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, mesh_deform=mesh_deform, factor=factor, max_iter=max_iter, save=save, timing=timing)

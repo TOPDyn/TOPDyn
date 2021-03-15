@@ -14,7 +14,7 @@ import plots as plt_opt
 # Import MMA functions
 from mma_opt import mmasub, subsolv, kktcheck
 
-def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_k=1e-8, x_min_m=1e-12, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
+def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     """ 
     Args:
         nelx (:obj:`int`): Number of elements on the x-axis.
@@ -45,8 +45,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         rho (:obj:`float`, optional): Density. Defaults to 7860. 
         E (:obj:`float`, optional): Elastic modulus. Defaults to 210e9.
         v (:obj:`float`, optional): Poisson's ratio. Defaults to 0.3. 
-        x_min_k (:obj:`float`, optional): Minimum relative densities to stiffness. Defaults to 1e-8.
-        x_min_m (:obj:`float`, optional): Minimum relative densities to mass. Defaults to 1e-12. 
+        x_min (:obj:`float`, optional): Minimum relative densities. Defaults to 0.001.
         alpha_par (:obj:`float`, optional): Damping coefficient proportional to mass. Defaults to 0.
         beta_par (:obj:`float`, optional): Damping coefficient proportional to stiffness. Defaults to 5e-6. 
         eta_par (:obj:`float`, optional): Damping coefficient. Defaults to 0.
@@ -123,44 +122,44 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             xnew = opt.calc_xnew(H, neighbors, xval)
         else:
             xnew = xval
-        stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega1_par, xnew, x_min_k, x_min_m, p_par, q_par)
+        stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega1_par, xnew, x_min, p_par, q_par)
         if modes is not None:
             disp_vector, t_superp = opt.mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega1_par, alpha_par, beta_par, eta_par, free_ind)
         else: 
             disp_vector, t_harmonic = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
         # Area function
-        fval, dfdx = opt.apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, area, xnew, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind)
+        fval, dfdx = opt.apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, area, xnew, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind)
         # Objective function      
         if func_name == "Compliance":
             f0val = opt.func_compliance(disp_vector, load_vector)
             lam_par = opt.lambda_parameter(disp_vector, load_vector, f0val)
-            df0dx = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par)
+            df0dx = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par)
         #
         elif func_name == "Elastic Potential Energy":
             f0val, fvirg = opt.elastic_potential_energy(disp_vector, stif_matrix, const_func)
             lam_par = opt.lambda_parameter_ep(disp_vector, stif_matrix, dyna_stif, free_ind)
-            df0dx = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par, fvirg)
+            df0dx = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par, fvirg)
         #
         elif func_name == "Input Power":
             f0val, fvirg = opt.func_input_power(disp_vector, load_vector, omega1_par, const_func)
-            df0dx = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, fvirg)
+            df0dx = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, fvirg)
         #               
         elif func_name == "Kinetic Energy":
             f0val, fvirg = opt.kinetic_energy(disp_vector, mass_matrix, omega1_par, const_func)
             lam_par = opt.lambda_parameter_ek(disp_vector, mass_matrix, dyna_stif, omega1_par, free_ind)
-            df0dx = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par, fvirg)
+            df0dx = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par, fvirg)
         #   
         elif func_name == 'R Ratio':
             f0val, fvirg, elastic_p, kinetic_e = opt.R_ratio(disp_vector, stif_matrix, mass_matrix, omega1_par, const_func)
             lam_par = opt.lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, fvirg, kinetic_e, free_ind)
-            df0dx = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par, fvirg, elastic_p, kinetic_e)
+            df0dx = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par, fvirg, elastic_p, kinetic_e)
         # Normalization
         f0_scale = f0val
         f0val = n1 * 100 * f0val/f0_scale
         df0dx = n1 * 100 * df0dx/f0_scale
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
-            stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega2_par, xnew, x_min_k, x_min_m, p_par, q_par)
+            stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega2_par, xnew, x_min, p_par, q_par)
             if modes is not None:
                 disp_vector2 = opt.mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega2_par, alpha_par, beta_par, eta_par, free_ind)
             else: 
@@ -169,26 +168,26 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             if func_name2 == "Compliance":
                 f0val2 = opt.func_compliance(disp_vector2, load_vector)
                 lam_par = opt.lambda_parameter(disp_vector2, load_vector, f0val2)
-                df0dx2 = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par)
+                df0dx2 = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par)
             #
             elif func_name2 == "Elastic Potential Energy":
                 f0val2, fvirg = opt.elastic_potential_energy(disp_vector2, stif_matrix, const_func)
                 lam_par = opt.lambda_parameter_ep(disp_vector2, stif_matrix, dyna_stif, free_ind)
-                df0dx2 = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par, fvirg)
+                df0dx2 = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par, fvirg)
             #
             elif func_name2 == "Input Power":
                 f0val2, fvirg = opt.func_input_power(disp_vector2, load_vector, omega2_par, const_func)
-                df0dx2 = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, fvirg)
+                df0dx2 = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, fvirg)
             #               
             elif func_name2 == "Kinetic Energy":
                 f0val2, fvirg = opt.kinetic_energy(disp_vector2, mass_matrix, omega2_par, const_func)
                 lam_par = opt.lambda_parameter_ek(disp_vector2, mass_matrix, dyna_stif, omega2_par, free_ind)
-                df0dx2 = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par, fvirg)
+                df0dx2 = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par, fvirg)
             #   
             elif func_name2 == 'R Ratio':
                 f0val2, fvirg, elastic_p, kinetic_e = opt.R_ratio(disp_vector2, stif_matrix, mass_matrix, omega2_par, const_func)
                 lam_par = opt.lambda_parameter_R(disp_vector2, dyna_stif, stif_matrix, mass_matrix, omega2_par, fvirg, kinetic_e, free_ind)
-                df0dx2 = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par, fvirg, elastic_p, kinetic_e)
+                df0dx2 = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par, fvirg, elastic_p, kinetic_e)
             # Normalization
             f0_scale_n2 = f0val2
             f0val2 = (1 - abs(n1)) * 100 * f0val2/f0_scale_n2
@@ -239,43 +238,43 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             xnew = opt.calc_xnew(H, neighbors, xval)
         else:
             xnew = xval
-        stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega1_par, xnew, x_min_k, x_min_m, p_par, q_par)
+        stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega1_par, xnew, x_min, p_par, q_par)
         if modes is not None:
             disp_vector, t_superp = opt.mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega1_par, alpha_par, beta_par, eta_par, free_ind)
         else: 
             disp_vector, t_harmonic = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
         # Area function
-        fval, dfdx = opt.apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_k, x_min_m, area, xnew, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind)
+        fval, dfdx = opt.apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, area, xnew, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind)
         # Objective function 
         if func_name == "Compliance":
             f0val = opt.func_compliance(disp_vector, load_vector)
             lam_par = opt.lambda_parameter(disp_vector, load_vector, f0val)
-            df0dx = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par)
+            df0dx = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par)
         #
         elif func_name == "Elastic Potential Energy":
             f0val, fvirg = opt.elastic_potential_energy(disp_vector, stif_matrix, const_func)
             lam_par = opt.lambda_parameter_ep(disp_vector, stif_matrix, dyna_stif, free_ind)
-            df0dx = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par, fvirg)
+            df0dx = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par, fvirg)
         #
         elif func_name == "Input Power":
             f0val, fvirg = opt.func_input_power(disp_vector, load_vector, omega1_par, const_func)
-            df0dx = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, fvirg)
+            df0dx = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, fvirg)
         #               
         elif func_name == "Kinetic Energy":
             f0val, fvirg = opt.kinetic_energy(disp_vector, mass_matrix, omega1_par, const_func)
             lam_par = opt.lambda_parameter_ek(disp_vector, mass_matrix, dyna_stif, omega1_par, free_ind)
-            df0dx = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par, fvirg)
+            df0dx = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par, fvirg)
         #   
         elif func_name == 'R Ratio':
             f0val, fvirg, elastic_p, kinetic_e = opt.R_ratio(disp_vector, stif_matrix, mass_matrix, omega1_par, const_func)
             lam_par = opt.lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, fvirg, kinetic_e, free_ind)
-            df0dx = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector, lam_par, fvirg, elastic_p, kinetic_e)
+            df0dx = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, disp_vector, lam_par, fvirg, elastic_p, kinetic_e)
         # Normalization
         f0val = n1 * 100 * f0val/f0_scale
         df0dx = n1 * 100 * df0dx/f0_scale
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
-            stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega2_par, xnew, x_min_k, x_min_m, p_par, q_par)
+            stif_matrix, mass_matrix, dyna_stif, t_assembly = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega2_par, xnew, x_min, p_par, q_par)
             if modes is not None:
                 disp_vector2 = opt.mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega2_par, alpha_par, beta_par, eta_par, free_ind)
             else: 
@@ -283,26 +282,26 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             if func_name2 == "Compliance":
                 f0val2 = opt.func_compliance(disp_vector2, load_vector)
                 lam_par = opt.lambda_parameter(disp_vector2, load_vector, f0val2)
-                df0dx2 = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par)
+                df0dx2 = opt.derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par)
             #
             elif func_name2 == "Elastic Potential Energy":
                 f0val2, fvirg = opt.elastic_potential_energy(disp_vector2, stif_matrix, const_func)
                 lam_par = opt.lambda_parameter_ep(disp_vector2, stif_matrix, dyna_stif, free_ind)
-                df0dx2 = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par, fvirg)
+                df0dx2 = opt.derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par, fvirg)
             #
             elif func_name2 == "Input Power":
                 f0val2, fvirg = opt.func_input_power(disp_vector2, load_vector, omega2_par, const_func)
-                df0dx2 = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, fvirg)
+                df0dx2 = opt.derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, fvirg)
             #               
             elif func_name2 == "Kinetic Energy":
                 f0val2, fvirg = opt.kinetic_energy(disp_vector2, mass_matrix, omega2_par, const_func)
                 lam_par = opt.lambda_parameter_ek(disp_vector2, mass_matrix, dyna_stif, omega2_par, free_ind)
-                df0dx2 = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par, fvirg)
+                df0dx2 = opt.derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par, fvirg)
             #   
             elif func_name2 == 'R Ratio':
                 f0val2, fvirg, elastic_p, kinetic_e = opt.R_ratio(disp_vector2, stif_matrix, mass_matrix, omega2_par, const_func)
                 lam_par = opt.lambda_parameter_R(disp_vector2, dyna_stif, stif_matrix, mass_matrix, omega2_par, fvirg, kinetic_e, free_ind)
-                df0dx2 = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_k, x_min_m, xnew, disp_vector2, lam_par, fvirg, elastic_p, kinetic_e)
+                df0dx2 = opt.derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, disp_vector2, lam_par, fvirg, elastic_p, kinetic_e)
             # Normalization
             f0val2 = (1 - abs(n1)) * 100 * f0val2/f0_scale_n2
             df0dx2 = (1 - abs(n1)) * 100 * df0dx2/f0_scale_n2
@@ -346,8 +345,8 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
     if len(freq_rsp) == 3:
         freq_range = freq_rsp[:2]
         delta = freq_rsp[2]
-        f_original = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_k, x_min_m, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
-        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval, x_min_k, x_min_m, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
+        f_original = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
+        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval, x_min, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
         ax = plt_opt.compare_freqresponse(freq_range, delta, f_optimized.real, f_original.real, func_name, save=save)
     if mesh_deform:
         disp_vector = fc.change_U_shape(disp_vector.real)
