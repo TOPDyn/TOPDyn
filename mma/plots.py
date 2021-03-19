@@ -1,9 +1,10 @@
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.exporters
+from PyQt5 import QtCore
 import matplotlib.pyplot as plt
 
-def freqresponse(freq_range, delta, obj_func, func_name, save=False):
+def freqresponse(freq_range, delta, obj_func, func_name, save=None):
     """ Plot the frequency response.
 
     Args:
@@ -16,14 +17,15 @@ def freqresponse(freq_range, delta, obj_func, func_name, save=False):
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
         save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
     """
+    fig, ax = plt.subplots()
     freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
-    plt.plot(freq, obj_func.real)
-    plt.xlabel('frequency [Hz]', fontsize=16)
-    plt.ylabel(func_name.lower(), fontsize=16)
-    plt.yscale('log')
-    if save:
-        plt.savefig("freq_response1.png")
-    plt.show()
+    ax.plot(freq, obj_func.real)
+    ax.set_xlabel('frequency [Hz]', fontsize=16)
+    ax.set_ylabel(func_name.lower(), fontsize=16)
+    ax.set_yscale('log')
+    if save is not None:
+        plt.savefig(save + ".eps")
+    #plt.show()
 
 def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
     """ Plot the frequency response of the original and the optimized function.
@@ -55,7 +57,7 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
 
     return ax
 
-def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx, nely, func_name):
+def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx, nely, lx, ly, func_name):
     """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
 
     Args:
@@ -76,16 +78,16 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx,
     win.setWindowTitle('MMA')
     # Enable antialiasing for prettier plots
     pg.setConfigOptions(antialias=True)
-    vb = pg.ViewBox()
-    p1 = win.addItem(vb)
-    # Configure view for images
-    vb.setAspectLocked()
-    vb.invertY()
-    vb.show()
-    # Create image
-    image = pg.ImageItem(-xval.real.reshape((nely, nelx)), axisOrder='row-major')
-    # Display image
-    vb.addItem(image)
+    p1 = win.addPlot()
+    p1.hideAxis('bottom')
+    p1.hideAxis('left')
+    win.setAspectLocked(False)
+    p1.setAspectLocked(False)
+    image = pg.ImageItem()
+    image.setImage(-xval.real.reshape((nelx, nely), order='F'), levels=[-1,0], autoRange=False)
+    rect = QtCore.QRectF(0, 0, lx, ly)
+    image.setRect(rect)
+    p1.addItem(image)
     win.nextRow()
     # Plot Objective function and area
     p2 = win.addPlot()
@@ -105,7 +107,7 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx,
 
     return win, p2, image
 
-def simple_window(xval, nelx, nely):
+def simple_window(xval, nelx, nely, lx, ly):
     """ Generate a window to plot the optimized mesh.
 
     Args:
@@ -116,22 +118,23 @@ def simple_window(xval, nelx, nely):
     Returns:
         Principal window, optimezed part.
     """
-    gv = pg.GraphicsView()
-    gv.setWindowTitle('MMA')
-    gv.resize(1000,600)
-    vb = pg.ViewBox()
-    gv.setCentralItem(vb)
-    gv.show()
-    # Configure view for images
-    vb.setAspectLocked()
-    vb.invertY()
-    vb.show()
-    # Create image
-    image = pg.ImageItem(-xval.real.reshape((nely, nelx)), axisOrder='row-major')
-    # Display image
-    vb.addItem(image)
+    win = pg.GraphicsLayoutWidget(show=True)
+    win.resize(900,600)
+    win.setWindowTitle('MMA')
+    # Enable antialiasing for prettier plots
+    pg.setConfigOptions(antialias=True)
+    p1 = win.addPlot()
+    p1.hideAxis('bottom')
+    p1.hideAxis('left')
+    win.setAspectLocked(False)
+    p1.setAspectLocked(False)
+    image = pg.ImageItem()
+    image.setImage(-xval.real.reshape((nelx, nely), order='F'), levels=[-1,0], autoRange=False)
+    rect = QtCore.QRectF(0, 0, lx, ly)
+    image.setRect(rect)
+    p1.addItem(image)
 
-    return gv, image
+    return win, image
 
 def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
     """ Generate a window to plot the convergence graph.
