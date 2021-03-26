@@ -71,12 +71,16 @@ def matricesQ4(ee, coord, connect, E, v, rho):
         #
     return Ke, Me
 
+def generate_xy_coord(lx, ly, nelx, nely):
+    dx, dy = lx/nelx, ly/nely
+    return dx * np.arange(nelx + 1), dy * np.arange(nely + 1)
+
 def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     """ Create a regular Q4 mesh.
 
     Args:
-        lx (:obj:`int`): X-axis length.
-        ly (:obj:`int`): Y-axis length.
+        lx (:obj:`float`): X-axis length.
+        ly (:obj:`float`): Y-axis length.
         nelx (:obj:`int`): Number of elements on the X-axis.
         nely (:obj:`int`): Number of elements on the Y-axis.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
@@ -87,8 +91,7 @@ def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     # processing of nodal coordinates matrix
     t0 = time()
     dofs, edofs = 2, 8
-    dx, dy = lx/nelx, ly/nely
-    x, y = dx * np.arange(nelx + 1), dy * np.arange(nely + 1)
+    x, y = generate_xy_coord(lx, ly, nelx, nely)
     #x, y = np.arange(0,lx+dx,dx), np.arange(0,ly+dy,dy)
     nx, ny = len(x), len(y)
     mat_x = (x.reshape(nx, 1)@np.ones((1, ny))).T

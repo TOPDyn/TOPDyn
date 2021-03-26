@@ -189,9 +189,9 @@ def regularmeshH8(nelx, nely, nelz, lx, ly, lz):
         nelx (:obj:`int`): Number of elements on the X-axis.
         nely (:obj:`int`): Number of elements on the Y-axis.
         nelz (:obj:`int`): Number of elements on the Z-axis.
-        lx (:obj:`int`): X-axis length.
-        ly (:obj:`int`): Y-axis length.
-        lz (:obj:`int`): Z-axis length.
+        lx (:obj:`float`): X-axis length.
+        ly (:obj:`float`): Y-axis length.
+        lz (:obj:`float`): Z-axis length.
     
     Returns:
         Tuple with the coordinate matrix, connectivity, and the indexes of each node.    

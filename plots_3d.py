@@ -1,9 +1,9 @@
 from time import time
-import functions_3d as fc
 import numpy as np
-import numpy_indexed as npi
-import vtkplotter as vt
 import pyqtgraph as pg
+import vedo as vt
+import functions_3d as fc
+import numpy_indexed as npi
 
 def all_faces(coord, connect):
     """ Get vertice of all faces of the mesh.

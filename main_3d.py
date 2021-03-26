@@ -29,7 +29,7 @@ if __name__ == "__main__":
     factor = 100000
     plot_type = 'deformed'
     complete = True
-    amp = 400000000  
+    amp = 400  
 
     fem.main(nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix, E, v, rho, alpha, beta, eta, factor, freq, freq_rsp, plot_type, complete, amp)
     

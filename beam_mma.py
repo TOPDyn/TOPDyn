@@ -1,18 +1,17 @@
 ﻿from __future__ import division
-from time import time
-import numpy as np
-import matplotlib.pyplot as plt
 from PyQt5 import QtCore
-import pyqtgraph as pg
-import logging
-import sys
+from time import time
 import os
-sys.path.append(os.getcwd())
-import solver_fem_2d.functions_2d as fc
-import solver_fem_2d.plots_2d as plt_fem
-import functions as opt
-import plots as plt_opt
-# Import MMA functions
+import sys
+import logging
+import numpy as np
+import pyqtgraph as pg
+import matplotlib.pyplot as plt
+
+import functions_2d as fc
+import plots_2d as plt_fem
+import functions_opt as opt
+import plots_opt as plt_opt
 from mma_opt import mmasub, subsolv, kktcheck
 
 def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
@@ -20,8 +19,8 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
     Args:
         nelx (:obj:`int`): Number of elements on the x-axis.
         nely (:obj:`int`): Number of elements on the y-axis.
-        lx (:obj:`int`): x-axis length.
-        ly (:obj:`int`): x-axis length.
+        lx (:obj:`float`): x-axis length.
+        ly (:obj:`float`): x-axis length.
         func_name (:obj:`str`): Objective function used.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
             If the multiobjective function is being calculated, weight n1 is assigned.
@@ -179,11 +178,12 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
     app = pg.mkQApp()
     pg.setConfigOption('background', 'w')
     pg.setConfigOption('foreground', 'k')
-    rect = QtCore.QRectF(0, 0, lx, ly)
     if each_iter:
-        win, p2, image = plt_opt.window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx, nely, lx, ly, func_name)
+        win, p2, grid = plt_opt.window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xval, lx, ly, nelx, nely)
     else:
-        gv, image = plt_opt.simple_window(xval, nelx, nely, lx, ly)
+        gv, grid = plt_opt.simple_window()
+    #
+    x_plot, y_plot = plt_opt.set_coord_grid(lx, ly, nelx, nely)
     #
     kktnorm = kkttol+10
     chtol = 1e-4
@@ -246,9 +246,8 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             kktcheck(m,n,xmma,ymma,zmma,lam,xsi,eta,mu,zet,s,xmin,xmax,df0dx,fval,dfdx,a0,a,c,d)
         #
         chmax = max(abs(xold2 - xold1))
-        # Plot xval and objective function
-        image.setImage(-xval.real.reshape((nelx, nely), order='F'), levels=[-1,0], autoRange=False)
-        image.setRect(rect)
+        # Plot xval and objective function   
+        plt_opt.set_grid_data(grid, xval, x_plot, y_plot, nelx, nely)
         list_iter, list_f0val, list_fvals = opt.update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values)
         if each_iter:
             plt_opt.convergence(constr_func, p2, list_iter, list_f0val, list_fvals)
@@ -262,7 +261,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
     if not each_iter:
         win, p2 = plt_opt.win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name)
     if save:
-        plt_opt.save_fig(image, p2)
+        plt_opt.save_fig(grid, p2)
     tf = time()
     if timing:
         if modes is not None:

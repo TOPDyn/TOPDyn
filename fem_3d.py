@@ -9,9 +9,9 @@ def main(nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=None, E=210e9,
         nelx (int): Number of elements on the X-axis.
         nely (int): Number of elements on the Y-axis.
         nelz (int): Number of elements on the Z-axis.
-        lx (int): X-axis length.
-        ly (int): Y-axis length.
-        lz (int): Z-axis length.
+        lx (float): X-axis length.
+        ly (float): Y-axis length.
+        lz (float): Z-axis length.
         load_matrix (numpy.array): The columns are respectively node, x direction, y direction, z direction, force value.
         restri_matrix (:obj:`numpy.array`, optional)= The columns are respectively node, x direction, y direction, z direction. Defaults to None. 
         E (:obj:`float`, optional): Elastic modulus. Defaults to 210e9.

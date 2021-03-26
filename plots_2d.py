@@ -1,9 +1,9 @@
 from time import time
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.collections as cl
 import matplotlib.cm as cm
 import matplotlib.tri as tri
+import matplotlib.pyplot as plt
+import matplotlib.collections as cl
 
 def show_nodes(coord):
     """ Plot nodes of mesh.
@@ -55,8 +55,8 @@ def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None, sav
     """ Plot mesh, force arrows and constrain nodes. 
 
     Args:
-        lx (:obj:`int`): X-axis length.
-        ly (:obj:`int`): Y-axis length.
+        lx (:obj:`float`): X-axis length.
+        ly (:obj:`float`): Y-axis length.
         coord (:obj:`numpy.array`): Coordinates of the element.
         pc (matplotlib.collections): Matplotlib collection object.
         load_matrix (:obj:`numpy.array`, optional): The columns are respectively node, x direction, y direction, force value. 
@@ -94,8 +94,8 @@ def get_size(lx, ly):
     """ Get columns with maximum and minimum length.
 
     Args:
-        lx (:obj:`int`): X-axis length.
-        ly (:obj:`int`): Y-axis length.
+        lx (:obj:`float`): X-axis length.
+        ly (:obj:`float`): Y-axis length.
 
     Returns:
         Column indexes with maximum and minimum length, respectively.

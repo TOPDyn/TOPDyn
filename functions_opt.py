@@ -1,14 +1,24 @@
-from time import time
-import numpy as np
 import cmath
+import numpy as np
+from time import time
+import functions_2d as fc
+from scipy.linalg import eigh
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
-from scipy.linalg import eigh
-import sys
-import os
-sys.path.append(os.getcwd())
-import solver_fem_2d.functions_2d as fc
-import plots as plt_opt
+
+#import sys
+#import os
+#sys.path.append(os.getcwd())
+#import solver_fem_2d.functions_2d as fc
+#import plots as plt_opt TODO: remover esse aqui da função depois 
+
+def exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
+    if mma:
+        import beam_mma as beam
+        beam.main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
+    else:
+        import beam_gcmma as beam
+        beam.main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
 
 def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega_par, xval, x_min, p_par, q_par):
     """ Assembly matrices.
@@ -172,7 +182,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
             Second value is the maximum frequency.
         delta (:obj:`int`): Step between each calculation of the objective function. 
         func_name (:obj:`str`): Objective function used.
-        const_func ()
+        const_func (:obj:`float`):
         modes (:obj:`int`): The number of eigenvalues and eigenvectors desired.
         load_vector (:obj:`numpy.array`): Force.
 
@@ -698,7 +708,7 @@ def sens_dconst(dfdx, constr_func, H, neighbors, xval, radius):
             dfdx[i, :] = sensitivity_filter(dfdx[i, :], H, neighbors, xval, radius)[:, 0]
     return dfdx
 
-def area_constr(fval, dfdx, ind, constr_values, lx, ly, area, xval):
+def area_constr(fval, dfdx, ind, constr_values, lx, ly, area, xval, gradients):
     """ Calculates the function and derivative of the area.
 
     Args:
@@ -706,24 +716,27 @@ def area_constr(fval, dfdx, ind, constr_values, lx, ly, area, xval):
         dfdx (:obj:`numpy.array`): Value of the constraint derivative.
         ind (:obj:`int`): Function index in the constr_func list.
         constr_values (:obj:`list`): Values of restriction functions applied. 
-        lx (:obj:`int`): x-axis length.
-        ly (:obj:`int`): x-axis length.
+        lx (:obj:`float`): x-axis length.
+        ly (:obj:`float`): x-axis length.
         area (:obj:`float`): Total area.
         xval (:obj:`numpy.array`): Indicates where there is mass.
+        gradients (:obj:`float`): If True calculates the derivatives. Defaults to True. 
        
     Returns:
         A tuple of numpy.array with function and derivative values.         
     """
     fval[ind, 0] = total_area(lx, ly, area, xval)
     fval[ind, 0] -= constr_values[ind]
-    dfdx[ind, :] = 100/(lx * ly) * area.reshape(1, -1)
+    if gradients:
+        dfdx[ind, :] = 100/(lx * ly) * area.reshape(1, -1)
  
     if constr_values[ind] < 0:
         fval[ind, 0] *= -1 
-        dfdx[ind, :] *= -1
+        if gradients:
+            dfdx[ind, :] *= -1
     return fval, dfdx
 
-def ratio_constr(fval, dfdx, ind, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind):
+def ratio_constr(fval, dfdx, ind, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind, gradients):
     """ Calculates the function and derivative of the R Ratio.
 
     Args:
@@ -752,25 +765,29 @@ def ratio_constr(fval, dfdx, ind, constr_values, nelx, nely, coord, connect, E, 
         omega_par (:obj:`float`): 2 * pi * frequency
         const_func (:obj:`float`):
         free_ind (:obj:`numpy.array`): DOFs free.
+        gradients (:obj:`float`): If True calculates the derivatives. Defaults to True. 
        
     Returns:
         A tuple of numpy.array with function and derivative values.         
     """
     fval[ind, 0], fvirg = R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func)
     fval[ind, 0] -= constr_values[ind]
-    elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
-    if omega_par == 0:
-        omega_par = 1e-12
-    kinetic_e = ((1/4) * omega_par**2 * (disp_vector.conjugate()@mass_matrix@disp_vector)).real
-    lam_par = lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind)
-    dfdx[ind, :] = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min, xval, disp_vector, lam_par, fvirg, elastic_p, kinetic_e).reshape(nelx*nely)
+
+    if gradients:
+        elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
+        if omega_par == 0:
+            omega_par = 1e-12
+        kinetic_e = ((1/4) * omega_par**2 * (disp_vector.conjugate()@mass_matrix@disp_vector)).real
+        lam_par = lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind)
+        dfdx[ind, :] = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min, xval, disp_vector, lam_par, fvirg, elastic_p, kinetic_e).reshape(nelx*nely)
 
     if constr_values[ind] < 0:
         fval[ind, 0] *= -1 
-        dfdx[ind, :] *= -1 
+        if gradients:
+            dfdx[ind, :] *= -1 
     return fval, dfdx
 
-def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, area, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind):
+def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, area, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind, gradients=True):
     """ Calculates the function and derivative of the constraint functions.
 
     Args:
@@ -781,8 +798,8 @@ def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coo
         constr_values (:obj:`list`): Values of restriction functions applied. 
         nelx (:obj:`int`): Number of elements on the x-axis.
         nely (:obj:`int`): Number of elements on the y-axis.
-        lx (:obj:`int`): x-axis length.
-        ly (:obj:`int`): x-axis length.
+        lx (:obj:`float`): x-axis length.
+        ly (:obj:`float`): x-axis length.
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
         E (:obj:`float`): Elastic modulus.
@@ -802,16 +819,18 @@ def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coo
         omega_par (:obj:`float`): 2 * pi * frequency
         const_func (:obj:`float`):
         free_ind (:obj:`numpy.array`): DOFs free.
+        gradients (:obj:`float`, optional): If True calculates the derivatives. Defaults to True. 
        
     Returns:
         A tuple of numpy.array with function and derivative values.         
     """
     for i in range(len(constr_func)):
         if constr_func[i] == 'Area':
-            fval, dfdx = area_constr(fval, dfdx, i, constr_values, lx, ly, area, xval)
+            fval, dfdx = area_constr(fval, dfdx, i, constr_values, lx, ly, area, xval, gradients)
         
         if constr_func[i] == 'R Ratio':
-            fval, dfdx = ratio_constr(fval, dfdx, i, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind)  
+            fval, dfdx = ratio_constr(fval, dfdx, i, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind, gradients)  
+            
     return fval, dfdx
 
 def update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values):
@@ -864,8 +883,8 @@ def total_area(lx, ly, area, xval):
     """ Calculates the total element area.
 
     Args:
-        lx (:obj:`int`): X-axis length.
-        ly (:obj:`int`): Y-axis length.
+        lx (:obj:`float`): X-axis length.
+        ly (:obj:`float`): Y-axis length.
         nelx (:obj:`int`): Number of elements on the X-axis.
         nely (:obj:`int`): Number of elements on the Y-axis.
 
@@ -915,7 +934,7 @@ def get_neighbors_radius(nelx, nely, coord, connect, radius):
         if aux > cols:
             cols = aux
     H = csc_matrix((data, (ind_rows, ind_cols)), shape=(nelx*nely, cols))
-    neighbors = csc_matrix((neighbors, (ind_rows, ind_cols)), shape=(nelx*nely, cols))
+    neighbors = csc_matrix((neighbors, (ind_rows, ind_cols)), shape=(nelx*nely, cols), dtype='int')
     return neighbors, H
 
 def calc_xnew(H, neighbors, xval):
@@ -949,7 +968,6 @@ def set_initxval(constr_func, constr_values):
         initial_xval = ((abs(constr_values[idx[0]]) + abs(constr_values[idx[1]]))/2)/100
     else:
         initial_xval = abs(constr_values[idx[0]])/100
-
     return initial_xval
 
 
@@ -958,6 +976,13 @@ def objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vecto
     ''' Calculate objective function.
 
     Args:
+        func_name (:obj:`str`): Objective function used.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        load_vector (:obj:`numpy.array`): Force.
+        omega_par (:obj:`float`): 2 * pi * frequency.
+        const_func (:obj:`float`):
 
     Returns:
         Derivative values.
@@ -983,6 +1008,26 @@ def derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_m
     ''' Calculate derivatite of objective function.
 
     Args:
+        func_name (:obj:`str`): Objective function used.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        load_vector (:obj:`numpy.array`): Force.
+        fvirg (:obj:`float`): 'virgin' function value.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio. 
+        rho (:obj:`float`): Density.
+        alpha_par (:obj:`float`): Damping coefficient proportional to mass.
+        beta_par (:obj:`float`): Damping coefficient proportional to stiffness.
+        omega_par (:obj:`float`): 2 * pi * frequency.  
+        p_par (:obj:`int`): Penalization power to stiffness.
+        q_par (:obj:`int`): Penalization power to mass.
+        x_min (:obj:`float`): Minimum relative densities.
+        xnew (:obj:`numpy.array`): Indicates where there is mass.
+        free_ind (:obj:`numpy.array`): DOFs free.
 
     Returns:
         Derivative values.

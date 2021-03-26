@@ -4,13 +4,13 @@ import functions_2d as fc
        
 if __name__ == "__main__":
   
-    nelx, nely = 20, 10
+    nelx, nely = 40, 20
     lx, ly = 1, 0.5
     E = 210e9
     v = 0.3
     rho = 7860
     alpha, beta, eta = 0, 0, 0
-    factor = 100000000
+    factor = 1000000
     freq = 200
     freq_rsp = [0, 400, 5]
     coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely)

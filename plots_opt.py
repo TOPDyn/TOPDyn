@@ -1,9 +1,12 @@
 import numpy as np
+import plot_grid as mf
 import pyqtgraph as pg
 import pyqtgraph.exporters
 import matplotlib.pyplot as plt
+from PyQt5 import QtCore, QtGui
+from functions_2d import generate_xy_coord
 
-def freqresponse(freq_range, delta, obj_func, func_name, save=False):
+def freqresponse(freq_range, delta, obj_func, func_name, save=None):
     """ Plot the frequency response.
 
     Args:
@@ -16,13 +19,14 @@ def freqresponse(freq_range, delta, obj_func, func_name, save=False):
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
         save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
     """
+    fig, ax = plt.subplots()
     freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
-    plt.plot(freq, obj_func.real)
-    plt.xlabel('frequency [Hz]', fontsize=16)
-    plt.ylabel(func_name.lower(), fontsize=16)
-    plt.yscale('log')
-    if save:
-        plt.savefig("freq_response1.png")
+    ax.plot(freq, obj_func.real)
+    ax.set_xlabel('frequency [Hz]', fontsize=16)
+    ax.set_ylabel(func_name.lower(), fontsize=16)
+    ax.set_yscale('log')
+    if save is not None:
+        plt.savefig(save + ".eps")
     plt.show()
 
 def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
@@ -35,12 +39,12 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
         delta (:obj:`int`): Step between each calculation of the function. 
         newf (array): Optimized function.
         oldf (array): Original function.
-        func_name (:obj:`str`): Objective function used.
+        func_name (:obj:`str`): Objective function name.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
         save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
 
     Returns:
-        A single Axes object from matplotlib.pyplot. 
+        A single Axes object from matplotlib.pyplot.
     """
     freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
     fig, ax = plt.subplots()
@@ -55,7 +59,7 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
 
     return ax
 
-def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx, nely, func_name):
+def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xval, lx, ly, nelx, nely):
     """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
 
     Args:
@@ -63,9 +67,6 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx,
         list_iter (:obj:`list`): All iteration values.
         list_f0val (:obj:`list`): All objective function values.
         list_fvals (:obj:`list`): All constraint function values.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        nelx (:obj:`int`): Number of elements on the X-axis.
-        nely (:obj:`int`): Number of elements on the Y-axis.
         func_name (:obj:`str`): Objective function name.
 
     Returns:
@@ -74,20 +75,17 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx,
     win = pg.GraphicsLayoutWidget(show=True)
     win.resize(900,600)
     win.setWindowTitle('MMA')
-    # Enable antialiasing for prettier plots
-    pg.setConfigOptions(antialias=True)
-    vb = pg.ViewBox()
-    p1 = win.addItem(vb)
-    # Configure view for images
-    vb.setAspectLocked()
-    vb.invertY()
-    vb.show()
-    # Create image
-    image = pg.ImageItem(-xval.real.reshape((nely, nelx)), axisOrder='row-major')
-    # Display image
-    vb.addItem(image)
-    win.nextRow()
+    #
+    grid = mf.PColorMeshItem(cmap='grey')
+    x_plot, y_plot = set_coord_grid(lx, ly, nelx, nely)
+    set_grid_data(grid, xval, x_plot, y_plot, nelx, nely)
+    plot = win.addPlot()
+    plot.setAspectLocked(True)
+    plot.hideAxis('bottom')
+    plot.hideAxis('left')
+    plot.addItem(grid)
     # Plot Objective function and area
+    win.nextRow()
     p2 = win.addPlot()
     p2.addLegend(labelTextColor=(0,0,0), offset=(700,10))
     p2.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2}, name=func_name.lower())
@@ -102,36 +100,27 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, xval, nelx,
     if 'R Ratio' in constr_func:
         ind = constr_func.index("R Ratio")
         p2.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name='constraint - r ratio')
+    pg.QtGui.QApplication.processEvents()
+    return win, p2, grid
 
-    return win, p2, image
-
-def simple_window(xval, nelx, nely):
+def simple_window():
     """ Generate a window to plot the optimized mesh.
 
-    Args:
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        nelx (:obj:`int`): Number of elements on the X-axis.
-        nely (:obj:`int`): Number of elements on the Y-axis.
-
     Returns:
-        Principal window, optimezed part.
+        Principal window, optimized part.
     """
-    gv = pg.GraphicsView()
-    gv.setWindowTitle('MMA')
-    gv.resize(1000,600)
-    vb = pg.ViewBox()
-    gv.setCentralItem(vb)
-    gv.show()
-    # Configure view for images
-    vb.setAspectLocked()
-    vb.invertY()
-    vb.show()
-    # Create image
-    image = pg.ImageItem(-xval.real.reshape((nely, nelx)), axisOrder='row-major')
-    # Display image
-    vb.addItem(image)
+    win = pg.GraphicsLayoutWidget(show=True)
+    win.setWindowTitle('MMA')
 
-    return gv, image
+    grid = mf.PColorMeshItem(cmap='grey')
+    plot = win.addPlot()
+    plot.setAspectLocked(True)
+    plot.hideAxis('bottom')
+    plot.hideAxis('left')
+    plot.addItem(grid)
+    pg.QtGui.QApplication.processEvents()
+
+    return win, grid
 
 def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
     """ Generate a window to plot the convergence graph.
@@ -165,6 +154,15 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
 
     return win, p
 
+def set_coord_grid(lx, ly, nelx, nely):
+    x, y   = generate_xy_coord(lx, ly, nelx, nely)
+    x_plot = np.repeat(x, nely+1).reshape(nelx+1, nely+1)
+    y_plot = np.tile(y, nelx+1).reshape(nelx+1, nely+1)
+    return x_plot, y_plot
+
+def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
+    grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
+    
 def convergence(constr_func, p, list_iter, list_f0val, list_fvals):
     """ Update the values of the objective function and the constraint function to plot the convergence graph.
 
@@ -190,14 +188,14 @@ def convergence(constr_func, p, list_iter, list_f0val, list_fvals):
 
     return p
 
-def save_fig(imagewindow, convergence):
+def save_fig(opt_part, convergence):
     """ Save the optimized part and the convergence graph.
 
     Args:
         opt_part (pyqtgraph.graphicsItems.PlotItem): Optimized part window. 
         convergence (pyqtgraph.graphicsItems.PlotItem): Convergence graph window.
     """   
-    exporter = pg.exporters.ImageExporter(imagewindow)
+    exporter = pg.exporters.ImageExporter(opt_part)
     exporter.export('optimization.png')
 
     exporter2 = pg.exporters.ImageExporter(convergence)

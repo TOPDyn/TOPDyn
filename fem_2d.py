@@ -8,8 +8,8 @@ def main(nelx, nely, lx, ly, load_matrix, restri_matrix=None, E=210e9, v=0.3, rh
     Args:
         nelx (:obj:`int`): Number of elements on the x-axis.
         nely (:obj:`int`): Number of elements on the y-axis.
-        lx (:obj:`int`): x-axis length.
-        ly (:obj:`int`): y-axis length.
+        lx (:obj:`float`): x-axis length.
+        ly (:obj:`float`): y-axis length.
         load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
         restri_matrix (:obj:`numpy.array`, optional)= The columns are respectively node, x direction, y direction. Defaults to None. 
         E (:obj:`float`, optional): Elastic modulus. Defaults to 210e9.
