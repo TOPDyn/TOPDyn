@@ -22,41 +22,9 @@ Some features to be implemented:
 
 You will need Python 3.6.8 and the pip package manager.
 
-It's recommended to use a [virtual environment](https://towardsdatascience.com/why-you-should-use-a-virtual-environment-for-every-python-project-c17dab3b0fd0). To do this, run the following commands:
-
-- Linux/macos:
-
-	Install 
-
-		pip install virtualenv
-
-	Create 
-
-		virtualenv ../venv -p python3
-
-	Activate
-
-		source ../venv/bin/activate
-
-- Windows:
-
-	Install 
-	
-		python -m pip install virtualenv
-
-	Create 
-
-		virtualenv ../venv -p python3
-
-	Activate
-
-		../venv/Scripts/activate
-
 To install the requirements execute
 
 	pip install -r requirements.txt
-
-When finished you can execute the command `deactivate` to leave the virtual environment.
 
 Update your video card drivers.
 
@@ -70,7 +38,7 @@ Update your video card drivers.
 
 - More about MMA and GCMMA: [Krister Svanberg](https://people.kth.se/~krille/).
 
-Each API has a main file with an usage example.
+Each API has a **main** file with an usage example and It's the place where you must put your code.
 
 ## Documentation 
 
