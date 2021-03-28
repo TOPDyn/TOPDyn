@@ -9,7 +9,7 @@ Features
 
 - More about MMA and GCMMA: `Krister Svanberg <https://people.kth.se/~krille/>`_.
 
-Each feature has a main file with an usage example.
+Each feature has a **main** file with an usage example and It's the place where you must put your code.
 
 
 Prerequisites

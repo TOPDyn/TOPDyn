@@ -54,7 +54,6 @@ The authors are members of MOPT - Multidisciplinary Optimization Group, from Fed
 
    conteudo/fem2d
    conteudo/fem3d
-   conteudo/mma
-   conteudo/gcmma
+   conteudo/optimization
    
 

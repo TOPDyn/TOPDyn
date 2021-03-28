@@ -1,11 +1,17 @@
 Finite element method in 3D
 ==============================
 
-.. automodule:: solver_fem_3d.fem_3d
+FEM 3D
+---------------------------
+.. automodule:: fem_3d
    :members:
 
-.. automodule:: solver_fem_3d.functions_3d
+General functions
+---------------------------
+.. automodule:: functions_3d
    :members:
 
-.. automodule:: solver_fem_3d.plots_3d
+Plot 
+---------------------------
+.. automodule:: plots_3d
    :members:
