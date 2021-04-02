@@ -5,11 +5,6 @@ import functions_2d as fc
 from scipy.linalg import eigh
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
-
-#import sys
-#import os
-#sys.path.append(os.getcwd())
-#import solver_fem_2d.functions_2d as fc
 #import plots as plt_opt TODO: remover esse aqui da função depois 
 
 def exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
@@ -68,7 +63,6 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, a
 
     tf1 = time()
     t_assembly = str(round((tf1 - t01), 6))
-    
     return stif_matrix, mass_matrix, dyna_stif, t_assembly
 
 def harmonic_problem(ngl, dyna_stif, load_vector, free_ind=None):
@@ -81,11 +75,10 @@ def harmonic_problem(ngl, dyna_stif, load_vector, free_ind=None):
 
     tf2 = time()
     t_harmonic = str(round((tf2 - t02),6))
-
     return disp_vector, t_harmonic
 
 def modal_analysis(stif_matrix, mass_matrix, modes=20):
-    """ Modal Analysis. Use eigs Scipy function.
+    """ Modal Analysis. Use eigh Scipy function.
 
     Args:
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
@@ -109,7 +102,6 @@ def modal_analysis(stif_matrix, mass_matrix, modes=20):
     index_order = np.argsort(natural_frequencies)
     natural_frequencies = natural_frequencies[index_order]
     modal_shape = modal_shape[:, index_order]
-
     return natural_frequencies, modal_shape
 
 def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega_par, alpha, beta, eta, free_ind):    
@@ -153,7 +145,6 @@ def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega_par, 
 
     tf = time()
     t_superp = str(round((tf - t0), 6))
-    
     return disp_vector, natural_frequencies, t_superp
 
 def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, **kwargs):
@@ -292,7 +283,7 @@ def R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func):
         const_func (:obj:`float`):
 
     Returns:
-        R, Rvrig Ep and Ek
+        R, Rvrig 
     """
     elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
     if omega_par == 0:
@@ -600,113 +591,97 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par
 
     return deriv_R.real
 
-def dfAt_density(deriv_At, H, neighbors):
-    """ Apply the density filter to the derivative of the area.
+def set_deriv(dfdx, df0dx, df0dx2):
+    if df0dx2 is not None:
+        cols = 2 + dfdx.shape[0]
+    else:
+        cols = 1 + dfdx.shape[0]
+    #
+    all_deriv_f = np.empty((df0dx.shape[0], cols))
+    for i in range(dfdx.shape[0]):
+        all_deriv_f[:, i] = dfdx[i, :]
+    #
+    if df0dx2 is not None:
+        all_deriv_f[:, cols-1] = df0dx2[:, 0]
+        all_deriv_f[:, cols-2] = df0dx[:, 0]
+    else:
+        all_deriv_f[:, cols-1] = df0dx[:, 0]
+    return np.empty((df0dx.shape[0], cols)), all_deriv_f, cols
+
+def out_deriv(all_deriv, dfdx, df0dx2):
+    aux = dfdx.shape[0]
+    if df0dx2 is None:
+        return all_deriv[:, :aux].T, all_deriv[:, aux].reshape(-1, 1), None
+    else:
+        return all_deriv[:, :aux].T, all_deriv[:, aux].reshape(-1, 1), all_deriv[:, aux+1].reshape(-1, 1)
+
+def new_density_filter(H, neighbors, dfdx, df0dx, df0dx2=None):
+    """ Apply the density filter to the derivative of the functions (constrain, objective and multiobjective).
 
     Args:
-        deriv_At (:obj:`numpy.array`): Derivative of total area.
         H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
         neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
+        df0dx (:obj:`numpy.array`): Derivative value of the objective function.
+        df0dx2 (:obj:`numpy.array`, optional): Derivative value of the second objective function.
 
     Returns:
         Density filter applied to the derivative values.
     """
-    new_deriv_At = np.empty(deriv_At.shape)
-    for el in range(len(deriv_At)):
-        H_el = H[el, :].data
-        idx = neighbors[el, :].data
-        Hj = 0
-        aux = 0
-        for i in range(len(idx)):
-            nn = idx[i]
-            Hj = np.sum(H[nn, :])   
-            aux += (1/Hj) * H_el[i] * deriv_At[nn]
-        new_deriv_At[el] = aux
-    return new_deriv_At
-
-def density_filter(deriv_f, H, neighbors):
-    """ Apply the density filter to the derivative of the function.
-
-    Args:
-        deriv_f (:obj:`numpy.array`): Derivative of the function.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-
-    Returns:
-        Density filter applied to the derivative values.
-    """
-    new_deriv_f = np.empty(deriv_f.shape)    
+    new_deriv_f, deriv_f, cols = set_deriv(dfdx, df0dx, df0dx2)
     for el in range(deriv_f.shape[0]):
         H_el = H[el, :].data
         idx = neighbors[el, :].data
         Hj = 0
-        aux = 0
+        aux = np.zeros(cols)
         for i in range(len(idx)):
             nn = idx[i]
             Hj = np.sum(H[nn, :])   
-            aux += (1/Hj) * H_el[i] * deriv_f[nn, 0]
-        new_deriv_f[el] = aux   
-    return new_deriv_f
+            for ind in range(cols):
+                aux[ind] +=  (1/Hj) * H_el[i] * deriv_f[nn, ind]
+                #aux += (1/Hj) * H_el[i] * deriv_f[nn, 0]
+        new_deriv_f[el, :] = aux  
+    return out_deriv(new_deriv_f, dfdx, df0dx2)
 
-def sensitivity_filter(deriv_f, H, neighbors, xval, radius):
-    """ Apply the sensitivity filter to the derivative of the function.
+def normalize(n, f0_scale, f0val, df0dx):
+    """ Apply the sensitivity filter to the derivative of the functions (constrain, objective and multiobjective).
 
     Args:
-        deriv_f (:obj:`numpy.array`): Derivative of the function.
+        n (:obj:`float`): Weight associated with function.
+        f0_scale (:obj:`float`): Value of the function.
+        f0val (:obj:`numpy.array`): Objective function.
+        df0dx (:obj:`numpy.array`): Derivative value of the function.
+    
+    Returns:
+        Normalized function and it's derivative.
+    """
+    f0val = n * 100 * f0val/f0_scale
+    df0dx = n * 100 * df0dx/f0_scale
+    return f0val, df0dx
+
+def new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2=None):
+    """ Apply the sensitivity filter to the derivative of the functions (constrain, objective and multiobjective).
+
+    Args:
         H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
         neighbors (:obj:`csc_matrix`): Neighbors of each element.
         xval (:obj:`numpy.array`): Indicates where there is mass.
-        radius (:obj:`float`): Radius to get elements in the vicinity of each element. 
+        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
+        df0dx (:obj:`numpy.array`): Derivative value of the objective function.
+        df0dx2 (:obj:`numpy.array`, optional): Derivative value of the second objective function.
 
     Returns:
         Sensitivity filter applied to the derivative values.
     """
     aux1 = H.multiply(xval[neighbors.toarray().flatten()].reshape(H.shape))
-    aux2 = aux1.multiply(deriv_f[neighbors.toarray().flatten()].reshape(H.shape))
     aux3 = 1/np.multiply(np.sum(H, axis=1), xval)
-    new_deriv = np.multiply(aux3, np.sum(aux2, axis=1))
-    return np.asarray(new_deriv)
 
-def dens_dconstr(dfdx, constr_func, H, neighbors, radius):
-    """ Apply the density filter to the derivative of the constraint.
-
-    Args:
-        dfdx (:obj:`numpy.array`): Derivative of the constraint.
-        constr_func (:obj:`list`): Restriction functions applied.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
-
-    Returns:
-        Density filter applied to the derivative values.
-    """
-    for i in range(len(constr_func)):
-        if constr_func[i] == 'Area':
-            dfdx[i, :] = dfAt_density(dfdx[i, :], H, neighbors)
-
-        if constr_func[i] == 'R Ratio':
-            dfdx[i, :] = density_filter(dfdx[i, :].reshape(-1, 1), H, neighbors).reshape(-1)            
-    return dfdx
-
-def sens_dconst(dfdx, constr_func, H, neighbors, xval, radius):
-    """ Apply the sensitivity filter to the derivative of the constraint.
-
-    Args:
-        dfdx (:obj:`numpy.array`): Derivative of the constraint.
-        constr_func (:obj:`list`): Restriction functions applied.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
-
-    Returns:
-        Sensitivity filter applied to the derivative values.
-    """
-    for i in range(len(constr_func)):
-        if constr_func[i] == 'R Ratio':
-            dfdx[i, :] = sensitivity_filter(dfdx[i, :], H, neighbors, xval, radius)[:, 0]
-    return dfdx
+    new_deriv_f, deriv_f, cols = set_deriv(dfdx, df0dx, df0dx2)
+    for col in range(cols):
+        
+        aux2 = aux1.multiply(deriv_f[neighbors.toarray().flatten(), col].reshape(H.shape))
+        new_deriv_f[:, col] = np.asarray(np.multiply(aux3, np.sum(aux2, axis=1)))[:,0]
+    return out_deriv(new_deriv_f, dfdx, df0dx2)
 
 def area_constr(fval, dfdx, ind, constr_values, lx, ly, area, xval, gradients):
     """ Calculates the function and derivative of the area.
@@ -715,7 +690,7 @@ def area_constr(fval, dfdx, ind, constr_values, lx, ly, area, xval, gradients):
         fval (:obj:`numpy.array`): Value of the constraint function.
         dfdx (:obj:`numpy.array`): Value of the constraint derivative.
         ind (:obj:`int`): Function index in the constr_func list.
-        constr_values (:obj:`list`): Values of restriction functions applied. 
+        constr_values (:obj:`list`): Values of constraint functions applied. 
         lx (:obj:`float`): x-axis length.
         ly (:obj:`float`): x-axis length.
         area (:obj:`float`): Total area.
@@ -740,11 +715,11 @@ def ratio_constr(fval, dfdx, ind, constr_values, nelx, nely, coord, connect, E, 
     """ Calculates the function and derivative of the R Ratio.
 
     Args:
-        fval (:obj:`numpy.array`): Value of the constraint function.
-        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
+        fval (:obj:`numpy.array`): Constraint function.
+        dfdx (:obj:`numpy.array`): Values of the constraint derivative.
         ind (:obj:`int`): Function index in the constr_func list.
-        constr_func (:obj:`list`): Restriction functions applied.
-        constr_values (:obj:`list`): Values of restriction functions applied. 
+        constr_func (:obj:`list`): Constraint functions applied.
+        constr_values (:obj:`list`): Values of constraint functions applied. 
         nelx (:obj:`int`): Number of elements on the x-axis.
         nely (:obj:`int`): Number of elements on the y-axis.
         coord (:obj:`numpy.array`): Coordinates of the element.
@@ -791,11 +766,11 @@ def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coo
     """ Calculates the function and derivative of the constraint functions.
 
     Args:
-        fval (:obj:`numpy.array`): Value of the constraint function.
-        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
+        fval (:obj:`numpy.array`): Values of the constraint function.
+        dfdx (:obj:`numpy.array`): Values of the constraint derivative.
         ind (:obj:`int`): Function index in the constr_func list.
-        constr_func (:obj:`list`): Restriction functions applied.
-        constr_values (:obj:`list`): Values of restriction functions applied. 
+        constr_func (:obj:`list`): constraint functions applied.
+        constr_values (:obj:`list`): Values of constraint functions applied. 
         nelx (:obj:`int`): Number of elements on the x-axis.
         nely (:obj:`int`): Number of elements on the y-axis.
         lx (:obj:`float`): x-axis length.
@@ -843,8 +818,8 @@ def update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_f
         list_iter (:obj:`list`): All iteration values.
         list_fvals (:obj:`list`): All constraint function values.
         list_f0val (:obj:`list`): All objective function values.
-        constr_func (:obj:`list`): Restriction functions applied.
-        constr_values (:obj:`list`): Values of restriction functions applied.
+        constr_func (:obj:`list`): constraint functions applied.
+        constr_values (:obj:`list`): Values of constraint functions applied.
 
     Returns:
         A tuple of lists with iterations, objective and constraint function.
@@ -924,12 +899,14 @@ def get_neighbors_radius(nelx, nely, coord, connect, radius):
         neighbor = mask.nonzero()[0] + 1
         neighbors.extend(neighbor - 1)
         #
-        aux = len(distance[mask])
-        aux1 = np.repeat(el, aux).tolist()
-        aux2 = np.arange(0, aux)
-        data.extend(distance[mask])
-        ind_rows.extend(aux1)
-        ind_cols.extend(aux2)
+        hi      = radius - distance
+        hi_max  = np.maximum(0, hi)
+        data.extend(hi_max[mask])
+        aux     = len(hi_max[mask])
+        rows    = np.repeat(el, aux) #.tolist()
+        columns = np.arange(0, aux)
+        ind_rows.extend(rows) 
+        ind_cols.extend(columns)
         #
         if aux > cols:
             cols = aux
@@ -957,11 +934,11 @@ def set_initxval(constr_func, constr_values):
     """ Calculate the initial value of xval.
 
     Args:
-        constr_func (:obj:`list`): Restriction functions applied.
-        constr_values (:obj:`list`): Values of restriction functions applied.
+        constr_func (:obj:`list`): constraint functions applied.
+        constr_values (:obj:`list`): Values of constraint functions applied.
     
     Returns:
-        A tuple with the minimum and maximum frequency.
+        initial_xval (:obj:`float`): First value of xval
     """
     idx = [i for i, e in enumerate(constr_func) if e == constr_func[0]]
     if len(idx) > 1:
@@ -969,8 +946,6 @@ def set_initxval(constr_func, constr_values):
     else:
         initial_xval = abs(constr_values[idx[0]])/100
     return initial_xval
-
-
 
 def objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func):
     ''' Calculate objective function.
@@ -985,7 +960,7 @@ def objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vecto
         const_func (:obj:`float`):
 
     Returns:
-        Derivative values.
+        Objective function values.
     '''
     if func_name == "Compliance":
         f0val = compliance(disp_vector, load_vector)
@@ -1065,7 +1040,7 @@ def get_natural_freq(range_freq, delta, disp_vector):
         disp_vector (:obj:`numpy.array`): Displacement.
     
     Returns:
-        A tuple with the minimum and maximum frequency.
+        Maximum frequency.
     """
     x = np.arange(range_freq[0], range_freq[1] + 1, delta)
     y = disp_vector
@@ -1103,3 +1078,112 @@ def freq_resp(freq_rsp, const_func, constr_func, constr_values, force_matrix, re
     f_original = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval, x_min, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
     plt_opt.freqresponse(freq_range, delta, f_original.real, func_name, save)
     return f_original
+
+
+def dfAt_density(deriv_At, H, neighbors):
+    """ Apply the density filter to the derivative of the area.
+
+    Args:
+        deriv_At (:obj:`numpy.array`): Derivative of total area.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+
+    Returns:
+        Density filter applied to the derivative values.
+    """
+    new_deriv_At = np.empty(deriv_At.shape)
+    for el in range(len(deriv_At)):
+        H_el = H[el, :].data
+        idx = neighbors[el, :].data
+        Hj = 0
+        aux = 0
+        for i in range(len(idx)):
+            nn = idx[i]
+            Hj = np.sum(H[nn, :])   
+            aux += (1/Hj) * H_el[i] * deriv_At[nn]
+        new_deriv_At[el] = aux
+    return new_deriv_At
+
+def density_filter(deriv_f, H, neighbors):
+    """ Apply the density filter to the derivative of the function.
+
+    Args:
+        deriv_f (:obj:`numpy.array`): Derivative of the function.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+
+    Returns:
+        Density filter applied to the derivative values.
+    """
+    new_deriv_f = np.empty(deriv_f.shape)    
+    for el in range(deriv_f.shape[0]):
+        H_el = H[el, :].data
+        idx = neighbors[el, :].data
+        Hj = 0
+        aux = 0
+        for i in range(len(idx)):
+            nn = idx[i]
+            Hj = np.sum(H[nn, :])   
+            aux += (1/Hj) * H_el[i] * deriv_f[nn, 0]
+        new_deriv_f[el] = aux   
+    return new_deriv_f
+
+def sensitivity_filter(deriv_f, H, neighbors, xval, radius):
+    """ Apply the sensitivity filter to the derivative of the function.
+
+    Args:
+        deriv_f (:obj:`numpy.array`): Derivative of the function.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element. 
+
+    Returns:
+        Sensitivity filter applied to the derivative values.
+    """
+    aux1 = H.multiply(xval[neighbors.toarray().flatten()].reshape(H.shape))
+    aux2 = aux1.multiply(deriv_f[neighbors.toarray().flatten()].reshape(H.shape))
+    aux3 = 1/np.multiply(np.sum(H, axis=1), xval)
+    new_deriv = np.multiply(aux3, np.sum(aux2, axis=1))
+    return np.asarray(new_deriv)
+
+def dens_dconstr(dfdx, constr_func, H, neighbors, radius):
+    """ Apply the density filter to the derivative of the constraint.
+
+    Args:
+        dfdx (:obj:`numpy.array`): Derivative of the constraint.
+        constr_func (:obj:`list`): constraint functions applied.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
+
+    Returns:
+        Density filter applied to the derivative values.
+    """
+    for i in range(len(constr_func)):
+        if constr_func[i] == 'Area':
+            dfdx[i, :] = dfAt_density(dfdx[i, :], H, neighbors)
+
+        if constr_func[i] == 'R Ratio':
+            dfdx[i, :] = density_filter(dfdx[i, :].reshape(-1, 1), H, neighbors).reshape(-1)            
+    return dfdx
+
+def sens_dconst(dfdx, constr_func, H, neighbors, xval, radius):
+    """ Apply the sensitivity filter to the derivative of the constraint.
+
+    Args:
+        dfdx (:obj:`numpy.array`): Derivative of the constraint.
+        constr_func (:obj:`list`): constraint functions applied.
+        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
+        neighbors (:obj:`csc_matrix`): Neighbors of each element.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
+
+    Returns:
+        Sensitivity filter applied to the derivative values.
+    """
+    for i in range(len(constr_func)):
+        if constr_func[i] == 'R Ratio':
+            dfdx[i, :] = sensitivity_filter(dfdx[i, :], H, neighbors, xval, radius)[:, 0]
+    return dfdx

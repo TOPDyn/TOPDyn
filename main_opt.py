@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # Weight at objective function
     n1 = 1
     # Method iterations
-    max_iter = 50
+    max_iter = 100
     # Factor applied in the radius
     fac_ratio = 1.1 #2.1
     # If not None is used mode superposition method
@@ -44,12 +44,12 @@ if __name__ == "__main__":
     # Frequency optimized for func_name
     freq1 = 500
     # Frequency response plot
-    freq_rsp = [] #[0, 4000, 50]
+    freq_rsp = [0, 4000, 50]
     # If False use sensitivity filter
     dens_filter = True
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
-    # Constraint - The first value in the list is used to define the initial value of xval
+    # Constraint - The first function in the list is used to define the initial value of xval
     constr_func = ['Area']
     constr_values = [50]
     # Plot mesh  
@@ -87,6 +87,3 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.savefig('todospequenos' + ".eps")   
     #plt.show()
-
-
-    #beam.main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, mesh_deform=mesh_deform, factor=factor, max_iter=max_iter, save=save, timing=timing)

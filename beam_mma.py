@@ -27,10 +27,10 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
         restri_matrix (:obj:`numpy.array`, optional): The columns are respectively node, x direction, y direction. Defaults to None. 
         freq1 (:obj:`int`, optional): Optimized frequency. Defaults to 180.
-        constr_func (:obj:`list`, optional): Restriction functions applied. Defaults to 'Area'.
+        constr_func (:obj:`list`, optional): Constraint functions applied. Defaults to 'Area'.
             It can be: 'Area' or 'R Ratio'.
             The first function in the list will be used to define the initial value of xval.
-        constr_values (:obj:`list`, optional): Values of restriction functions applied. Defaults to 50.
+        constr_values (:obj:`list`, optional): Values of constraint functions applied. Defaults to 50.
             Value in position i relates to the function in position i of the list constr_func.
             It can be a maximum of 4 values.
         n1 (:obj:`float`, optional): Weight n1 used in func_name. Defaults to 1.
@@ -132,12 +132,9 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         fval, dfdx = opt.apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min, area, xnew, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega1_par, const_func, free_ind)
         # Objective function      
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
+        f0_scale = f0val
         # Derivative
         df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, free_ind)
-        # Normalization
-        f0_scale = f0val
-        f0val = n1 * 100 * f0val/f0_scale
-        df0dx = n1 * 100 * df0dx/f0_scale
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
             stif_matrix, mass_matrix, dyna_stif, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega2_par, xnew, x_min, p_par, q_par)
@@ -149,21 +146,36 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func)
             # Derivative
             df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, free_ind)
-            # Normalization
-            f0_scale_n2 = f0val2
-            f0val2 = (1 - abs(n1)) * 100 * f0val2/f0_scale_n2
-            df0dx2 = (1 - abs(n1)) * 100 * df0dx2/f0_scale_n2
+            # Filter
+            if dens_filter:
+                dfdx, df0dx, df0dx2 = opt.new_density_filter(H, neighbors, dfdx, df0dx, df0dx2)
+            else:
+                dfdx, df0dx, df0dx2 = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2)
+            # testes
+            # dfdx_or = opt.dens_dconstr(dfdx, constr_func, H, neighbors, radius)
+            # df0dx_or = opt.density_filter(df0dx, H, neighbors) 
+            # dfdx_or = opt.sens_dconst(dfdx, constr_func, H, neighbors, xval, radius)
+            # df0dx_or = opt.sensitivity_filter(df0dx, H, neighbors, xval, radius)
+            # df0dx2_or = opt.sensitivity_filter(df0dx2, H, neighbors, xval, radius)
+            # print((dfdx_new == dfdx_or).all())
+            # print((df0dx_new == df0dx_or).all())
+            # print((df0dx2_new == df0dx2_or).all())
+            # print('#############\n')
+            # Normalize multiobjective
+            f0_scale_n2  = f0val2
+            f0val2, df0dx2 = opt.normalize(1 - abs(n1), f0_scale_n2, f0val2, df0dx2)
+            f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)
             # Sum of functions and derivatives
             f0val = f0val + f0val2
             df0dx = df0dx + df0dx2
-        # Apply density filter
-        if dens_filter:
-            dfdx = opt.dens_dconstr(dfdx, constr_func, H, neighbors, radius)
-            df0dx = opt.density_filter(df0dx, H, neighbors) 
         else:
-            dfdx = opt.sens_dconst(dfdx, constr_func, H, neighbors, xval, radius)
-            df0dx = opt.sensitivity_filter(df0dx, H, neighbors, xval, radius)
-            
+            # Filter
+            if dens_filter:
+                dfdx, df0dx, _ = opt.new_density_filter(H, neighbors, dfdx, df0dx)
+            else:
+                dfdx, df0dx, _ = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx)
+            # Normalize objective f
+            f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)   
         innerit = 0
         # Log
         set_logger(logger, outeriter, innerit, f0val, fval, xval, natural_freqs)
@@ -214,9 +226,6 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
         # Derivative
         df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min, xnew, free_ind)
-        # Normalization
-        f0val = n1 * 100 * f0val/f0_scale
-        df0dx = n1 * 100 * df0dx/f0_scale
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
             stif_matrix, mass_matrix, dyna_stif, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega2_par, xnew, x_min, p_par, q_par)
@@ -228,19 +237,25 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func)
             # Derivative
             df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min, xnew, free_ind)
-            # Normalization
-            f0val2 = (1 - abs(n1)) * 100 * f0val2/f0_scale_n2
-            df0dx2 = (1 - abs(n1)) * 100 * df0dx2/f0_scale_n2
+            # Filter
+            if dens_filter:
+                dfdx, df0dx, df0dx2 = opt.new_density_filter(H, neighbors, dfdx, df0dx, df0dx2)
+            else:
+                dfdx, df0dx, df0dx2 = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2)
+            # Normalize multiobjective
+            f0val2, df0dx2 = opt.normalize(1 - abs(n1), f0_scale_n2, f0val2, df0dx2)
+            f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)
             # Sum of functions and derivatives
             f0val = f0val + f0val2
             df0dx = df0dx + df0dx2
-        # Apply density filter
-        if dens_filter:
-            dfdx = opt.dens_dconstr(dfdx, constr_func, H, neighbors, radius)
-            df0dx = opt.density_filter(df0dx, H, neighbors)
         else:
-            dfdx = opt.sens_dconst(dfdx, constr_func, H, neighbors, xval, radius)
-            df0dx = opt.sensitivity_filter(df0dx, H, neighbors, xval, radius)
+            # Filter
+            if dens_filter:
+                dfdx, df0dx, _ = opt.new_density_filter(H, neighbors, dfdx, df0dx)
+            else:
+                dfdx, df0dx, _ = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx)
+            # Normalize objective f
+            f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)   
         # The residual vector of the KKT conditions is calculated
         residu,kktnorm,residumax = \
             kktcheck(m,n,xmma,ymma,zmma,lam,xsi,eta,mu,zet,s,xmin,xmax,df0dx,fval,dfdx,a0,a,c,d)
