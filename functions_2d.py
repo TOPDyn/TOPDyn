@@ -69,7 +69,7 @@ def matricesQ4(ee, coord, connect, E, v, rho):
         Ke += B.T@(cttv@B)*(detJAC*wps)
         Me += rho*N.T@N*(detJAC*wps)
         #
-    return Ke, Me
+    return Ke.real, Me.real
 
 def generate_xy_coord(lx, ly, nelx, nely):
     dx, dy = lx/nelx, ly/nely

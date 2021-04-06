@@ -59,7 +59,31 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
 
     return ax
 
-def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xval, lx, ly, nelx, nely):
+def legend_constr(constr_func):
+    ''' Define the labels  of the constraint functions.
+    Args:
+        constr_func (:obj:`list`): Restriction functions applied.
+
+    Returns:
+        Numpy array with the labels.
+    '''
+    label = np.empty(len(constr_func), dtype=object)
+    func, index = np.unique(constr_func, return_index=True)
+    aux = np.arange(0, len(constr_func))
+    aux2 = np.setdiff1d(aux, index)
+    label[aux2] = None
+    i = 0
+    for f in func:
+        if f =='Area':
+            label[index[i]] = 'constraint - area'
+        elif f == 'R Ratio':
+            label[index[i]] = 'constraint - r ratio'
+        elif f == 'Compliance':
+            label[index[i]] = 'constraint - compliance'
+        i += 1
+    return label
+
+def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xval, lx, ly, nelx, nely, label):
     """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
 
     Args:
@@ -68,6 +92,7 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, 
         list_f0val (:obj:`list`): All objective function values.
         list_fvals (:obj:`list`): All constraint function values.
         func_name (:obj:`str`): Objective function name.
+        label (:obj:`numpy.array`): Label of the constraint functions.
 
     Returns:
         Principal window, convergece graph, optimezed part.
@@ -91,15 +116,15 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, 
     p2.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2}, name=func_name.lower())
     p2.setLabel('left', func_name.lower())
     p2.setLabel('bottom', "iteration") 
-
+    #
     colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
-    if 'Area' in constr_func:
-        ind = constr_func.index("Area")
-        p2.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2}, name='constraint - area')
-        
-    if 'R Ratio' in constr_func:
-        ind = constr_func.index("R Ratio")
-        p2.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name='constraint - r ratio')
+    for ind, f in enumerate(constr_func):
+        if f == 'Area':
+            p2.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2}, name=label[ind])
+        elif f == 'R Ratio':
+            p2.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name=label[ind])
+        elif f == 'Compliance':
+            p2.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2}, name=label[ind])
     pg.QtGui.QApplication.processEvents()
     return win, p2, grid
 
@@ -122,7 +147,7 @@ def simple_window():
 
     return win, grid
 
-def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
+def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, label):
     """ Generate a window to plot the convergence graph.
 
     Args:
@@ -131,6 +156,7 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
         list_f0val (:obj:`list`): All objective function values.
         list_fvals (:obj:`list`): All constraint function values.
         func_name (:obj:`str`): Objective function name.
+        label (:obj:`numpy.array`): Label of the constraint functions.
 
     Returns:
         Principal window, convergece graph.
@@ -144,14 +170,13 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name):
     p.setLabel('left', func_name.lower())
     p.setLabel('bottom', "iteration") 
     colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
-    if 'Area' in constr_func:
-        ind = constr_func.index("Area")
-        p.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2}, name='constraint - area')
-        
-    if 'R Ratio' in constr_func:
-        ind = constr_func.index("R Ratio")
-        p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name='constraint - r ratio')
-
+    for ind, f in enumerate(constr_func):
+        if f == 'Area':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2}, name=label[ind])
+        elif f == 'R Ratio':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name=label[ind])
+        elif f == 'Compliance':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2}, name=label[ind])
     return win, p
 
 def set_coord_grid(lx, ly, nelx, nely):
@@ -163,7 +188,7 @@ def set_coord_grid(lx, ly, nelx, nely):
 def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
     grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
     
-def convergence(constr_func, p, list_iter, list_f0val, list_fvals):
+def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
     """ Update the values of the objective function and the constraint function to plot the convergence graph.
 
     Args:
@@ -178,14 +203,13 @@ def convergence(constr_func, p, list_iter, list_f0val, list_fvals):
     """
     p.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2})
     colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
-    if 'Area' in constr_func:
-        ind = constr_func.index("Area")
-        p.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2})
-        
-    if 'R Ratio' in constr_func:
-        ind = constr_func.index("R Ratio")
-        p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2})
-
+    for ind, f in enumerate(constr_func):
+        if f == 'Area':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2})
+        elif f == 'R Ratio':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2})
+        elif f == 'Compliance':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2})
     return p
 
 def save_fig(opt_part, convergence):

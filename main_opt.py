@@ -4,7 +4,6 @@ import functions_opt as fc_opt
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-
     # If True is used the mma method. If False use the gcmma method.
     mma = True
     nelx, nely = 40, 20
@@ -13,7 +12,8 @@ if __name__ == "__main__":
     rho = 7860
     E = 210e9
     v = 0.3
-    x_min = 1e-6
+    x_min_m = 1e-6
+    x_min_k = 1e-6
     alpha_par, beta_par, eta_par = 0, 1e-5, 0
     alpha_plot, beta_plot, eta_plot = 0, 1e-6, 0
     p_par = 3
@@ -49,9 +49,11 @@ if __name__ == "__main__":
     dens_filter = True
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
-    # Constraint - The first function in the list is used to define the initial value of xval
-    constr_func = ['Area']
-    constr_values = [50]
+    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance' -> (constraint value, frequency)
+    constr_func = [ 'Area', 'Compliance']
+    constr_values = [50, (20, 0)]
+    # Está comentado no while ainda!
+    chtol = 1e-4
     # Plot mesh  
     mesh_deform = True 
     factor = 500
@@ -60,30 +62,4 @@ if __name__ == "__main__":
     #
     timing = False
 
-    fc_opt.exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
-
-    # interval = np.arange(freq_rsp[0], freq_rsp[1] + 1, freq_rsp[2])
-    # func_vector = np.empty((len(interval), 5), dtype=complex)
-    # origin = fc_opt.freq_resp(freq_rsp, const_func, constr_func, constr_values, force_matrix, restri_matrix, coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha_plot, beta_plot, eta_plot, x_min, p_par, q_par, func_name, None,None)
-    # for i, modes in enumerate([1,2,3]):
-    #     func_vector[:, i] = fc_opt.freq_resp(freq_rsp, const_func, constr_func, constr_values, force_matrix, restri_matrix, coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha_plot, beta_plot, eta_plot, x_min, p_par, q_par, func_name, modes, save=None)
-        
-    #     fig, ax = plt.subplots()
-    #     ax.plot(interval, origin.real, label='original')
-    #     ax.plot(interval, func_vector[:, i].real, label=str(modes) + 'modes')
-    #     ax.set_xlabel('frequency [Hz]', fontsize=16)
-    #     ax.set_ylabel(func_name.lower(), fontsize=16)
-    #     ax.set_yscale('log')
-    #     plt.legend()
-    #     plt.savefig(str(modes) + ".eps")
-
-    # fig, ax = plt.subplots()
-    # ax.plot(interval, origin.real, label='original')
-    # for i in range(3):
-    #     ax.plot(interval, func_vector[:, i].real, label=str(modes) + 'modes')
-    # ax.set_xlabel('frequency [Hz]', fontsize=16)
-    # ax.set_ylabel(func_name.lower(), fontsize=16)
-    # ax.set_yscale('log')
-    # plt.legend()
-    # plt.savefig('todospequenos' + ".eps")   
-    #plt.show()
+    fc_opt.exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
