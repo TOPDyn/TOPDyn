@@ -814,6 +814,8 @@ def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coo
     return fval, dfdx
 
 def new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly,  ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega_par, const_func, free_ind, gradients=True):
+    ''' Calculates the constraint functions and derivatives. 
+    '''
     i = 0
     for ind in range(len(constr_func)):
         if constr_func[ind] == 'Area':
@@ -860,15 +862,25 @@ def new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, l
     return fval, dfdx
 
 def constr_compliance(constr_values, constr_func):
-    freq_comp_constr = np.empty(2)
+    ''' Separates the constraint value and the frequency of the compliance constraint.
+    Args:
+        constr_values (:obj:`list`): Values of constraint functions applied.
+        constr_func (:obj:`list`)  : Constraint functions applied.
+
+    Returns:
+        constr_values, freq_comp_constr, ind_comp
+    '''
+    freq_comp_constr    = np.empty(2)
     freq_comp_constr[:] = None
-    ind = 0
+    ind_comp = []
+    ind      = 0
     for i in range(len(constr_func)):
         if constr_func[i] == 'Compliance':
             freq_comp_constr[ind] = constr_values[i][1]
-            constr_values[i]    = constr_values[i][0]
+            constr_values[i]      = constr_values[i][0]
+            ind_comp.append(i)
             ind += 1
-    return constr_values, freq_comp_constr
+    return constr_values, freq_comp_constr, ind_comp
 
 def update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values):
     """ Add new values to list of functions to plot convergence
@@ -1128,21 +1140,6 @@ def get_first_freq(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=No
     print(freq)
     return freq
 
-def freq_resp(freq_rsp, const_func, constr_func, constr_values, force_matrix, restri_matrix, coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha_plot, beta_plot, eta_plot, x_min_m, x_min_k, p_par, q_par, func_name, modes,save):
-    
-    initial_xval = set_initxval(constr_func, constr_values)
-    xval = initial_xval * np.ones((nelx * nely, 1))
-    load_vector  = fc.get_load_vector(nelx, nely, force_matrix)
-    restricted_dofs = fc.get_dofs(restri_matrix)
-    free_ind = fc.remove_dofs(nelx, nely, restricted_dofs)
-    ngl = 2 * ((nelx + 1) * (nely + 1))
-    freq_range = freq_rsp[:2]
-    delta = freq_rsp[2]
-    f_original = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
-    plt_opt.freqresponse(freq_range, delta, f_original.real, func_name, save)
-    return f_original
-
-
 def dfAt_density(deriv_At, H, neighbors):
     """ Apply the density filter to the derivative of the area.
 
@@ -1209,44 +1206,3 @@ def sensitivity_filter(deriv_f, H, neighbors, xval, radius):
     aux3 = 1/np.multiply(np.sum(H, axis=1), xval)
     new_deriv = np.multiply(aux3, np.sum(aux2, axis=1))
     return np.asarray(new_deriv)
-
-def dens_dconstr(dfdx, constr_func, H, neighbors, radius):
-    """ Apply the density filter to the derivative of the constraint.
-
-    Args:
-        dfdx (:obj:`numpy.array`): Derivative of the constraint.
-        constr_func (:obj:`list`): constraint functions applied.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
-
-    Returns:
-        Density filter applied to the derivative values.
-    """
-    for i in range(len(constr_func)):
-        if constr_func[i] == 'Area':
-            dfdx[i, :] = dfAt_density(dfdx[i, :], H, neighbors)
-
-        if constr_func[i] == 'R Ratio':
-            dfdx[i, :] = density_filter(dfdx[i, :].reshape(-1, 1), H, neighbors).reshape(-1)            
-    return dfdx
-
-def sens_dconst(dfdx, constr_func, H, neighbors, xval, radius):
-    """ Apply the sensitivity filter to the derivative of the constraint.
-
-    Args:
-        dfdx (:obj:`numpy.array`): Derivative of the constraint.
-        constr_func (:obj:`list`): constraint functions applied.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
-
-    Returns:
-        Sensitivity filter applied to the derivative values.
-    """
-    for i in range(len(constr_func)):
-        if constr_func[i] == 'R Ratio':
-            dfdx[i, :] = sensitivity_filter(dfdx[i, :], H, neighbors, xval, radius)[:, 0]
-    return dfdx

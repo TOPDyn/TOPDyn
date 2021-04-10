@@ -28,11 +28,21 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
         restri_matrix (:obj:`numpy.array`, optional): The columns are respectively node, x direction, y direction. Defaults to None. 
         freq1 (:obj:`int`, optional): Optimized frequency. Defaults to 180.
         constr_func (:obj:`list`, optional): Constraint functions applied. Defaults to 'Area'.
-            It can be: 'Area' or 'R Ratio'.
+            It can be: 'Area', 'R Ratio' or 'Compliance.
             The first function in the list will be used to define the initial value of xval.
+            If the same function is passed 2x,the box constraint is used. Negative values indicate the lower constraint.
+            Example:
+                constr_func   = ['Area', 'Area']
+                constr_values = [50, -20]
         constr_values (:obj:`list`, optional): Values of constraint functions applied. Defaults to 50.
             Value in position i relates to the function in position i of the list constr_func.
-            It can be a maximum of 4 values.
+            It can be a maximum of 6 values.
+            constr_values[i] < 0 = lower constraint
+            constr_values[i] > 0 = upper constraint
+            If 'Compliance' is passed a tuple with constraint value and frequency respectively.
+            Example: 
+                constr_func   = ['Area', 'Area', 'Compliance, 'R Ratio]
+                constr_values = [50, -20, (50, 1000), 10]
         n1 (:obj:`float`, optional): Weight n1 used in func_name. Defaults to 1.
             If n1 < 0: Maximize objective function
             If n1 > 0: Minimize objective function
@@ -79,7 +89,10 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
     natural_freqs = None
     contr_comp = 'Compliance' in constr_func
     if contr_comp:
-        constr_values, freq_comp_constr = opt.constr_compliance(constr_values, constr_func)
+        constr_values, freq_comp_constr, ind_comp = opt.constr_compliance(constr_values, constr_func)
+        f_scale_comp = np.empty(len(ind_comp))
+    else:
+        freq_comp_constr = None
     # Beam initial settings
     m = len(constr_func)
     n = nelx * nely
@@ -140,6 +153,9 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
             disp_vector, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
         # Area function
         fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
+        if contr_comp:
+            f_scale_comp[:] = fval[ind_comp, 0]
+            fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
         # Objective function      
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
         f0_scale = f0val
@@ -223,6 +239,8 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
             disp_vector, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
         # Area function
         fvalnew, _ = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind, gradients=False)
+        if contr_comp:
+            fvalnew[ind_comp, 0] = 100 * fvalnew[ind_comp, 0]/f_scale_comp
         # Objective function 
         f0valnew, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
         # Normalize
@@ -266,6 +284,8 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
                     disp_vector, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
                 # Area function
                 fvalnew, _ = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind, gradients=False)
+                if contr_comp:
+                    fvalnew[ind_comp, 0] = 100 * fvalnew[ind_comp, 0]/f_scale_comp
                 # Objective function      
                 f0valnew, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
                 # Normalization
@@ -301,6 +321,8 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
             disp_vector, t_harmonic = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
         # Area function
         fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
+        if contr_comp:
+            fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
         # Objective function 
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
         # Derivative

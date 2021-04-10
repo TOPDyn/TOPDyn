@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # Weight at objective function
     n1 = 1
     # Method iterations
-    max_iter = 100
+    max_iter = 70
     # Factor applied in the radius
     fac_ratio = 1.1 #2.1
     # If not None is used mode superposition method
@@ -50,8 +50,8 @@ if __name__ == "__main__":
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
     # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance' -> (constraint value, frequency)
-    constr_func = [ 'Area', 'Compliance']
-    constr_values = [50, (20, 0)]
+    constr_func = [ 'Area', 'Area', 'Compliance']
+    constr_values = [50, -20, (20, 0)]
     # Está comentado no while ainda!
     chtol = 1e-4
     # Plot mesh  
