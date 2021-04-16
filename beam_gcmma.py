@@ -14,7 +14,7 @@ import functions_opt as opt
 import plots_opt as plt_opt
 from mma_opt import gcmmasub, subsolv, kktcheck, asymp, concheck, raaupdate
 
-def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
+def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     """ 
     Args:
         nelx (:obj:`int`): Number of elements on the X-axis.
@@ -65,6 +65,8 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
         eta_plot (:obj:`float`, optional): Damping coefficient to generate the graph. Defaults to 0.
         p_par (:obj:`int`, optional): Penalization power to stiffness. Defaults to 3.
         q_par (:obj:`int`, optional): Penalization power to mass. Defaults to 1. 
+        passive_coord (:obj:`tuple`): Region that the shape will not be changed. Defaults to None. 
+                Example: ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))
         freq_rsp (:obj:`list`, optional): If len is 3, a frequency response graph of the original and optimized structure is generated. Defaults to [].
             First value is the minimum frequency of the graph.
             Second value is the maximum frequency of the graph.
@@ -93,6 +95,9 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
         f_scale_comp = np.empty(len(ind_comp))
     else:
         freq_comp_constr = None
+    # Calculate neighbors and distance
+    radius = fac_ratio * lx/nelx
+    neighbors, H, centroids = opt.get_neighbors_radius(nelx, nely, coord, connect, radius)	
     # Beam initial settings
     m = len(constr_func)
     n = nelx * nely
@@ -109,6 +114,10 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
     xold2 = xval.copy()
     xmin = 0.00 * eeen.copy()
     xmax = 1 * eeen
+    #
+    if passive_coord is not None:
+        xmin, xval = opt.set_passive_el(xmin, xval, passive_coord, centroids)
+    #
     low = xmin.copy()
     upp = xmax.copy()
     c = 1000*eeem 
@@ -135,9 +144,6 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
         free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
     # Calculate force
     load_vector = fc.get_load_vector(nelx, nely, force_matrix)
-    # Calculate neighbors and distance
-    radius = fac_ratio * lx/nelx
-    neighbors, H = opt.get_neighbors_radius(nelx, nely, coord, connect, radius)	
     # Calculate area and derivative
     area = opt.calc_A(coord, connect[:, 1:] - 1)
     # Calculate function values and gradients of the objective and constraints functions

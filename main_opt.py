@@ -1,7 +1,6 @@
 import numpy as np
 import functions_2d as fc
 import functions_opt as fc_opt
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # If True is used the mma method. If False use the gcmma method.
@@ -50,8 +49,10 @@ if __name__ == "__main__":
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
     # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance' -> (constraint value, frequency)
-    constr_func = [ 'Area', 'Area', 'Compliance']
-    constr_values = [50, -20, (20, 0)]
+    constr_func = [ 'Area']
+    constr_values = [50]
+    #
+    passive_coord = ((0, 0.1), (0, 0.5)) # ((x_initial, x_final), (y_initial, y_final))
     # Está comentado no while ainda!
     chtol = 1e-4
     # Plot mesh  
@@ -62,4 +63,4 @@ if __name__ == "__main__":
     #
     timing = False
 
-    fc_opt.exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
+    fc_opt.exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)

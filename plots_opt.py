@@ -6,29 +6,6 @@ import matplotlib.pyplot as plt
 from PyQt5 import QtCore, QtGui
 from functions_2d import generate_xy_coord
 
-def freqresponse(freq_range, delta, obj_func, func_name, save=None):
-    """ Plot the frequency response.
-
-    Args:
-        freq_range (:obj:`list`): Range of frequencies analyzed.
-            First value is the minimum frequency.
-            Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the function. 
-        obj_func (:obj:`list`): Objective function values.
-        func_name (:obj:`str`): Objective function name.
-            It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
-        save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
-    """
-    fig, ax = plt.subplots()
-    freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
-    ax.plot(freq, obj_func.real)
-    ax.set_xlabel('frequency [Hz]', fontsize=16)
-    ax.set_ylabel(func_name.lower(), fontsize=16)
-    ax.set_yscale('log')
-    if save is not None:
-        plt.savefig(save + ".eps")
-    plt.show()
-
 def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
     """ Plot the frequency response of the original and the optimized function.
 
@@ -41,7 +18,7 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
         oldf (array): Original function.
         func_name (:obj:`str`): Objective function name.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
-        save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
+        save (:obj:`bool`): True for save the graphic in PNG. Defaults to False.
 
     Returns:
         A single Axes object from matplotlib.pyplot.
@@ -224,3 +201,45 @@ def save_fig(opt_part, convergence):
 
     exporter2 = pg.exporters.ImageExporter(convergence)
     exporter2.export('convergence.png')
+
+def freqrsp_modes(freq_range, delta, newf, oldf, modes, func_name, save):
+    """ Plot the frequency response of the function with multiple modes.
+
+    Args:
+        freq_range (:obj:`list`): Range of frequencies analyzed.
+            First value is the minimum frequency.
+            Second value is the maximum frequency.
+        delta (:obj:`int`): Step between each calculation of the function. 
+        newf (:obj:`numpy.array`): Optimized function.
+        oldf (:obj:`numpy.array`): Original function.
+        modes (:obj:`list`): Analyzed modes. 
+        func_name (:obj:`str`): Objective function name.
+            It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
+        save (:obj:`bool`): True for save the graphic in PNG. Defaults to False.
+    """
+    freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    
+    for i, mode in enumerate(modes):
+        plt.figure(i+1)
+        plt.plot(freq, oldf.real, label='original')
+        plt.plot(freq, newf[:, i].real, label=str(mode) + ' mode')
+        plt.title(str(mode) + ' mode')
+        plt.xlabel('frequency [Hz]', fontsize=16)
+        plt.ylabel(func_name.lower(), fontsize=16)
+        plt.yscale('log')
+        plt.legend()
+        if save:
+            plt.savefig(str(mode) + ".eps")
+
+    plt.figure(i+1)
+    #plt.plot(freq, oldf.real, label='original')
+    for i, mode in enumerate(modes):
+        plt.plot(freq, newf[:, i].real, label=str(mode) + ' mode')
+        plt.xlabel('frequency [Hz]', fontsize=16)
+        plt.ylabel(func_name.lower(), fontsize=16)
+        plt.yscale('log')
+    plt.title('All modes')
+    plt.legend()
+    if save:
+        plt.savefig('all' + ".eps")   
+    plt.show()

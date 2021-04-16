@@ -2,18 +2,18 @@ import cmath
 import numpy as np
 from time import time
 import functions_2d as fc
+import plots_opt as plt_opt
 from scipy.linalg import eigh
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
-#import plots as plt_opt TODO: remover esse aqui da função depois 
 
-def exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
+def exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     if mma:
         import beam_mma as beam
-        beam.main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
+        beam.main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
     else:
         import beam_gcmma as beam
-        beam.main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
+        beam.main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
 
 def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega_par, xval, x_min_m, x_min_k, p_par, q_par):
     """ Assembly matrices.
@@ -483,9 +483,7 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
     dofs = 2
     ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
                             dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    
     for el in range(len(connect)):
-    
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
         #dKe1 = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke.conjugate()
@@ -499,7 +497,6 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
         deriv_ep[el, 0] = (1/4) * (disp_vector[ind].conjugate()@dKe@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
         #Log Scale
         deriv_ep[el, 0] = 10.0*deriv_ep[el, 0]*np.log10(np.exp(1))/fvirg
-
     return deriv_ep.real
 
 def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, fvirg):
@@ -530,9 +527,7 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
     dofs = 2
     ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
                             dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    
     for el in range(len(connect)):
-    
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
         dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
@@ -545,7 +540,6 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
         deriv_ek[el, 0] = ((omega_par**2)/4) * (disp_vector[ind].conjugate()@dMe@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
         #Log Scale
         deriv_ek[el, 0] = 10.0*deriv_ek[el, 0]*np.log10(np.exp(1))/fvirg
-
     return deriv_ek.real
 
 def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, fvirg, elastic_p, kinetic_e):
@@ -578,9 +572,7 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par
     dofs = 2
     ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
                             dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    
     for el in range(len(connect)):
-    
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
         ind = ind_dofs[el, :]
         dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
@@ -594,7 +586,6 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par
         deriv_R[el, 0] = 1/(4*kinetic_e) * (disp_vector[ind].conjugate()@(dKe - (omega_par**2)*fvirg*dMe)@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
         #Log Scale
         deriv_R[el, 0] = 10.0*deriv_R[el, 0]*np.log10(np.exp(1))/fvirg
-
     return deriv_R.real
 
 def set_deriv(dfdx, df0dx, df0dx2):
@@ -688,130 +679,6 @@ def new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2=None):
         aux2 = aux1.multiply(deriv_f[neighbors.toarray().flatten(), col].reshape(H.shape))
         new_deriv_f[:, col] = np.asarray(np.multiply(aux3, np.sum(aux2, axis=1)))[:,0]
     return out_deriv(new_deriv_f, dfdx, df0dx2)
-
-def area_constr(fval, dfdx, ind, constr_values, lx, ly, area, xval, gradients):
-    """ Calculates the function and derivative of the area.
-
-    Args:
-        fval (:obj:`numpy.array`): Value of the constraint function.
-        dfdx (:obj:`numpy.array`): Value of the constraint derivative.
-        ind (:obj:`int`): Function index in the constr_func list.
-        constr_values (:obj:`list`): Values of constraint functions applied. 
-        lx (:obj:`float`): x-axis length.
-        ly (:obj:`float`): x-axis length.
-        area (:obj:`float`): Total area.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        gradients (:obj:`float`): If True calculates the derivatives. Defaults to True. 
-       
-    Returns:
-        A tuple of numpy.array with function and derivative values.         
-    """
-    fval[ind, 0] = total_area(lx, ly, area, xval)
-    if gradients:
-        dfdx[ind, :] = 100/(lx * ly) * area.reshape(1, -1)
-    if constr_values[ind] < 0:
-        fval[ind, 0] *= -1 
-        if gradients:
-            dfdx[ind, :] *= -1
-    fval[ind, 0] -= constr_values[ind]
-    return fval, dfdx
-
-def ratio_constr(fval, dfdx, ind, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind, gradients):
-    """ Calculates the function and derivative of the R Ratio.
-
-    Args:
-        fval (:obj:`numpy.array`): Constraint function.
-        dfdx (:obj:`numpy.array`): Values of the constraint derivative.
-        ind (:obj:`int`): Function index in the constr_func list.
-        constr_func (:obj:`list`): Constraint functions applied.
-        constr_values (:obj:`list`): Values of constraint functions applied. 
-        nelx (:obj:`int`): Number of elements on the x-axis.
-        nely (:obj:`int`): Number of elements on the y-axis.
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio. 
-        rho (:obj:`float`): Density.
-        alpha_par (:obj:`float`): Damping coefficient proportional to mass.
-        beta_par (:obj:`float`): Damping coefficient proportional to stiffness.  
-        p_par (:obj:`int`): Penalization power to stiffness.
-        q_par (:obj:`int`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        const_func (:obj:`float`):
-        free_ind (:obj:`numpy.array`): DOFs free.
-        gradients (:obj:`float`): If True calculates the derivatives. Defaults to True. 
-       
-    Returns:
-        A tuple of numpy.array with function and derivative values.         
-    """
-    fval[ind, 0], fvirg = R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func)
-    if gradients:
-        elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
-        if omega_par == 0:
-            omega_par = 1e-12
-        kinetic_e = ((1/4) * omega_par**2 * (disp_vector.conjugate()@mass_matrix@disp_vector)).real
-        lam_par = lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind)
-        dfdx[ind, :] = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par, fvirg, elastic_p, kinetic_e).reshape(nelx*nely)
-    if constr_values[ind] < 0:
-        fval[ind, 0] *= -1 
-        if gradients:
-            dfdx[ind, :] *= -1 
-    fval[ind, 0] -= constr_values[ind]
-    return fval, dfdx
-
-def apply_constr(fval, dfdx, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_m, x_min_k, area, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind, gradients=True):
-    """ Calculates the function and derivative of the constraint functions.
-
-    Args:
-        fval (:obj:`numpy.array`): Values of the constraint function.
-        dfdx (:obj:`numpy.array`): Values of the constraint derivative.
-        ind (:obj:`int`): Function index in the constr_func list.
-        constr_func (:obj:`list`): constraint functions applied.
-        constr_values (:obj:`list`): Values of constraint functions applied. 
-        nelx (:obj:`int`): Number of elements on the x-axis.
-        nely (:obj:`int`): Number of elements on the y-axis.
-        lx (:obj:`float`): x-axis length.
-        ly (:obj:`float`): x-axis length.
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio. 
-        rho (:obj:`float`): Density.
-        alpha_par (:obj:`float`): Damping coefficient proportional to mass.
-        beta_par (:obj:`float`): Damping coefficient proportional to stiffness.  
-        p_par (:obj:`int`): Penalization power to stiffness.
-        q_par (:obj:`int`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        area (:obj:`float`): Total area.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        const_func (:obj:`float`):
-        free_ind (:obj:`numpy.array`): DOFs free.
-        gradients (:obj:`float`, optional): If True calculates the derivatives. Defaults to True. 
-       
-    Returns:
-        A tuple of numpy.array with function and derivative values.         
-    """
-    for i in range(len(constr_func)):
-        if constr_func[i] == 'Area':
-            fval, dfdx = area_constr(fval, dfdx, i, constr_values, lx, ly, area, xval, gradients)
-        
-        if constr_func[i] == 'R Ratio':
-            fval, dfdx = ratio_constr(fval, dfdx, i, constr_values, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, const_func, free_ind, gradients)  
-
-    return fval, dfdx
 
 def new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly,  ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega_par, const_func, free_ind, gradients=True):
     ''' Calculates the constraint functions and derivatives. 
@@ -953,7 +820,7 @@ def get_neighbors_radius(nelx, nely, coord, connect, radius):
         radius (:obj:`float`): Radius to get elements in the vicinity of each element.
 
     Returns:
-        A tuple of sparse matrices with neighbors and H (radius - distance).
+        neighbors, H, centroids 
     """
     el_number = nelx * nely
     # 
@@ -986,7 +853,7 @@ def get_neighbors_radius(nelx, nely, coord, connect, radius):
             cols = aux
     H = csc_matrix((data, (ind_rows, ind_cols)), shape=(nelx*nely, cols))
     neighbors = csc_matrix((neighbors, (ind_rows, ind_cols)), shape=(nelx*nely, cols), dtype='int')
-    return neighbors, H
+    return neighbors, H, centroids
 
 def calc_xnew(H, neighbors, xval):
     """ Recalculate xval.
@@ -1020,6 +887,23 @@ def set_initxval(constr_func, constr_values):
     else:
         initial_xval = abs(constr_values[idx[0]])/100
     return initial_xval
+
+def set_passive_el(xmin, xval, passive_coord, centroids):
+    ''' Set the values of passive elements.
+        Args:
+            xmin (:obj:`numpy.array`): 
+            xval (:obj:`numpy.array`): Indicates where there is mass.
+            passive_coord (:obj:`tuple`): Region that the shape will not be changed.
+                Example: ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))
+            centroids (:obj:`numpy.array`): Coordinate (x,y) of the centroid of each element.
+
+        Returns:
+            A tuple with updated xmin and xval.
+    '''
+    mask = (centroids[:, 0] >= passive_coord[0][0]) & (centroids[:, 0] <= passive_coord[0][1]) & (centroids[:, 1] >= passive_coord[1][0]) & (centroids[:, 1] <= passive_coord[1][1])
+    xmin[mask] = 0.99
+    xval[mask] = 1
+    return xmin, xval
 
 def objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func):
     ''' Calculate objective function.
@@ -1106,103 +990,22 @@ def derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_m
         df0dx     = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xnew, disp_vector, lam_par, fvirg, elastic_p, kinetic_e)
     return df0dx
 
-def get_natural_freq(range_freq, delta, disp_vector):
-    """ Get the frequency with the maximum displacement.
+def freqrsp_multi_modes(modes, freq_rsp, constr_func, constr_values, load_matrix, restri_matrix, coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, x_min_m, x_min_k, p_par, q_par, func_name, const_func, save=False):
 
-    Args:
-        range_freq (:obj:`list`): The initial and final frequency.
-        delta (:obj:`int`): The step between each calculation of the displacement.
-        disp_vector (:obj:`numpy.array`): Displacement.
-    
-    Returns:
-        Maximum frequency.
-    """
-    x = np.arange(range_freq[0], range_freq[1] + 1, delta)
-    y = disp_vector
-    return  x[np.where(y == y.max())]
-
-def get_first_freq(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq_rsp=[0, 400, 5], constr_func=['Area'], constr_values=[50], const_func=100, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha=0, beta=5e-6, eta=0, p_par=3, q_par=1, save=True):
-        
-    coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely)
     initial_xval = set_initxval(constr_func, constr_values)
-    xval = initial_xval * np.ones((nelx * nely, 1))
-    load_vector = fc.get_load_vector(nelx, nely, force_matrix)
-
+    xval  = initial_xval * np.ones((nelx * nely, 1))
+    load_vector     = fc.get_load_vector(nelx, nely, load_matrix)
     restricted_dofs = fc.get_dofs(restri_matrix)
     free_ind = fc.remove_dofs(nelx, nely, restricted_dofs)
     ngl = 2 * ((nelx + 1) * (nely + 1))
-
-    disp_vector = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, 
-                xval, x_min_m, x_min_k, p_par, q_par, freq_rsp[:2], freq_rsp[2], func_name, const_func, modes,
-                load_vector, unrestricted_ind=free_ind)
-
-    freq = get_natural_freq(freq_rsp[:2], freq_rsp[2], disp_vector)
-    print(freq)
-    return freq
-
-def dfAt_density(deriv_At, H, neighbors):
-    """ Apply the density filter to the derivative of the area.
-
-    Args:
-        deriv_At (:obj:`numpy.array`): Derivative of total area.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-
-    Returns:
-        Density filter applied to the derivative values.
-    """
-    new_deriv_At = np.empty(deriv_At.shape)
-    for el in range(len(deriv_At)):
-        H_el = H[el, :].data
-        idx = neighbors[el, :].data
-        Hj = 0
-        aux = 0
-        for i in range(len(idx)):
-            nn = idx[i]
-            Hj = np.sum(H[nn, :])   
-            aux += (1/Hj) * H_el[i] * deriv_At[nn]
-        new_deriv_At[el] = aux
-    return new_deriv_At
-
-def density_filter(deriv_f, H, neighbors):
-    """ Apply the density filter to the derivative of the function.
-
-    Args:
-        deriv_f (:obj:`numpy.array`): Derivative of the function.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-
-    Returns:
-        Density filter applied to the derivative values.
-    """
-    new_deriv_f = np.empty(deriv_f.shape)    
-    for el in range(deriv_f.shape[0]):
-        H_el = H[el, :].data
-        idx = neighbors[el, :].data
-        Hj = 0
-        aux = 0
-        for i in range(len(idx)):
-            nn = idx[i]
-            Hj = np.sum(H[nn, :])   
-            aux += (1/Hj) * H_el[i] * deriv_f[nn, 0]
-        new_deriv_f[el] = aux   
-    return new_deriv_f
-
-def sensitivity_filter(deriv_f, H, neighbors, xval, radius):
-    """ Apply the sensitivity filter to the derivative of the function.
-
-    Args:
-        deriv_f (:obj:`numpy.array`): Derivative of the function.
-        H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
-        neighbors (:obj:`csc_matrix`): Neighbors of each element.
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        radius (:obj:`float`): Radius to get elements in the vicinity of each element. 
-
-    Returns:
-        Sensitivity filter applied to the derivative values.
-    """
-    aux1 = H.multiply(xval[neighbors.toarray().flatten()].reshape(H.shape))
-    aux2 = aux1.multiply(deriv_f[neighbors.toarray().flatten()].reshape(H.shape))
-    aux3 = 1/np.multiply(np.sum(H, axis=1), xval)
-    new_deriv = np.multiply(aux3, np.sum(aux2, axis=1))
-    return np.asarray(new_deriv)
+    #
+    freq_range = freq_rsp[:2]
+    delta = freq_rsp[2]    
+    #
+    rows = int((freq_rsp[1] - freq_rsp[0]) /freq_rsp[2] + 1)
+    func_vector = np.empty((rows, 5), dtype=complex)
+    origin = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, None, load_vector, unrestricted_ind=free_ind)
+    for i, mode in enumerate(modes):      
+        func_vector[:, i] = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, mode, load_vector, unrestricted_ind=free_ind)
+    plt_opt.freqrsp_modes(freq_range, delta, func_vector, origin, modes, func_name, save)
+    
