@@ -7,6 +7,8 @@ from scipy.linalg import eigh
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
+import numba as nb
+
 def exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     if mma:
         import beam_mma as beam
@@ -370,6 +372,8 @@ def lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_p
     lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
     return lam
 
+# Or use @nb.njit
+# @nb.jit(nopython=True)
 def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam):
     """ calculates the derivative of the compliance function.
 
@@ -612,7 +616,7 @@ def out_deriv(all_deriv, dfdx, df0dx2):
     else:
         return all_deriv[:, :aux].T, all_deriv[:, aux].reshape(-1, 1), all_deriv[:, aux+1].reshape(-1, 1)
 
-def new_density_filter(H, neighbors, dfdx, df0dx, df0dx2=None):
+def density_filter(H, neighbors, dfdx, df0dx, df0dx2=None):
     """ Apply the density filter to the derivative of the functions (constrain, objective and multiobjective).
 
     Args:
@@ -626,18 +630,13 @@ def new_density_filter(H, neighbors, dfdx, df0dx, df0dx2=None):
         Density filter applied to the derivative values.
     """
     new_deriv_f, deriv_f, cols = set_deriv(dfdx, df0dx, df0dx2)
+  
     for el in range(deriv_f.shape[0]):
-        H_el = H[el, :].data
         idx = neighbors[el, :].data
-        Hj = 0
-        aux = np.zeros(cols)
-        for i in range(len(idx)):
-            nn = idx[i]
-            Hj = np.sum(H[nn, :])   
-            for ind in range(cols):
-                aux[ind] +=  (1/Hj) * H_el[i] * deriv_f[nn, ind]
-                #aux += (1/Hj) * H_el[i] * deriv_f[nn, 0]
-        new_deriv_f[el, :] = aux  
+        hj = np.asarray(H[idx, :].sum(axis=1)).reshape(-1)
+        for ind in range(cols):
+            new_deriv_f[el, ind] = np.sum((1/hj) * H[el, :].data * deriv_f[idx, ind])
+
     return out_deriv(new_deriv_f, dfdx, df0dx2)
 
 def normalize(n, f0_scale, f0val, df0dx):
@@ -656,7 +655,7 @@ def normalize(n, f0_scale, f0val, df0dx):
     df0dx = n * 100 * df0dx/f0_scale
     return f0val, df0dx
 
-def new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2=None):
+def sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2=None):
     """ Apply the sensitivity filter to the derivative of the functions (constrain, objective and multiobjective).
 
     Args:
@@ -670,12 +669,13 @@ def new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2=None):
     Returns:
         Sensitivity filter applied to the derivative values.
     """
+    #xval2 = xval.copy()
+    #xval2[xval2 <= x_min_k] = x_min_k
     aux1 = H.multiply(xval[neighbors.toarray().flatten()].reshape(H.shape))
     aux3 = 1/np.multiply(np.sum(H, axis=1), xval)
 
     new_deriv_f, deriv_f, cols = set_deriv(dfdx, df0dx, df0dx2)
     for col in range(cols):
-        
         aux2 = aux1.multiply(deriv_f[neighbors.toarray().flatten(), col].reshape(H.shape))
         new_deriv_f[:, col] = np.asarray(np.multiply(aux3, np.sum(aux2, axis=1)))[:,0]
     return out_deriv(new_deriv_f, dfdx, df0dx2)

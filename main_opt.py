@@ -52,7 +52,7 @@ if __name__ == "__main__":
     constr_func = [ 'Area']
     constr_values = [50]
     #
-    passive_coord = ((0, 0.1), (0, 0.5)) # ((x_initial, x_final), (y_initial, y_final))
+    passive_coord = ((0, 0.1), (0, 0.5)) # ((x_initial, x_final), (y_initial, y_final)) or None
     # Está comentado no while ainda!
     chtol = 1e-4
     # Plot mesh  

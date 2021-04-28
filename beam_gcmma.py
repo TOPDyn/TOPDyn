@@ -180,9 +180,9 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
             df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind)
             # Filter
             if dens_filter:
-                dfdx, df0dx, df0dx2 = opt.new_density_filter(H, neighbors, dfdx, df0dx, df0dx2)
+                dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
             else:
-                dfdx, df0dx, df0dx2 = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2)
+                dfdx, df0dx, df0dx2 = opt.sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2)
             # Normalize multiobjective
             f0_scale_n2  = f0val2
             f0val2, df0dx2 = opt.normalize(1 - abs(n1), f0_scale_n2, f0val2, df0dx2)
@@ -193,9 +193,9 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
         else:
             # Filter
             if dens_filter:
-                dfdx, df0dx, _ = opt.new_density_filter(H, neighbors, dfdx, df0dx)
+                dfdx, df0dx, _ = opt.density_filter(H, neighbors, dfdx, df0dx)
             else:
-                dfdx, df0dx, _ = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx)
+                dfdx, df0dx, _ = opt.sensitivity_filter(H, neighbors, xval, dfdx, df0dx)
             # Normalize objective f
             f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)   
         innerit = 0
@@ -346,9 +346,9 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
             df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind)
             # Filter
             if dens_filter:
-                dfdx, df0dx, df0dx2 = opt.new_density_filter(H, neighbors, dfdx, df0dx, df0dx2)
+                dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
             else:
-                dfdx, df0dx, df0dx2 = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2)
+                dfdx, df0dx, df0dx2 = opt.sensitivity_filter(H, neighbors, xval, dfdx, df0dx, df0dx2)
             # Normalize multiobjective
             f0val2, df0dx2 = opt.normalize(1 - abs(n1), f0_scale_n2, f0val2, df0dx2)
             f0val, df0dx   = opt.normalize(n1, f0_scale, f0val, df0dx)
@@ -358,9 +358,9 @@ def main(nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=None, freq1=
         else:
             # Filter
             if dens_filter:
-                dfdx, df0dx, _ = opt.new_density_filter(H, neighbors, dfdx, df0dx)
+                dfdx, df0dx, _ = opt.density_filter(H, neighbors, dfdx, df0dx)
             else:
-                dfdx, df0dx, _ = opt.new_sensitivity_filter(H, neighbors, xval, dfdx, df0dx)
+                dfdx, df0dx, _ = opt.sensitivity_filter(H, neighbors, xval, dfdx, df0dx)
             # Normalize objective f
             f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)   
         # The residual vector of the KKT conditions is calculated
