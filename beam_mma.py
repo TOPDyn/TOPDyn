@@ -96,7 +96,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         freq_comp_constr = None
     # Calculate neighbors and distance
     radius = fac_ratio * lx/nelx
-    neighbors, H, centroids = opt.get_neighbors_radius(nelx, nely, coord, connect, radius)	
+    neighbors, H, centroids = opt.get_neighbors_radius(nelx, nely, coord, connect, radius)
     # Beam initial settings
     m = len(constr_func)
     n = nelx * nely
@@ -152,7 +152,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         else: 
             disp_vector, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
         # Constraint function       
-        fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
+        fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xnew, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
         if contr_comp:
             f_scale_comp[:] = fval[ind_comp, 0]
             fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
@@ -176,7 +176,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
             else:
-                dfdx, df0dx, df0dx2 = opt.sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2)
+                dfdx, df0dx, df0dx2 = opt.sensitivity_filter(H, neighbors, x_min_k, xnew, dfdx, df0dx, df0dx2)
             # Normalize multiobjective
             f0_scale_n2  = f0val2
             f0val2, df0dx2 = opt.normalize(1 - abs(n1), f0_scale_n2, f0val2, df0dx2)
@@ -189,7 +189,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             if dens_filter:
                 dfdx, df0dx, _ = opt.density_filter(H, neighbors, dfdx, df0dx)
             else:
-                dfdx, df0dx, _ = opt.sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx)
+                dfdx, df0dx, _ = opt.sensitivity_filter(H, neighbors, x_min_k, xnew, dfdx, df0dx)
             # Normalize objective f
             f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)   
         innerit = 0
@@ -208,7 +208,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
     pg.setConfigOption('foreground', 'k')
     labels_constr = plt_opt.legend_constr(constr_func)
     if each_iter:
-        win, p2, grid = plt_opt.window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xval, lx, ly, nelx, nely, labels_constr)
+        win, p2, grid = plt_opt.window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xnew, lx, ly, nelx, nely, labels_constr)
     else:
         gv, grid = plt_opt.simple_window()
     #
@@ -237,7 +237,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         else: 
             disp_vector, t_harmonic = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
         # Area function
-        fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
+        fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xnew, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
         if contr_comp:
             fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
         # Objective function 
@@ -259,7 +259,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
             else:
-                dfdx, df0dx, df0dx2 = opt.sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2)
+                dfdx, df0dx, df0dx2 = opt.sensitivity_filter(H, neighbors, x_min_k, xnew, dfdx, df0dx, df0dx2)
             # Normalize multiobjective
             f0val2, df0dx2 = opt.normalize(1 - abs(n1), f0_scale_n2, f0val2, df0dx2)
             f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)
@@ -271,7 +271,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
             if dens_filter:
                 dfdx, df0dx, _ = opt.density_filter(H, neighbors, dfdx, df0dx)
             else:
-                dfdx, df0dx, _ = opt.sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx)
+                dfdx, df0dx, _ = opt.sensitivity_filter(H, neighbors, x_min_k, xnew, dfdx, df0dx)
             # Normalize objective f
             f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)   
         # The residual vector of the KKT conditions is calculated
@@ -280,7 +280,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         #
         chmax = max(abs(xold2 - xold1))
         # Plot xval and objective function   
-        plt_opt.set_grid_data(grid, xval, x_plot, y_plot, nelx, nely)
+        plt_opt.set_grid_data(grid, xnew, x_plot, y_plot, nelx, nely)
         list_iter, list_f0val, list_fvals = opt.update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values)
         if each_iter:
             plt_opt.update_conv(constr_func, p2, list_iter, list_f0val, list_fvals)
@@ -307,7 +307,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         freq_range = freq_rsp[:2]
         delta = freq_rsp[2]
         f_original  = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
-        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
+        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xnew, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
         ax = plt_opt.compare_freqresponse(freq_range, delta, f_optimized.real, f_original.real, func_name, save=save)
     if mesh_deform:
         disp_vector = fc.change_U_shape(disp_vector.real)

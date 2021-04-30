@@ -7,8 +7,6 @@ from scipy.linalg import eigh
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-import numba as nb
-
 def exe_opt(mma, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     if mma:
         import beam_mma as beam
@@ -616,7 +614,53 @@ def out_deriv(all_deriv, dfdx, df0dx2):
     else:
         return all_deriv[:, :aux].T, all_deriv[:, aux].reshape(-1, 1), all_deriv[:, aux+1].reshape(-1, 1)
 
-def density_filter(H, neighbors, dfdx, df0dx, df0dx2=None):
+def get_neighbors_radius(nelx, nely, coord, connect, radius):
+    """ Check neighboring elements that have the centroid within the predetermined radius.
+
+    Args:
+        nelx (:obj:`int`): Number of elements on the x axis.
+        nely (:obj:`int`): Number of elements on the x axis
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
+
+    Returns:
+        neighbors, H, centroids 
+    """
+    el_number = nelx * nely
+    # 
+    centroids = np.empty((el_number, 2))
+    idx = connect[:, 1:] - 1   
+    centroids[:, 0] = np.sum(coord[idx, 1], axis = 1)/4
+    centroids[:, 1] = np.sum(coord[idx, 2], axis = 1)/4
+    # 
+    ind_rows = []
+    ind_cols = []
+    data = []
+    cols = 0
+    neighbors = []
+    for el in range(el_number):
+        distance = np.sqrt(np.sum((centroids[el] - centroids)**2, axis=1))
+        mask = distance <= radius
+        neighbor = mask.nonzero()[0] + 1
+        neighbors.extend(neighbor - 1)
+        #
+        hi      = radius - distance
+        hi_max  = np.maximum(0, hi)
+        data.extend(hi_max[mask])
+        aux     = len(hi_max[mask])
+        rows    = np.repeat(el, aux) #.tolist()
+        columns = np.arange(0, aux)
+        ind_rows.extend(rows) 
+        ind_cols.extend(columns)
+        #
+        if aux > cols:
+            cols = aux
+    H = csc_matrix((data, (ind_rows, ind_cols)), shape=(nelx*nely, cols)).toarray()
+    neighbors = csc_matrix((neighbors, (ind_rows, ind_cols)), shape=(nelx*nely, cols), dtype='int').toarray()
+    return neighbors, H, centroids
+
+def density_filter(H1, neighbors1, dfdx, df0dx, df0dx2=None):
     """ Apply the density filter to the derivative of the functions (constrain, objective and multiobjective).
 
     Args:
@@ -629,15 +673,13 @@ def density_filter(H, neighbors, dfdx, df0dx, df0dx2=None):
     Returns:
         Density filter applied to the derivative values.
     """
-    new_deriv_f, deriv_f, cols = set_deriv(dfdx, df0dx, df0dx2)
-  
+    new_deriv_f1, deriv_f, cols = set_deriv(dfdx, df0dx, df0dx2)
     for el in range(deriv_f.shape[0]):
-        idx = neighbors[el, :].data
-        hj = np.asarray(H[idx, :].sum(axis=1)).reshape(-1)
+        idx = neighbors1[el, :]
+        hj  = H1[idx, :].sum(axis=1)
         for ind in range(cols):
-            new_deriv_f[el, ind] = np.sum((1/hj) * H[el, :].data * deriv_f[idx, ind])
-
-    return out_deriv(new_deriv_f, dfdx, df0dx2)
+            new_deriv_f1[el, ind] = np.sum((1/hj) * H1[el, :] * deriv_f[idx, ind])
+    return out_deriv(new_deriv_f1, dfdx, df0dx2)
 
 def normalize(n, f0_scale, f0val, df0dx):
     """ Apply the sensitivity filter to the derivative of the functions (constrain, objective and multiobjective).
@@ -669,15 +711,16 @@ def sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2=None):
     Returns:
         Sensitivity filter applied to the derivative values.
     """
-    #xval2 = xval.copy()
-    #xval2[xval2 <= x_min_k] = x_min_k
-    aux1 = H.multiply(xval[neighbors.toarray().flatten()].reshape(H.shape))
-    aux3 = 1/np.multiply(np.sum(H, axis=1), xval)
+    xval2 = xval.copy()
+    xval2[xval2 <= x_min_k] = x_min_k
+    #
+    aux1 = H * xval2[neighbors.flatten()].reshape(H.shape)
+    aux3 = 1/(np.sum(H, axis=1) * xval2[:, 0])
 
     new_deriv_f, deriv_f, cols = set_deriv(dfdx, df0dx, df0dx2)
     for col in range(cols):
-        aux2 = aux1.multiply(deriv_f[neighbors.toarray().flatten(), col].reshape(H.shape))
-        new_deriv_f[:, col] = np.asarray(np.multiply(aux3, np.sum(aux2, axis=1)))[:,0]
+        aux2 = aux1 * deriv_f[neighbors.flatten(), col].reshape(H.shape)
+        new_deriv_f[:, col] = aux3 * np.sum(aux2, axis=1)
     return out_deriv(new_deriv_f, dfdx, df0dx2)
 
 def new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly,  ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega_par, const_func, free_ind, gradients=True):
@@ -809,52 +852,6 @@ def total_area(lx, ly, area, xval):
     """
     return (100/(lx * ly)) * np.sum(xval * area)
 
-def get_neighbors_radius(nelx, nely, coord, connect, radius):
-    """ Check neighboring elements that have the centroid within the predetermined radius.
-
-    Args:
-        nelx (:obj:`int`): Number of elements on the x axis.
-        nely (:obj:`int`): Number of elements on the x axis
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        radius (:obj:`float`): Radius to get elements in the vicinity of each element.
-
-    Returns:
-        neighbors, H, centroids 
-    """
-    el_number = nelx * nely
-    # 
-    centroids = np.empty((el_number, 2))
-    idx = connect[:, 1:] - 1   
-    centroids[:, 0] = np.sum(coord[idx, 1], axis = 1)/4
-    centroids[:, 1] = np.sum(coord[idx, 2], axis = 1)/4
-    # 
-    ind_rows = []
-    ind_cols = []
-    data = []
-    cols = 0
-    neighbors = []
-    for el in range(el_number):
-        distance = np.sqrt(np.sum((centroids[el] - centroids)**2, axis=1))
-        mask = distance <= radius
-        neighbor = mask.nonzero()[0] + 1
-        neighbors.extend(neighbor - 1)
-        #
-        hi      = radius - distance
-        hi_max  = np.maximum(0, hi)
-        data.extend(hi_max[mask])
-        aux     = len(hi_max[mask])
-        rows    = np.repeat(el, aux) #.tolist()
-        columns = np.arange(0, aux)
-        ind_rows.extend(rows) 
-        ind_cols.extend(columns)
-        #
-        if aux > cols:
-            cols = aux
-    H = csc_matrix((data, (ind_rows, ind_cols)), shape=(nelx*nely, cols))
-    neighbors = csc_matrix((neighbors, (ind_rows, ind_cols)), shape=(nelx*nely, cols), dtype='int')
-    return neighbors, H, centroids
-
 def calc_xnew(H, neighbors, xval):
     """ Recalculate xval.
 
@@ -867,9 +864,9 @@ def calc_xnew(H, neighbors, xval):
         New xval values.
     """
     a = 1/np.sum(H, axis=1)
-    b = np.sum(H.multiply(xval[neighbors.toarray().flatten()].reshape(H.shape)), axis=1)
-    xe = np.multiply(a, b)
-    return np.asarray(xe)
+    b = np.sum(H * xval[neighbors.flatten()].reshape(H.shape), axis=1)
+    xe = a * b
+    return xe.reshape(-1, 1)
 
 def set_initxval(constr_func, constr_values):
     """ Calculate the initial value of xval.
