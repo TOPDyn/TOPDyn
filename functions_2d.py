@@ -90,7 +90,6 @@ def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     """
     # processing of nodal coordinates matrix
     t0 = time()
-    dofs, edofs = 2, 8
     x, y = generate_xy_coord(lx, ly, nelx, nely)
     #x, y = np.arange(0,lx+dx,dx), np.arange(0,ly+dy,dy)
     nx, ny = len(x), len(y)
@@ -107,16 +106,26 @@ def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     b = (mat_aux + a).flatten()
     connect = np.array([ind_connect, b, b+1, b+(nelx+2), b+(nelx+1)], dtype=int).T
     # processing the dofs indices (rows and columns) for assembly
-    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
-                          dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    vect_indices = ind_dofs.flatten()
-    ind_rows = ((np.tile(vect_indices, (edofs,1))).T).flatten()
-    ind_cols = (np.tile(ind_dofs, edofs)).flatten()
+    ind_rows, ind_cols = generate_ind_rows_cols(connect)
+    # ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
+    #                       dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
+    # vect_indices = ind_dofs.flatten()
+    # ind_rows = ((np.tile(vect_indices, (edofs,1))).T).flatten()
+    # ind_cols = (np.tile(ind_dofs, edofs)).flatten()
     tf = time()
     if timing:
         print("Time to process mesh: " + str(round((tf - t0),6)) + '[s]')
     #
     return coord, connect, ind_rows, ind_cols
+
+def generate_ind_rows_cols(connect):
+    dofs, edofs = 2, 8
+    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
+                          dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
+    vect_indices = ind_dofs.flatten()
+    ind_rows = ((np.tile(vect_indices, (edofs,1))).T).flatten()
+    ind_cols = (np.tile(ind_dofs, edofs)).flatten()
+    return ind_rows, ind_cols
   
 def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq, timing=False, **kwargs):
     """ Assembly and solution.

@@ -166,10 +166,11 @@ def plot_restr_nodes(ax, coord, restri_matrix):
 
     return ax
 
-def plot_freqresponse(freq_range, delta, disp_vector, save=False):
+def plot_freqresponse(node, freq_range, delta, disp_vector, save=False):
     """ Plot the frequency response.
             
     Args:    
+        node (:obj:`list`): Node that was calculated the frequency response.
         freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
@@ -184,6 +185,7 @@ def plot_freqresponse(freq_range, delta, disp_vector, save=False):
     x = np.arange(freq_range[0], freq_range[1] + 1, delta)
     y = 10 * np.log10(abs(disp_vector))
     ax.plot(x, y)
+    ax.set_title('Node' + str(node), fontsize=15)
     ax.set_xlabel('frequency [Hz]', fontsize=16)
     ax.set_ylabel('displacement [N]', fontsize=16)
     ax.set_xlim(0, x[-1])

@@ -6,4 +6,5 @@ vedo==2020.3.2
 matplotlib==3.2.1
 PyQt5==5.15.0
 pyqtgraph==0.11.1
+gmsh==4.8.0
 

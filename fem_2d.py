@@ -1,9 +1,11 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import plots_2d as plt_fem
 import functions_2d as fc
+from mesh_process_2d import import_mesh
 
-def main(nelx, nely, lx, ly, load_matrix, restri_matrix=None, E=210e9, v=0.3, rho=7860, alpha=0, beta=0, eta=0, factor=1000, freq=180, node_plot=None, freq_rsp=[], save=False, timing=False):
+def main(mesh_file, nelx, nely, lx, ly, load_matrix, restri_matrix=None, E=210e9, v=0.3, rho=7860, alpha=0, beta=0, eta=0, factor=1000, freq=180, node_plot=None, freq_rsp=[], save=False, timing=False):
     """ 
     Args:
         nelx (:obj:`int`): Number of elements on the x-axis.
@@ -30,7 +32,19 @@ def main(nelx, nely, lx, ly, load_matrix, restri_matrix=None, E=210e9, v=0.3, rh
         save (:obj:`bool`, optional): if True save the optimization and frequency response graphs as PNG. Defaults to False.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
     """
-    coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely, timing=timing)
+    if mesh_file is not None:
+        path = os.path.dirname(os.path.realpath(__file__)) 
+        #mesh_file = '/home/ana/Downloads/TOPDyn-master/retangulo1x05.IGES'
+        m_file = os.path.join(path, mesh_file)
+        coord, connect = import_mesh(m_file)
+        ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+        nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
+        nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
+        lx = max(coord[:, 1])
+        ly = max(coord[:, 2])
+
+    else:
+        coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely, timing=timing)
     # Get free indexes
     free_ind = None
     if restri_matrix is not None:
@@ -50,8 +64,10 @@ def main(nelx, nely, lx, ly, load_matrix, restri_matrix=None, E=210e9, v=0.3, rh
         delta = freq_rsp[2]
         if node_plot is None:
             node_plot = load_matrix[0, :3].reshape(1, 3)
+        else:
+            node_plot = np.array(node_plot, dtype='int').reshape(1, 3)
         vector_U = fc.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_range, delta, node_plot, load_vector, unrestricted_ind=free_ind)
-        ax2 = plt_fem.plot_freqresponse(freq_range, delta, vector_U.real, save=save)
+        ax2 = plt_fem.plot_freqresponse(node_plot[0,0], freq_range, delta, vector_U.real, save=save)
         plt.show()
     else:
         ax = plt_fem.plot_collection(lx, ly, coord_U, collection, load_matrix, restri_matrix, save=save)
