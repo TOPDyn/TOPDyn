@@ -42,7 +42,6 @@ def main(mesh_file, nelx, nely, lx, ly, load_matrix, restri_matrix=None, E=210e9
         nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
         lx = max(coord[:, 1])
         ly = max(coord[:, 2])
-
     else:
         coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely, timing=timing)
     # Get free indexes

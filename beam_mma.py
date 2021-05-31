@@ -1,5 +1,4 @@
 ﻿from __future__ import division
-from PyQt5 import QtCore
 from time import time
 import os
 import sys
@@ -12,9 +11,10 @@ import functions_2d as fc
 import plots_2d as plt_fem
 import functions_opt as opt
 import plots_opt as plt_opt
+from mesh_process_2d import import_mesh
 from mma_opt import mmasub, subsolv, kktcheck
 
-def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
+def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     """ 
     Args:
         nelx (:obj:`int`): Number of elements on the x-axis.
@@ -82,7 +82,17 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
     """
     t0 = time()
     # FEM settings
-    coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely)
+    if mesh_file is not None:
+        path = os.path.dirname(os.path.realpath(__file__)) 
+        m_file = os.path.join(path, mesh_file)
+        coord, connect = import_mesh(m_file)
+        ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+        nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
+        nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
+        lx = max(coord[:, 1])
+        ly = max(coord[:, 2])
+    else:
+        coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely)
     func_name2, freq2 = multiobjective
     omega1_par = 2 * np.pi * freq1
     omega2_par = 2 * np.pi * freq2   
@@ -196,11 +206,10 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         # Log
         set_logger(logger, outeriter, innerit, f0val, fval, xval, natural_freqs)
     # List to plot convergence
-    list_iter = []
-    list_f0val = []
-    list_fvals = []
-    for i in range(m):
-        list_fvals.append([])
+    list_iter  = np.empty(max_iter + 1)
+    list_f0val = np.empty(max_iter + 1)
+    list_fvals = np.empty((max_iter + 1, len(constr_func)))
+
     list_iter, list_f0val, list_fvals = opt.update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values)
     # Construct a QApplication
     app = pg.mkQApp()
@@ -208,11 +217,14 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
     pg.setConfigOption('foreground', 'k')
     labels_constr = plt_opt.legend_constr(constr_func)
     if each_iter:
-        win, p2, grid = plt_opt.window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xnew, lx, ly, nelx, nely, labels_constr)
+        win, p2, curves_funcs, grid = plt_opt.window_each_iter(constr_func, func_name, xnew, lx, ly, nelx, nely, labels_constr)
     else:
         gv, grid = plt_opt.simple_window()
     #
     x_plot, y_plot = plt_opt.set_coord_grid(lx, ly, nelx, nely)
+    plt_opt.set_grid_data(grid, xnew, x_plot, y_plot, nelx, nely)
+    plt_opt.set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func)
+    pg.QtGui.QApplication.processEvents()
     #
     kktnorm = kkttol+10
     chmax = 10
@@ -283,7 +295,7 @@ def main(nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=1
         plt_opt.set_grid_data(grid, xnew, x_plot, y_plot, nelx, nely)
         list_iter, list_f0val, list_fvals = opt.update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values)
         if each_iter:
-            plt_opt.update_conv(constr_func, p2, list_iter, list_f0val, list_fvals)
+            plt_opt.set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func)
         pg.QtGui.QApplication.processEvents()
         # Log
         set_logger(logger, outeriter, innerit, f0val, fval, xval, natural_freqs)

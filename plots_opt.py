@@ -60,7 +60,7 @@ def legend_constr(constr_func):
         i += 1
     return label
 
-def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, xval, lx, ly, nelx, nely, label):
+def window_each_iter(constr_func, func_name, xval, lx, ly, nelx, nely, label):
     """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
 
     Args:
@@ -77,10 +77,10 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, 
     win = pg.GraphicsLayoutWidget(show=True)
     win.resize(900,600)
     win.setWindowTitle('MMA')
-    #
+    
     grid = mf.PColorMeshItem(cmap='grey')
-    x_plot, y_plot = set_coord_grid(lx, ly, nelx, nely)
-    set_grid_data(grid, xval, x_plot, y_plot, nelx, nely)
+    # x_plot, y_plot = set_coord_grid(lx, ly, nelx, nely)
+    # set_grid_data(grid, xval, x_plot, y_plot, nelx, nely)
     plot = win.addPlot()
     plot.setAspectLocked(True)
     plot.hideAxis('bottom')
@@ -90,20 +90,22 @@ def window_each_iter(constr_func, list_iter, list_f0val, list_fvals, func_name, 
     win.nextRow()
     p2 = win.addPlot()
     p2.addLegend(labelTextColor=(0,0,0), offset=(700,10))
-    p2.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2}, name=func_name.lower())
     p2.setLabel('left', func_name.lower())
     p2.setLabel('bottom', "iteration") 
-    #
+    
+    curves_p2 = []
+    curves_p2.append(p2.plot(pen={'color': (0,0,0), 'width': 2}, name=func_name.lower()))
+
     colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
     for ind, f in enumerate(constr_func):
         if f == 'Area':
-            p2.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2}, name=label[ind])
+            pen_set = {'color': colors[0], 'width': 2}
         elif f == 'R Ratio':
-            p2.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name=label[ind])
+            pen_set = {'color': colors[1], 'width': 2}
         elif f == 'Compliance':
-            p2.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2}, name=label[ind])
-    pg.QtGui.QApplication.processEvents()
-    return win, p2, grid
+            pen_set = {'color': colors[2], 'width': 2}
+        curves_p2.append(p2.plot(name=label[ind], pen=pen_set))
+    return win, p2, curves_p2, grid
 
 def simple_window():
     """ Generate a window to plot the optimized mesh.
@@ -164,7 +166,19 @@ def set_coord_grid(lx, ly, nelx, nely):
 
 def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
     grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
-    
+
+def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func):
+    """ Update the values of the objective function and the constraint function to plot the convergence graph.
+
+    Args:
+        outeriter (:obj:`int`): Iteration value.
+
+    """
+    curves_funcs[0].setData(list_iter[:outeriter+1], list_f0val[:outeriter+1])
+
+    for ind in range(len(constr_func)):
+        curves_funcs[1].setData(list_iter[:outeriter+1], list_fvals[:outeriter+1, ind])
+   
 def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
     """ Update the values of the objective function and the constraint function to plot the convergence graph.
 
