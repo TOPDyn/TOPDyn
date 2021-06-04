@@ -216,6 +216,11 @@ def regularmeshH8(nelx, nely, nelz, lx, ly, lz):
     connect = np.array([ind_connect, b+(nelx+1), b, b+1, b+(nelx+2), \
                         b+(nelx+1)*(nely+1)+(nelx+1), b+(nelx+1)*(nely+1), \
                         b+1+(nelx+1)*(nely+1), b+(nelx+1)*(nely+1)+(nelx+2)], dtype=int).T
+    
+    ind_rows, ind_cols = generate_ind_rows_cols(connect)
+    return coord, connect, ind_rows, ind_cols
+
+def generate_ind_rows_cols(connect):
     # processing the dofs indices (rows and columns) for assembly
     dofs, edofs = 3, 24
     ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,1]+1,
@@ -230,8 +235,8 @@ def regularmeshH8(nelx, nely, nelz, lx, ly, lz):
     vect_indices = ind_dofs.flatten()
     ind_rows = ((np.tile(vect_indices, (edofs,1))).T).flatten()
     ind_cols = (np.tile(ind_dofs, edofs)).flatten()
-    
-    return coord, connect, ind_rows, ind_cols
+    return ind_rows, ind_cols
+
    
 def solution3D(coord, connect, ind_rows, ind_cols, nelx, nely, nelz, E, v, rho, alpha, beta, eta, freq, timing=False, **kwargs):
     """ Assembly and solution.

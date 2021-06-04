@@ -1,9 +1,11 @@
+import os
 import numpy as np
 import pyqtgraph as pg
 import functions_3d as fc
 import plots_3d as plt
+from mesh_process_3d import import_mesh
 
-def main(nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=None, E=210e9, v=0.3, rho=7860, alpha=1e-1, beta=1e-7, eta=1e-8, factor=1e9, freq=180, freq_rsp=[], plot_type='deformed', complete=True, amp=1e9, node_plot=None, timing=False):
+def main(mesh_file, num_el, nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=None, E=210e9, v=0.3, rho=7860, alpha=1e-1, beta=1e-7, eta=1e-8, factor=1e9, freq=180, freq_rsp=[], plot_type='deformed', complete=True, amp=1e9, node_plot=None, timing=False):
     '''
     Args:
         nelx (int): Number of elements on the X-axis.
@@ -34,8 +36,21 @@ def main(nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=None, E=210e9,
             It is a 1x4 matrix.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.           
     '''
-
-    coord, connect, ind_rows, ind_cols = fc.regularmeshH8(nelx, nely, nelz, lx, ly, lz)
+    if mesh_file is not None:
+        path = os.path.dirname(os.path.realpath(__file__)) 
+        m_file = os.path.join(path, mesh_file)
+        coord, connect = import_mesh(m_file, num_el)
+        lx = max(coord[:, 1])
+        ly = max(coord[:, 2])
+        lz = max(coord[:, 3])
+        nelx = len(coord[np.logical_and(coord[:, 2] == coord[0, 2], coord[:, 3] == coord[0, 3])]) - 1
+        nely = len(coord[np.logical_and(coord[:, 1] == coord[0, 1], coord[:, 3] == coord[0, 3])]) - 1
+        nelz = len(coord[np.logical_and(coord[:, 1] == coord[0, 1], coord[:, 2] == coord[0, 2])]) - 1
+        ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+    else:
+        nelx, nely, nelz = 10, 10, 10
+        lx, ly, lz = 1, 0.5, 0.3
+        coord, connect, ind_rows, ind_cols = fc.regularmeshH8(nelx, nely, nelz, lx, ly, lz)
     free_ind = None
     # Get free indexes
     if restri_matrix is not None:
