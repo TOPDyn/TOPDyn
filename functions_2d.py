@@ -72,6 +72,17 @@ def matricesQ4(ee, coord, connect, E, v, rho):
     return Ke.real, Me.real
 
 def generate_xy_coord(lx, ly, nelx, nely):
+    """ Create the mesh coordinate range 
+
+    Args:
+        lx (:obj:`float`): X-axis length.
+        ly (:obj:`float`): Y-axis length.
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+    
+    Returns:
+        Tuple with range x and y.    
+    """
     dx, dy = lx/nelx, ly/nely
     return dx * np.arange(nelx + 1), dy * np.arange(nely + 1)
 
@@ -119,6 +130,14 @@ def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     return coord, connect
 
 def generate_ind_rows_cols(connect):
+    """ Node indexes to make the assembly
+
+    Args: 
+        connect (:obj:`numpy.array`): Element connectivity.
+
+    Returns:
+        Node indexes to make the assembly
+    """
     dofs, edofs = 2, 8
     ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
                           dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
@@ -197,16 +216,42 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha,
     return disp_vector   
 
 def get_num_el(coord):
+    """ Get number of elements in mesh.
+
+    Args:
+        coord (:obj:`numpy.array`): Coordinates of the element.
+
+    Returns:
+        Number of elements in x and y.
+    """
     nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
     nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
     return nelx, nely
 
 def get_size_el(coord):
+    """ Get size of mesh.
+
+    Args:
+        coord (:obj:`numpy.array`): Coordinates of the element.
+
+    Returns:
+        Size of mesh.
+    """
     lx = max(coord[:, 1])
     ly = max(coord[:, 2])
     return lx, ly
 
 def get_matrices(matrix, coord, force):
+    """ Get force matrix and restri_matrix.
+
+    Args:
+        matrix (:obj:`list`): List passed by the user. 
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        force (:obj:`bool`): True if encountering force matrix.
+
+    Returns:
+        force_matrix or restri_matrix.
+    """
     if force:
         index_by_coord, index_by_col, np_matrix = get_ind_matrices(matrix, 5, 6)
         nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col, 5)
@@ -218,6 +263,16 @@ def get_matrices(matrix, coord, force):
     return nodes_matrix.astype(int)
 
 def get_ind_matrices(matrix, by_coord, by_col):
+    """ Get if is passed the column or coordinate.
+
+    Args:
+        matrix (:obj:`list`): List passed by the user. 
+        by_coord (:obj:`int`): Length of list if it coordinates were passed.
+        by_col (:obj:`int`): Length of list if column was passed.
+
+    Returns:
+        index_by_coord, index_by_col, matrix_F
+    """
     index_by_coord = []
     index_by_col   = []
     for i, list_row in enumerate(matrix):
@@ -232,20 +287,48 @@ def get_ind_matrices(matrix, by_coord, by_col):
     matrix_F = np.array(matrix)
     return index_by_coord, index_by_col, matrix_F
 
-def get_nodes(coord, matrix, index_by_coord, index_by_col, ind):
+def get_nodes(coord, np_matrix, index_by_coord, index_by_col, ind):
+    """ Get nodes by the coordinate or column
+
+    Args:
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        np_matrix (:obj:`numpy.array`): List passed to an array.
+        index_by_coord (:obj:`list`): Indexes of elements passed by coordinates.
+        index_by_col (:obj:`list`): Indexes of elements passed by columns.
+        ind (:obj:`int`): The column that has the margin of error.
+
+    Returns:
+        Nodes.
+    """
     nodes_coord = []
     nodes_col = []
 
     if len(index_by_coord) > 0:   
-        nodes_coord = get_nodes_by_coord(coord, matrix[np.ix_(index_by_coord, [0,1])])
+        nodes_coord = get_nodes_by_coord(coord, np_matrix[np.ix_(index_by_coord, [0,1])])
 
     if len(index_by_col) > 0:
         for index in index_by_col:
-            aux = get_nodes1d(coord, int(matrix[index, 0]), matrix[index, ind], int(matrix[index, 1]))
+            aux = get_nodes1d(coord, int(np_matrix[index, 0]), np_matrix[index, ind], int(np_matrix[index, 1]))
             nodes_col.append(aux)
     return nodes_coord, nodes_col 
 
 def get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, ind1, ind2, total_cols):
+    """ Create matrix with nodes.
+
+    Args:
+        nodes_coord (:obj:`list`): Nodes passed by coordinate.
+        nodes_col (:obj:`list`): Nodes passed by column.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        matrix (:obj:`numpy.array`): List passed to an array.
+        index_by_coord (:obj:`list`): Indexes of elements passed by coordinates.
+        index_by_col (:obj:`list`): Indexes of elements passed by columns.
+        ind1 (:obj:`int`): Indices of matrix with nodes.
+        ind2 (:obj:`int`): Indices of matrix passed by user.
+        total_cols (:obj:`int`): Number of columns desired for the matrix.
+
+    Returns:
+        matrix with nodes.
+    """
     if len(nodes_col) > 0:
         len_col = sum([len(listElem) for listElem in nodes_col])
     else:
@@ -265,7 +348,7 @@ def get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, 
     return matrix
 
 def get_nodes_by_coord(coord, coord_user):
-    ''' Get node number by coordinate.
+    """ Get node number by coordinate.
 
     Args:
         coord (:obj:`numpy.array`): mesh coordinates.
@@ -273,14 +356,14 @@ def get_nodes_by_coord(coord, coord_user):
         
     Returns:
         Nodes of the coordinates provided.
-    '''
+    """
     mytree = spatial.cKDTree(coord[:, [1,2]])
     _, ind_nodes = mytree.query(coord_user)
     nodes = coord[ind_nodes, 0]
     return nodes
 
 def get_nodes1d(coord, coord_user, eps, column):
-    ''' Get node numbers that are equal to coord.
+    """ Get node numbers that are equal to coord.
 
     Args:
         coord (:obj:`numpy.array`): mesh coordinates.
@@ -291,14 +374,14 @@ def get_nodes1d(coord, coord_user, eps, column):
 
     Returns:
         Nodes.
-    '''
+    """
     dif = np.abs(coord[:, column] - coord_user)
     mask = dif < eps
 
     return (coord[mask, 0]).astype('int')
 
 def get_dofs(nodes_dir):
-    ''' Get DOFs that meet the specified direction.
+    """ Get DOFs that meet the specified direction.
 
     Args:
         nodes_dir (:obj:`numpy.array`): [nodes numbers, x_direction, y_direction].
@@ -306,7 +389,7 @@ def get_dofs(nodes_dir):
     
     Returns: 
         DOFs of each node in array nodes.
-    '''
+    """
     dofs = 2
     all_dofs = []
     mask = abs(nodes_dir[:, 1]) == 1
@@ -375,21 +458,21 @@ def remove_dofs(nelx, nely, del_dofs):
     return np.delete(dofs, del_dofs)
 
 def change_U_shape(disp_vector):
-    ''' Transform displacement vector in matrix.
+    """ Transform displacement vector in matrix.
     
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
     
     Returns: 
         Displacement of each axis.
-    '''
+    """
     new_U = np.empty((int(len(disp_vector)/2), 2))
     new_U[:,0] = disp_vector[::2]
     new_U[:,1] = disp_vector[1::2] 
     return new_U
 
 def apply_U(disp_vector, coord, factor):
-    ''' Apply displacement to coordinates. 
+    """ Apply displacement to coordinates. 
 
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
@@ -398,7 +481,7 @@ def apply_U(disp_vector, coord, factor):
     
     Returns: 
         Displaced mesh coordinates.
-    '''
+    """
     new_coord = coord.copy()
     new_coord[:, 1:] += disp_vector * factor
     return new_coord
