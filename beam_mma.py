@@ -24,8 +24,19 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         func_name (:obj:`str`): Objective function used.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
             If the multiobjective function is being calculated, weight n1 is assigned.
-        load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
-        restri_matrix (:obj:`numpy.array`, optional): The columns are respectively node, x direction, y direction. Defaults to None. 
+        load_matrix (:obj:`numpy.array`): It's a list of lists. The list can be:
+            * [x_coordinate, y_coordinate, force_applied_x, force_applied_y, force_value]
+
+            * [value_coordinate, column_to_compare, force_applied_x, force_applied_y, force_value, error_margin]
+
+            It is possible to merge the two options. Examples:
+                load_matrix = [[1, 1, 0, -1, 100]] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1)
+                load_matrix = [[0, 1, 1, 0, 200, 0.001]] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0
+                load_matrix = [[1, 1, 0, -1, 100], [0, 1, -1, 0, 200, 0.001]] -> Apply the two options above.
+        restri_matrix (:obj:`numpy.array`, optional): It's a list of lists. Defaults to None. 
+            * [x_coordinate, y_coordinate, constrain_disp_x, constrain_disp_y]
+
+            * [value_coordinate, column_to_compare, constrain_disp_x, constrain_disp_y, error_margin]
         freq1 (:obj:`int`, optional): Optimized frequency. Defaults to 180.
         constr_func (:obj:`list`, optional): Constraint functions applied. Defaults to 'Area'.
             It can be: 'Area', 'R Ratio' or 'Compliance.
@@ -92,7 +103,12 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         lx = max(coord[:, 1])
         ly = max(coord[:, 2])
     else:
-        coord, connect, ind_rows, ind_cols = fc.regularmeshQ4(lx, ly, nelx, nely)
+        coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely, timing=timing)
+    ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+    # Force and restrictions matrix
+    load_matrix = fc.get_matrices(load_matrix, coord, True)
+    restri_matrix = fc.get_matrices(restri_matrix, coord, False)
+    
     func_name2, freq2 = multiobjective
     omega1_par = 2 * np.pi * freq1
     omega2_par = 2 * np.pi * freq2   

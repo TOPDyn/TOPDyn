@@ -106,7 +106,7 @@ def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     b = (mat_aux + a).flatten()
     connect = np.array([ind_connect, b, b+1, b+(nelx+2), b+(nelx+1)], dtype=int).T
     # processing the dofs indices (rows and columns) for assembly
-    ind_rows, ind_cols = generate_ind_rows_cols(connect)
+    #ind_rows, ind_cols = generate_ind_rows_cols(connect)
     # ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
     #                       dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
     # vect_indices = ind_dofs.flatten()
@@ -116,7 +116,7 @@ def regularmeshQ4(lx, ly, nelx, nely, timing=False):
     if timing:
         print("Time to process mesh: " + str(round((tf - t0),6)) + '[s]')
     #
-    return coord, connect, ind_rows, ind_cols
+    return coord, connect
 
 def generate_ind_rows_cols(connect):
     dofs, edofs = 2, 8
@@ -195,6 +195,74 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha,
         print("Total time elapsed in solution: " + str(round((tf2 - t01), 6)) + '[s]')
     #
     return disp_vector   
+
+def get_num_el(coord):
+    nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
+    nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
+    return nelx, nely
+
+def get_size_el(coord):
+    lx = max(coord[:, 1])
+    ly = max(coord[:, 2])
+    return lx, ly
+
+def get_matrices(matrix, coord, force):
+    if force:
+        index_by_coord, index_by_col, np_matrix = get_ind_matrices(matrix, 5, 6)
+        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col, 5)
+        nodes_matrix = get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, [1,2,3], [2,3,4], 4)
+    else:
+        index_by_coord, index_by_col, np_matrix = get_ind_matrices(matrix, 4, 5)
+        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col, 4)
+        nodes_matrix = get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, [1,2], [2,3], 3)
+    return nodes_matrix.astype(int)
+
+def get_ind_matrices(matrix, by_coord, by_col):
+    index_by_coord = []
+    index_by_col   = []
+    for i, list_row in enumerate(matrix):
+        if len(list_row) == by_coord:
+            list_row.append(0)
+            index_by_coord.append(i)
+        elif len(list_row) == by_col:
+            index_by_col.append(i)
+        else:
+            #TODO: Fazer algo melhor hehe
+            print("ERRADO!")
+    matrix_F = np.array(matrix)
+    return index_by_coord, index_by_col, matrix_F
+
+def get_nodes(coord, matrix, index_by_coord, index_by_col, ind):
+    nodes_coord = []
+    nodes_col = []
+
+    if len(index_by_coord) > 0:   
+        nodes_coord = get_nodes_by_coord(coord, matrix[np.ix_(index_by_coord, [0,1])])
+
+    if len(index_by_col) > 0:
+        for index in index_by_col:
+            aux = get_nodes1d(coord, int(matrix[index, 0]), matrix[index, ind], int(matrix[index, 1]))
+            nodes_col.append(aux)
+    return nodes_coord, nodes_col 
+
+def get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, ind1, ind2, total_cols):
+    if len(nodes_col) > 0:
+        len_col = sum([len(listElem) for listElem in nodes_col])
+    else:
+        len_col = 0
+    matrix = np.empty((len(nodes_coord) + len_col, total_cols))
+
+    if len(index_by_coord) > 0:
+        matrix[:len(nodes_coord), 0] = nodes_coord
+        matrix[:len(nodes_coord), ind1] = np_matrix[np.ix_(index_by_coord, ind2)]
+    
+    if len(index_by_col) > 0:
+        aux = 0
+        for i, nodes in enumerate(nodes_col):
+            matrix[len(nodes_coord)+aux:len(nodes)+aux+len(nodes_coord), 0] = nodes
+            matrix[len(nodes_coord)+aux:len(nodes)+aux+len(nodes_coord), ind1] = np_matrix[index_by_col[i], ind2] 
+            aux += len(nodes)
+    return matrix
 
 def get_nodes_by_coord(coord, coord_user):
     ''' Get node number by coordinate.
@@ -373,3 +441,25 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alph
         print('It.', n)
         
     return vector_U
+
+#TODO: REMOVER LINHAS REPETIDAS SE TIVER
+# def get_force_matrix(nodes_coord, nodes_col, matrix_F, index_by_coord, index_by_col):
+#     if len(nodes_col) > 0:
+#         len_col = sum([len(listElem) for listElem in nodes_col])
+#     else:
+#         len_col = 0
+#     force_matrix = np.empty((len(nodes_coord) + len_col, 4))
+
+#     if len(index_by_coord) > 0:
+#         force_matrix[:len(nodes_coord), 0] = nodes_coord
+#         force_matrix[:len(nodes_coord), [1,2,3]] = matrix_F[np.ix_(index_by_coord, [2,3,4])]
+    
+#     if len(index_by_col) > 0:
+#         end = 1
+#         start = 0
+#         for i, nodes in enumerate(nodes_col):
+#             force_matrix[len(nodes_coord)+start:len(nodes)+end, 0] = nodes
+#             force_matrix[len(nodes_coord)+start:len(nodes)+end, [1,2,3]] = matrix_F[index_by_col[i], [3, 4, 5]] 
+#             end += len(nodes)
+#             start += len(nodes)
+#     return force_matrix
