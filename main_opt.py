@@ -3,34 +3,31 @@ import functions_opt as fc_opt
 
 if __name__ == "__main__":
     # If True is used the mma method. If False use the gcmma method.
-    mma = True
-    mesh_file = '/home/ana/Downloads/TOPDyn-master/retangulo1x05.IGES'
+    mma = False
     
-    nelx, nely = None, None 
-    lx, ly = None, None
+    mesh_file = None
     
+    nelx, nely = 50, 100
+    lx, ly = 0.5, 1
+
     rho = 7860
     E = 210e9
     v = 0.3
-
     x_min_m = 1e-12
     x_min_k = 1e-9
-
     alpha_par, beta_par, eta_par = 0, 1e-5, 0
     alpha_plot, beta_plot, eta_plot = 0, 1e-6, 0
-    
     p_par = 3
     q_par = 1
     const_func = 100
-
-    force_matrix = [[1, 1, 0, -1, 1, 0.001]]
-
-    restri_matrix = [[0, 1, 1, 1, 0.001]]
-
+    # Create matrix of loads 
+    force_matrix = [[ly, 2, 0, -1, 10000, 0.001]]
+    # Create constrain nodes matrix
+    restri_matrix = [[0, 2, 1, 1, 0.001]]
     # Weight at objective function
     n1 = 1
     # Method iterations
-    max_iter = 100
+    max_iter = 150
     # Factor applied in the radius
     fac_ratio = 2.2 #2.1
     # If not None is used mode superposition method
@@ -42,7 +39,7 @@ if __name__ == "__main__":
     # Frequency optimized for func_name
     freq1 = 10
     # Frequency response plot
-    freq_rsp = [0, 100, 10]
+    freq_rsp = [0, 400, 5]
     # If False use sensitivity filter
     dens_filter = True
     # If True plots the convergence graph for each iteration of the optimization

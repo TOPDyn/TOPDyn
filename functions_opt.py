@@ -1,4 +1,5 @@
 import cmath
+import os
 import numpy as np
 from time import time
 import functions_2d as fc
@@ -6,6 +7,7 @@ import plots_opt as plt_opt
 from scipy.linalg import eigh
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
+from mesh_process_2d import import_mesh
 
 def exe_opt(mma, mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     if mma:
@@ -15,7 +17,7 @@ def exe_opt(mma, mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_m
         import beam_gcmma as beam
         beam.main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
 
-def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega_par, xval, x_min_m, x_min_k, p_par, q_par):
+def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par):
     """ Assembly matrices.
 
     Args:
@@ -32,7 +34,6 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, a
         alpha (:obj:`float`): Damping coefficient proportional to mass. 
         beta (:obj:`float`): Damping coefficient proportional to stiffness.  
         eta (:obj:`float`): Damping coefficient. 
-        omega_par (:obj:`float`): 2 pi frequency
         xval (:obj:`numpy.array`): Indicates where there is mass.
         x_min_m (:obj:`float`): Minimum relative densities to mass. 
         p_par (:obj:`int`): Penalization power to stiffness.
@@ -53,17 +54,18 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, a
             data_m[el, :] = (x_min_m + (xval[el]**q_par)*(1-x_min_m)) * Me.flatten()
         else:
             data_m[el, :] =  (x_min_m + (3.512e7*xval[el]**9 - 2.081e8*xval[el]**10)*(1-x_min_m) ) * Me.flatten() 
-    #
-    data_k = data_k.flatten()
-    data_m = data_m.flatten()
+    tf1 = time()
+    t_assembly = str(round((tf1 - t01), 6))
+    return data_k.flatten(), data_m.flatten(), t_assembly
+    
+def assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta):
     stif_matrix = csc_matrix((data_k, (ind_rows, ind_cols)), shape=(ngl, ngl))
     mass_matrix = csc_matrix((data_m, (ind_rows, ind_cols)), shape=(ngl, ngl))
     damp_matrix = alpha * mass_matrix + (beta) * stif_matrix
-    dyna_stif = -(omega_par**2) * mass_matrix + 1j * omega_par * damp_matrix + stif_matrix
+    return stif_matrix.real, mass_matrix.real, damp_matrix.real
 
-    tf1 = time()
-    t_assembly = str(round((tf1 - t01), 6))
-    return stif_matrix.real, mass_matrix.real, dyna_stif, t_assembly
+def assembly_dyna_stif(omega_par, mass_matrix, damp_matrix, stif_matrix):
+    return -(omega_par**2) * mass_matrix + 1j * omega_par * damp_matrix + stif_matrix
 
 def harmonic_problem(ngl, dyna_stif, load_vector, free_ind=None):
     t02 = time()
@@ -104,7 +106,7 @@ def modal_analysis(stif_matrix, mass_matrix, modes=20):
     modal_shape = modal_shape[:, index_order]
     return natural_frequencies, modal_shape
 
-def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega_par, alpha, beta, eta, free_ind):    
+def mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega_par, alpha, beta, eta, free_ind):    
     """ Perform an harmonic analysis through superposition method and returns the response of
         all nodes due the external or internal equivalent load. It has been implemented two
         different damping models: Viscous Proportional and Hysteretic Proportional
@@ -115,7 +117,6 @@ def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega_par, 
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         mass_matrix (:obj:`numpy.array`): Mass matrix.
         load_vector (:obj:`numpy.array`): Force.
-        modes (:obj:`int`, optional): The number of eigenvalues and eigenvectors desired.
         omega_par (:obj:`float`): 2 pi frequency
         alpha (:obj:`float`): Damping coefficient proportional to mass. 
         beta (:obj:`float`): Damping coefficient proportional to stiffness.
@@ -128,7 +129,7 @@ def mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega_par, 
     t0 = time()
     alphaV, betaV, betaH = alpha, beta, eta
 
-    natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+    #natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
 
     F_aux = modal_shape.T @ load_vector[free_ind]
     omega_n = 2*np.pi*natural_frequencies
@@ -188,16 +189,19 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
     interval = np.arange(freq_range[0], freq_range[1] + 1, delta)
     func_vector = np.empty((len(interval)), dtype=complex)
 
+    data_k, data_m, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par)
+    stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta)
+    if modes is not None:
+        natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
     for n in range(len(interval)):
         omega_par = 2 * np.pi * interval[n]
-        stif_matrix, mass_matrix, dyna_stif, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, omega_par, xval, x_min_m, x_min_k, p_par, q_par)
+        dyna_stif = assembly_dyna_stif(omega_par, mass_matrix, damp_matrix, stif_matrix)
         if modes is not None:
-            disp_vector, _, _ = mode_superposition(stif_matrix, mass_matrix, load_vector, modes, omega_par, alpha, beta, eta, free_ind)
+            disp_vector, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega_par, alpha, beta, eta, free_ind)
         else: 
             disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
 
         _, func_vector[n] = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func)
-        print('It.', n)
     return func_vector 
 
 def compliance(disp_vector, load_vector):
@@ -736,17 +740,23 @@ def new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, l
             if (freq_comp_constr[0] == freq_comp_constr[1]) and (i == 0):
                 omega_comp = 2 * np.pi * freq_comp_constr[0]
                 ngl = 2 * ((nelx + 1) * (nely + 1))
-                stif_matrix_comp, mass_matrix_comp, dyna_stif_comp, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega_comp, xval, x_min_m, x_min_k, p_par, q_par)
+                data_k, data_m, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xval, x_min_m, x_min_k, p_par, q_par)
+                stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
+                dyna_stif = assembly_dyna_stif(omega_comp, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
-                    disp_vector_comp, _, _ = mode_superposition(stif_matrix_comp, mass_matrix_comp, load_vector, modes, omega_comp, alpha_par, beta_par, eta_par, free_ind)
+                    natural_frequencies, modal_shape = modal_analysis(stif_matrix_comp[free_ind, :][:, free_ind], mass_matrix_comp[free_ind, :][:, free_ind], modes=modes)
+                    disp_vector_comp, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix_comp, mass_matrix_comp, load_vector, omega_comp, alpha_par, beta_par, eta_par, free_ind)
                 else: 
                     disp_vector_comp, _ = harmonic_problem(ngl, dyna_stif_comp, load_vector, free_ind)
             elif not(freq_comp_constr[0] == freq_comp_constr[1]):    
                 omega_comp = 2 * np.pi * freq_comp_constr[i]
                 ngl = 2 * ((nelx + 1) * (nely + 1))
-                stif_matrix_comp, mass_matrix_comp, dyna_stif_comp, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega_comp, xval, x_min_m, x_min_k, p_par, q_par)
+                data_k, data_m, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xval, x_min_m, x_min_k, p_par, q_par)
+                stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
+                dyna_stif = assembly_dyna_stif(omega_comp, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
-                    disp_vector_comp, _, _ = mode_superposition(stif_matrix_comp, mass_matrix_comp, load_vector, modes, omega_comp, alpha_par, beta_par, eta_par, free_ind)
+                    natural_frequencies, modal_shape = modal_analysis(stif_matrix_comp[free_ind, :][:, free_ind], mass_matrix_comp[free_ind, :][:, free_ind], modes=modes)
+                    disp_vector_comp, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix_comp, mass_matrix_comp, load_vector, omega_comp, alpha_par, beta_par, eta_par, free_ind)
                 else: 
                     disp_vector_comp, _ = harmonic_problem(ngl, dyna_stif_comp, load_vector, free_ind)
             aux_fval, fvirg = objective_funcs('Compliance', disp_vector_comp, stif_matrix_comp, mass_matrix_comp, load_vector, omega_comp, const_func)
@@ -989,7 +999,6 @@ def derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_m
     return df0dx
 
 def freqrsp_multi_modes(modes, freq_rsp, constr_func, constr_values, load_matrix, restri_matrix, coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, x_min_m, x_min_k, p_par, q_par, func_name, const_func, save=False):
-
     initial_xval = set_initxval(constr_func, constr_values)
     xval  = initial_xval * np.ones((nelx * nely, 1))
     load_vector     = fc.get_load_vector(nelx, nely, load_matrix)
@@ -1006,4 +1015,31 @@ def freqrsp_multi_modes(modes, freq_rsp, constr_func, constr_values, load_matrix
     for i, mode in enumerate(modes):      
         func_vector[:, i] = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, mode, load_vector, unrestricted_ind=free_ind)
     plt_opt.freqrsp_modes(freq_range, delta, func_vector, origin, modes, func_name, save)
-    
+
+def freq_test(mesh_file, nelx, nely, lx, ly, E, v, rho, alpha, beta, eta, initial_xval, x_min_m, x_min_k, p_par, q_par, freq_range, func_name, const_func, modes, load_matrix, **kwargs):
+    if mesh_file is not None:
+        path = os.path.dirname(os.path.realpath(__file__)) 
+        m_file = os.path.join(path, mesh_file)
+        coord, connect = import_mesh(m_file)
+        ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+        nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
+        nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
+        lx = max(coord[:, 1])
+        ly = max(coord[:, 2])
+    else:
+        coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely)
+    ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+    # Force and restrictions matrix
+    load_matrix = fc.get_matrices(load_matrix, coord, True)
+    load_vector = fc.get_load_vector(nelx, nely, load_matrix)
+    if kwargs.get('restri_matrix') is not None: 
+        restri_matrix = kwargs.get('restri_matrix')
+        restri_matrix = fc.get_matrices(restri_matrix, coord, False)
+        restricted_ind = fc.get_dofs(restri_matrix)
+        free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
+    else:
+        free_ind = None
+    ngl = 2 * ((nelx + 1) * (nely + 1))
+    xval = initial_xval * np.ones((nelx * nely, 1))
+    vector = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range[:2], freq_range[2], func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
+    plt_opt.freqrsp_plot(freq_range, vector)    

@@ -146,8 +146,8 @@ def generate_ind_rows_cols(connect):
     ind_cols = (np.tile(ind_dofs, edofs)).flatten()
     return ind_rows, ind_cols
   
-def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq, timing=False, **kwargs):
-    """ Assembly and solution.
+def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, timing=False):
+    """ Assembly matrices.
 
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
@@ -159,14 +159,10 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha,
         E (:obj:`float`): Elastic modulus.
         v (:obj:`float`): Poisson's ratio.  
         rho (:obj:`float`): Density.  
-        alpha (:obj:`float`): Damping coefficient proportional to mass. 
-        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
-        eta (:obj:`float`): Damping coefficient. 
-        freq (:obj:`int`): Analyzed frequency.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
 
     Returns:
-        Displacement array.
+        Stiffness and mass matrices.
     """
     #
     t01 = time()
@@ -186,7 +182,21 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha,
     tf1 = time()
     if timing:
         print("Time to assembly global matrices: " + str(round((tf1 - t01), 6)) + '[s]')
-    # harmonic solution: direct method and no damping
+    return stif_matrix, mass_matrix 
+
+def harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq, ngl, timing=False, **kwargs):
+    """ Direct method and no damping
+
+    Args:
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
+        eta (:obj:`float`): Damping coefficient. 
+        freq (:obj:`int`): Analyzed frequency.
+        timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
+
+    Returns:
+        Displacement array.
+    """
     t02 = time()
     omega = 2 * np.pi * freq
     damp_matrix = alpha * mass_matrix + (beta + eta/omega)*stif_matrix
@@ -211,9 +221,8 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha,
     tf2 = time()
     if timing:
         print("Time to solve the harmonic analysis problem: " + str(round((tf2 - t02), 6)) + '[s]')
-        print("Total time elapsed in solution: " + str(round((tf2 - t01), 6)) + '[s]')
-    #
-    return disp_vector   
+        #print("Total time elapsed in solution: " + str(round((tf2 - t01), 6)) + '[s]')
+    return disp_vector  
 
 def get_num_el(coord):
     """ Get number of elements in mesh.
@@ -518,11 +527,11 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alph
     interval = np.arange(freq_rsp[0], freq_rsp[1] + 1, delta)
     vector_U = np.empty((len(interval)), dtype=complex)
     force_ind = get_dofs(node_plot)
+    stif_matrix, mass_matrix = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho)
+    ngl = 2 * ((nelx + 1) * (nely + 1))
     for n in range(len(interval)):
-        disp_vector = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq=interval[n], load_vector = load_vector, unrestricted_ind = free_ind)
+        disp_vector = harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, interval[n], ngl, load_vector=load_vector, unrestricted_ind=free_ind)
         vector_U[n] = disp_vector[force_ind]
-        print('It.', n)
-        
     return vector_U
 
 #TODO: REMOVER LINHAS REPETIDAS SE TIVER

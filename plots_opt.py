@@ -257,3 +257,8 @@ def freqrsp_modes(freq_range, delta, newf, oldf, modes, func_name, save):
     if save:
         plt.savefig('all' + ".eps")   
     plt.show()
+
+def freqrsp_plot(freq_range, vector):
+    freq = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
+    plt.plot(freq, vector)
+    plt.show()

@@ -3,10 +3,10 @@ import fem_2d as fem
        
 if __name__ == "__main__":
 
-    mesh_file = '/home/ana/Downloads/TOPDyn-master/retangulo1x05.IGES' #None
+    mesh_file = None 
 
-    nelx, nely = None, None 
-    lx, ly = None, None
+    nelx, nely = 40, 20 
+    lx, ly = 1, 0.25
 
     E = 210e9
     v = 0.3
