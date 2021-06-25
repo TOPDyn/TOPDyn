@@ -6,6 +6,17 @@ import matplotlib.pyplot as plt
 from PyQt5 import QtCore, QtGui
 from functions_2d import generate_xy_coord
 
+def compare_deriv(nodes, delta_d, dw, dw_orig):
+    for ind2, node in enumerate(nodes):
+        plt.figure(ind2+1)
+        plt.plot(delta_d, dw[:, ind2], marker='o', label='FDM')
+        plt.plot(delta_d, np.repeat(dw_orig[ind2], len(delta_d)), marker='o', label='Analytical Method')
+        plt.title('Node ' + str(node), fontsize=18)
+        plt.xlabel(r'$\Delta D_i$', fontsize=18)
+        plt.ylabel(r'$\frac{d \alpha}{d D_i}$', fontsize=18) #, rotation=0
+        plt.legend()
+    plt.show(block=True)
+
 def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
     """ Plot the frequency response of the original and the optimized function.
 

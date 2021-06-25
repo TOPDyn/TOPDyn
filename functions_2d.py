@@ -139,12 +139,16 @@ def generate_ind_rows_cols(connect):
         Node indexes to make the assembly
     """
     dofs, edofs = 2, 8
-    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
-                          dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
+    ind_dofs = get_ind_dofs(connect, dofs)
     vect_indices = ind_dofs.flatten()
     ind_rows = ((np.tile(vect_indices, (edofs,1))).T).flatten()
     ind_cols = (np.tile(ind_dofs, edofs)).flatten()
     return ind_rows, ind_cols
+
+def get_ind_dofs(connect, dofs):
+    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
+                          dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
+    return ind_dofs
   
 def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, timing=False):
     """ Assembly matrices.

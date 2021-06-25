@@ -121,9 +121,11 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
         f_scale_comp = np.empty(len(ind_comp))
     else:
         freq_comp_constr = None
+    
     # Calculate neighbors and distance
     radius = fac_ratio * lx/nelx
     neighbors, H, centroids = opt.get_neighbors_radius(nelx, nely, coord, connect, radius)	
+    
     # Beam initial settings
     m = len(constr_func)
     n = nelx * nely
@@ -140,10 +142,20 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
     xold2 = xval.copy()
     xmin = 0.00 * eeen.copy()
     xmax = 1 * eeen
-    #
+    
     if passive_coord is not None:
-        xmin, xval = opt.set_passive_el(xmin, xval, passive_coord, centroids)
-    #
+        passive_el = opt.get_passive_el(passive_coord, centroids)
+        xmin, xval = opt.set_passive_el(xmin, xval, passive_el)
+
+        ind_dofs = fc.get_ind_dofs(connect, 2)
+        ind_passive = ind_dofs[passive_el, :]
+        l_el = opt.set_l_el(passive_el, ngl, ind_passive.flatten())
+    else:
+        passive_el = None
+        ind_dofs = None
+        ind_passive = None
+        l_el = None
+    
     low = xmin.copy()
     upp = xmax.copy()
     c = 1000*eeem 
@@ -192,10 +204,10 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
             f_scale_comp[:] = fval[ind_comp, 0]
             fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
         # Objective function      
-        f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
+        f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         f0_scale = f0val
         # Derivative
-        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind)
+        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el)
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
             data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xnew, x_min_m, x_min_k, p_par, q_par)
@@ -207,9 +219,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
             else: 
                 disp_vector2, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
             # Second objective function
-            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func)
+            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind)
+            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el)
             # Filter
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
@@ -284,7 +296,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
         if contr_comp:
             fvalnew[ind_comp, 0] = 100 * fvalnew[ind_comp, 0]/f_scale_comp
         # Objective function 
-        f0valnew, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
+        f0valnew, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         # Normalize
         f0valnew = n1 * 100 * f0valnew/f0_scale # SERÁ QUE ESSE F0_SCALE ESTA CERTO? ACHO QUE SIM????
         # Multiobjective
@@ -298,7 +310,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
             else: 
                 disp_vector2, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
             # Second objective function
-            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func)
+            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Normalization
             f0val2 = (1 - abs(n1)) * 100 * f0val2/f0_scale_n2
             # Sum of functions and derivatives
@@ -335,12 +347,12 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
                 if contr_comp:
                     fvalnew[ind_comp, 0] = 100 * fvalnew[ind_comp, 0]/f_scale_comp
                 # Objective function      
-                f0valnew, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
+                f0valnew, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
                 # Normalization
                 f0valnew = n1 * 100 * f0valnew/f0_scale
                 # Multiobjective
                 if (func_name2 is not None) and (n1 != 1):
-                    data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, omega2_par, xnew, x_min_m, x_min_k, p_par, q_par)
+                    data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xnew, x_min_m, x_min_k, p_par, q_par)
                     stif_matrix, mass_matrix, damp_matrix = opt.assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
                     dyna_stif = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
                     if modes is not None:
@@ -349,7 +361,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
                     else: 
                         disp_vector2, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
                     # Second objective function
-                    f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func)
+                    f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
                     # Normalization
                     f0val2 = (1 - abs(n1)) * 100 * f0val2/f0_scale_n2
                     # Sum of functions and derivatives
@@ -378,9 +390,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
         if contr_comp:
             fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
         # Objective function 
-        f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func)
+        f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         # Derivative
-        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind)    
+        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el)    
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
             data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xnew, x_min_m, x_min_k, p_par, q_par)
@@ -392,9 +404,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
             else: 
                 disp_vector2, _    = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
             # Second objective function
-            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func)
+            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind)
+            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el)
             # Filter
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
@@ -447,8 +459,8 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
         freq_range = freq_rsp[:2]
         delta = freq_rsp[2]
         print("Calculating the frequency response of the objective function")
-        f_original = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
-        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xnew, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
+        f_original = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, unrestricted_ind=free_ind)
+        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xnew, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, unrestricted_ind=free_ind)
         ax = plt_opt.compare_freqresponse(freq_range, delta, f_optimized.real, f_original.real, func_name, save=save)
     if mesh_deform:
         disp_vector = fc.change_U_shape(disp_vector.real)
