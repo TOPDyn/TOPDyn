@@ -842,10 +842,10 @@ def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr
             i += 1
         
         elif constr_func[ind] == 'R Ratio':
-            aux_fval, fvirg = objective_funcs('R Ratio', disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func)
+            aux_fval, fvirg = objective_funcs('R Ratio', disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func, None, None, None, None, None, None, None)
             if gradients:
                 aux_dfdx = derivatives_objective('R Ratio', disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, \
-                                                    E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, free_ind)
+                                                    E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, free_ind, None, None, None)
         
         if constr_values[ind] < 0:
             aux_fval *= -1

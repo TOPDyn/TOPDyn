@@ -194,7 +194,7 @@ def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, co
     curves_funcs[0].setData(list_iter[:outeriter+1], list_f0val[:outeriter+1])
 
     for ind in range(len(constr_func)):
-        curves_funcs[1].setData(list_iter[:outeriter+1], list_fvals[:outeriter+1, ind])
+        curves_funcs[ind+1].setData(list_iter[:outeriter+1], list_fvals[:outeriter+1, ind])
    
 def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
     """ Update the values of the objective function and the constraint function to plot the convergence graph.
