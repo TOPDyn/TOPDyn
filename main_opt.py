@@ -7,7 +7,7 @@ if __name__ == "__main__":
     
     mesh_file = None
     
-    nelx, nely = 40, 80
+    nelx, nely = 10, 20
     lx, ly = 0.5, 1
 
     rho = 7860
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # Frequency optimized for func_name
     freq1 = 10
     # Frequency response plot
-    freq_rsp = []#[5, 400, 5]
+    freq_rsp = [5, 450, 5]
     # If False use sensitivity filter
     dens_filter = True
     # If True plots the convergence graph for each iteration of the optimization

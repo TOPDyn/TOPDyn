@@ -68,6 +68,8 @@ def legend_constr(constr_func):
             label[index[i]] = 'constraint - r ratio'
         elif f == 'Compliance':
             label[index[i]] = 'constraint - compliance'
+        elif f == 'Local Ep':
+            label[index[i]] = 'constraint - local ep'
         i += 1
     return label
 
@@ -115,6 +117,8 @@ def window_each_iter(constr_func, func_name, xval, lx, ly, nelx, nely, label):
             pen_set = {'color': colors[1], 'width': 2}
         elif f == 'Compliance':
             pen_set = {'color': colors[2], 'width': 2}
+        elif f == 'Local Ep':
+            pen_set = {'color': colors[3], 'width': 2}
         curves_p2.append(p2.plot(name=label[ind], pen=pen_set))
     return win, p2, curves_p2, grid
 
@@ -167,6 +171,8 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, l
             p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name=label[ind])
         elif f == 'Compliance':
             p.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2}, name=label[ind])
+        elif f == 'Local Ep':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[3], 'width': 2}, name=label[ind])
     return win, p
 
 def set_coord_grid(lx, ly, nelx, nely):
@@ -212,6 +218,8 @@ def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
             p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2})
         elif f == 'Compliance':
             p.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2})
+        elif f == 'Local Ep':
+            p.plot(list_iter, list_fvals[ind], pen={'color': colors[3], 'width': 2})
     return p
 
 def save_fig(opt_part, convergence):

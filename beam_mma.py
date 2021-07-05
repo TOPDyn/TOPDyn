@@ -128,7 +128,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     contr_localep = 'Local Ep' in constr_func
     if contr_localep:
         constr_values, freq_localep_constr, ind_localep = opt.constr_with_freq(constr_values, constr_func, 'Local Ep')
-        f_scale_localep = np.empty(len(ind_comp))
+        f_scale_localep = np.empty(len(ind_localep))
     else:
         freq_localep_constr = None
 
