@@ -117,12 +117,20 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     omega2_par = 2 * np.pi * freq2   
     ngl = 2 * ((nelx + 1) * (nely + 1))
     natural_freqs = None
+
     contr_comp = 'Compliance' in constr_func
     if contr_comp:
-        constr_values, freq_comp_constr, ind_comp = opt.constr_compliance(constr_values, constr_func)
+        constr_values, freq_comp_constr, ind_comp = opt.constr_with_freq(constr_values, constr_func, 'Compliance')
         f_scale_comp = np.empty(len(ind_comp))
     else:
         freq_comp_constr = None
+
+    contr_localep = 'Local Ep' in constr_func
+    if contr_localep:
+        constr_values, freq_localep_constr, ind_localep = opt.constr_with_freq(constr_values, constr_func, 'Local Ep')
+        f_scale_localep = np.empty(len(ind_comp))
+    else:
+        freq_localep_constr = None
 
     # Calculate neighbors and distance
     radius = fac_ratio * lx/nelx
@@ -184,7 +192,6 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     # Calculate function values and gradients of the objective and constraints functions
 
     ##############
-
     # if dens_filter:
     #     xnew = opt.calc_xnew(H, neighbors, xval)
     # else:
@@ -235,10 +242,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     #         # Acontece em outro lugares. está somando complexo com real, mas no return pega a parte real. Não compensa jápegar a parte real de ambas as partes?
     #         deriv_f[el, 0] = (1/4) *  ((disp_vector[ind].reshape(1, -1).conjugate() @ dKe @ disp_vector[ind]) + (lam[ind].reshape(1, -1) @ dKed @ disp_vector[ind]).real)[0]
     #     else:
-    #         deriv_f[el, 0] = ((lam[ind].reshape(1, -1) @ dKed @ disp_vector[ind]).real)[0]
-    
-      
-    
+    #         deriv_f[el, 0] = ((lam[ind].reshape(1, -1) @ dKed @ disp_vector[ind]).real)[0]    
     #####################
 
     if outeriter == 0:   
@@ -254,11 +258,19 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             disp_vector, natural_freqs, _ = opt.mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
         else: 
             disp_vector, _ = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
-        # Constraint function       
-        fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xnew, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
+        
+        # Constraint function              
+        fval, dfdx = opt.new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr, freq_localep_constr, lx, ly, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, 
+                                             p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs, l_el)
+        
         if contr_comp:
             f_scale_comp[:] = fval[ind_comp, 0]
             fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
+
+        if contr_localep:
+            f_scale_localep[:] = fval[ind_localep, 0]
+            fval[ind_localep, 0] = 100 * fval[ind_localep, 0]/f_scale_localep
+
         # Objective function      
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         f0_scale = f0val
@@ -266,8 +278,8 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el)
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
-            data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xnew, x_min_m, x_min_k, p_par, q_par)
-            stif_matrix, mass_matrix, damp_matrix = opt.assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
+            #data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xnew, x_min_m, x_min_k, p_par, q_par)
+            #stif_matrix, mass_matrix, damp_matrix = opt.assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
             dyna_stif = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
             if modes is not None:
                 natural_frequencies, modal_shape = opt.modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
@@ -324,7 +336,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     #
     kktnorm = kkttol+10
     chmax = 10
-    while (kktnorm > kkttol) and (outit < max_iter): #and (chmax > chtol):
+    while (kktnorm > kkttol) and (outit < max_iter) and (chmax > chtol):
         outit += 1
         outeriter += 1
         # The MMA subproblem is solved at the point xval:
@@ -347,18 +359,25 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             disp_vector, natural_freqs, t_superp = opt.mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
         else: 
             disp_vector, t_harmonic = opt.harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
-        # Area function
-        fval, dfdx = opt.new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly, ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xnew, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, free_ind)
+       
+        # Constraint function              
+        fval, dfdx = opt.new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr, freq_localep_constr, lx, ly, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, 
+                                             p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs, l_el)
+        
         if contr_comp:
             fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
+
+        if contr_localep:
+            fval[ind_localep, 0] = 100 * fval[ind_localep, 0]/f_scale_localep
+
         # Objective function 
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         # Derivative
         df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el)
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
-            data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xnew, x_min_m, x_min_k, p_par, q_par)
-            stif_matrix, mass_matrix, damp_matrix = opt.assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
+            #data_k, data_m, _ = opt.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xnew, x_min_m, x_min_k, p_par, q_par)
+            #stif_matrix, mass_matrix, damp_matrix = opt.assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
             dyna_stif = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
             if modes is not None:
                 natural_frequencies, modal_shape = opt.modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)

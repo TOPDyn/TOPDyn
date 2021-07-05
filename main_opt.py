@@ -7,7 +7,7 @@ if __name__ == "__main__":
     
     mesh_file = None
     
-    nelx, nely = 50, 100
+    nelx, nely = 40, 80
     lx, ly = 0.5, 1
 
     rho = 7860
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # Weight at objective function
     n1 = 1
     # Method iterations
-    max_iter = 3
+    max_iter = 100
     # Factor applied in the radius
     fac_ratio = 2.2 #2.1
     # If not None is used mode superposition method
@@ -39,14 +39,14 @@ if __name__ == "__main__":
     # Frequency optimized for func_name
     freq1 = 10
     # Frequency response plot
-    freq_rsp = [5, 400, 5]
+    freq_rsp = []#[5, 400, 5]
     # If False use sensitivity filter
     dens_filter = True
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
-    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance' -> (constraint value, frequency)
-    constr_func = [ 'Area']
-    constr_values = [30]
+    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance', 'Local Ep' -> (constraint value, frequency)
+    constr_func = ['Local Ep']
+    constr_values = [(30, 100)]
     #
     passive_coord = ((0, 0.5), (0.95, 1)) # ((x_initial, x_final), (y_initial, y_final)) or None
     # Está comentado no while ainda!

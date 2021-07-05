@@ -776,42 +776,71 @@ def sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2=None):
         new_deriv_f[:, col] = aux3 * np.sum(aux2, axis=1)
     return out_deriv(new_deriv_f, dfdx, df0dx2)
 
-def new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, lx, ly,  ind_rows, ind_cols, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, load_vector, omega_par, const_func, free_ind, gradients=True):
+def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr, freq_localep_constr, lx, ly, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega_par, const_func, free_ind, passive_el, ind_dofs, l_el, gradients=True):
     ''' Calculates the constraint functions and derivatives. '''
     i = 0
+    j = 0
     for ind in range(len(constr_func)):
         if constr_func[ind] == 'Area':
             aux_fval = total_area(lx, ly, area, xval)
             if gradients:
                 aux_dfdx = 100/(lx * ly) * area.reshape(1, -1)
+
+        elif constr_func[ind] == 'Local Ep':
+            if (freq_localep_constr[0] == freq_localep_constr[1]) and (j == 0):
+                omega_localep = 2 * np.pi * freq_localep_constr[0]
+                ngl = 2 * ((nelx + 1) * (nely + 1))
+                dyna_stif_localep = assembly_dyna_stif(omega_localep, mass_matrix, damp_matrix, stif_matrix)
+                if modes is not None:
+                    natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+                    disp_vector_localep, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega_localep, alpha_par, beta_par, eta_par, free_ind)
+                else:  
+                    disp_vector_localep, _ = harmonic_problem(ngl, dyna_stif_localep, load_vector, free_ind)
+            
+            elif not(freq_localep_constr[0] == freq_localep_constr[1]):    
+                omega_localep = 2 * np.pi * freq_localep_constr[j]
+                ngl = 2 * ((nelx + 1) * (nely + 1))
+                dyna_stif_localep = assembly_dyna_stif(omega_localep, mass_matrix, damp_matrix, stif_matrix)
+                if modes is not None:
+                    natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+                    disp_vector_localep, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega_localep, alpha_par, beta_par, eta_par, free_ind)
+                else: 
+                    disp_vector_localep, _ = harmonic_problem(ngl, dyna_stif_localep, load_vector, free_ind)
+            
+            ind_passive = ind_dofs[passive_el, :]
+            aux_fval, fvirg = objective_funcs('Local Ep', disp_vector_localep, stif_matrix, mass_matrix, load_vector, omega_localep, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+                                                         
+            if gradients:
+                aux_dfdx = derivatives_objective('Local Ep', disp_vector_localep, stif_matrix, dyna_stif_localep, mass_matrix, load_vector, fvirg, coord, connect, \
+                                                    E, v, rho, alpha_par, beta_par, omega_localep, p_par, q_par, x_min_m, x_min_k, xval, free_ind, ind_dofs, passive_el, l_el)
+            j += 1
+            
         elif constr_func[ind] == 'Compliance':
             if (freq_comp_constr[0] == freq_comp_constr[1]) and (i == 0):
                 omega_comp = 2 * np.pi * freq_comp_constr[0]
                 ngl = 2 * ((nelx + 1) * (nely + 1))
-                data_k_comp, data_m_comp, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xval, x_min_m, x_min_k, p_par, q_par)
-                stif_matrix_comp, mass_matrix_comp, damp_matrix_comp = assembly_matrices(data_k_comp, data_m_comp, ind_rows, ind_cols, ngl, alpha_par, beta_par)
-                dyna_stif_comp = assembly_dyna_stif(omega_comp, mass_matrix_comp, damp_matrix_comp, stif_matrix_comp)
+                dyna_stif_comp = assembly_dyna_stif(omega_comp, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
-                    natural_frequencies, modal_shape = modal_analysis(stif_matrix_comp[free_ind, :][:, free_ind], mass_matrix_comp[free_ind, :][:, free_ind], modes=modes)
-                    disp_vector_comp, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix_comp, mass_matrix_comp, load_vector, omega_comp, alpha_par, beta_par, eta_par, free_ind)
+                    natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+                    disp_vector_comp, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega_comp, alpha_par, beta_par, eta_par, free_ind)
                 else: 
                     disp_vector_comp, _ = harmonic_problem(ngl, dyna_stif_comp, load_vector, free_ind)
+
             elif not(freq_comp_constr[0] == freq_comp_constr[1]):    
                 omega_comp = 2 * np.pi * freq_comp_constr[i]
                 ngl = 2 * ((nelx + 1) * (nely + 1))
-                data_k_comp, data_m_comp, _ = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_par, beta_par, eta_par, xval, x_min_m, x_min_k, p_par, q_par)
-                stif_matrix_comp, mass_matrix_comp, damp_matrix_comp = assembly_matrices(data_k_comp, data_m_comp, ind_rows, ind_cols, ngl, alpha_par, beta_par)
-                dyna_stif_comp = assembly_dyna_stif(omega_comp, mass_matrix_comp, damp_matrix_comp, stif_matrix_comp)
+                dyna_stif_comp = assembly_dyna_stif(omega_comp, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
-                    natural_frequencies, modal_shape = modal_analysis(stif_matrix_comp[free_ind, :][:, free_ind], mass_matrix_comp[free_ind, :][:, free_ind], modes=modes)
-                    disp_vector_comp, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix_comp, mass_matrix_comp, load_vector, omega_comp, alpha_par, beta_par, eta_par, free_ind)
+                    natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+                    disp_vector_comp, _, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, mass_matrix, load_vector, omega_comp, alpha_par, beta_par, eta_par, free_ind)
                 else: 
                     disp_vector_comp, _ = harmonic_problem(ngl, dyna_stif_comp, load_vector, free_ind)
-            aux_fval, fvirg = objective_funcs('Compliance', disp_vector_comp, stif_matrix_comp, mass_matrix_comp, load_vector, omega_comp, const_func)
+            aux_fval, fvirg = objective_funcs('Compliance', disp_vector_comp, stif_matrix, mass_matrix, load_vector, omega_comp, const_func, None, None, None, None, None, None, None)
             if gradients:
-                aux_dfdx = derivatives_objective('Compliance', disp_vector_comp, stif_matrix_comp, dyna_stif_comp, mass_matrix_comp, load_vector, fvirg, coord, connect, \
-                                                    E, v, rho, alpha_par, beta_par, omega_comp, p_par, q_par, x_min_m, x_min_k, xval, free_ind)
+                aux_dfdx = derivatives_objective('Compliance', disp_vector_comp, stif_matrix, dyna_stif_comp, mass_matrix, load_vector, fvirg, coord, connect, \
+                                                    E, v, rho, alpha_par, beta_par, omega_comp, p_par, q_par, x_min_m, x_min_k, xval, free_ind, None, None, None)
             i += 1
+        
         elif constr_func[ind] == 'R Ratio':
             aux_fval, fvirg = objective_funcs('R Ratio', disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func)
             if gradients:
@@ -823,32 +852,32 @@ def new_apply_constr(fval, dfdx, constr_func, constr_values, freq_comp_constr, l
             if gradients:
                 aux_dfdx *= -1 
         aux_fval -= constr_values[ind]
-        #
+        
         fval[ind, 0] = aux_fval
         if gradients:
             dfdx[ind, :] = aux_dfdx[:, 0]
     return fval, dfdx
 
-def constr_compliance(constr_values, constr_func):
-    ''' Separates the constraint value and the frequency of the compliance constraint.
+def constr_with_freq(constr_values, constr_func, func):
+    ''' Separates the constraint value and the frequency of the constrain function.
     Args:
         constr_values (:obj:`list`): Values of constraint functions applied.
         constr_func (:obj:`list`)  : Constraint functions applied.
 
     Returns:
-        constr_values, freq_comp_constr, ind_comp
+        constr_values, freq_constr, ind_func
     '''
-    freq_comp_constr    = np.empty(2)
-    freq_comp_constr[:] = None
-    ind_comp = []
+    freq_constr    = np.empty(2)
+    freq_constr[:] = None
+    ind_func = []
     ind      = 0
     for i in range(len(constr_func)):
-        if constr_func[i] == 'Compliance':
-            freq_comp_constr[ind] = constr_values[i][1]
-            constr_values[i]      = constr_values[i][0]
-            ind_comp.append(i)
+        if constr_func[i] == func:
+            freq_constr[ind] = constr_values[i][1]
+            constr_values[i] = constr_values[i][0]
+            ind_func.append(i)
             ind += 1
-    return constr_values, freq_comp_constr, ind_comp
+    return constr_values, freq_constr, ind_func
 
 def update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_func, constr_values):
     """ Add new values to list of functions to plot convergence
