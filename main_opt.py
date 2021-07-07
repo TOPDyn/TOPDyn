@@ -1,4 +1,3 @@
-import os
 import functions_opt as fc_opt
 
 if __name__ == "__main__":
@@ -7,7 +6,7 @@ if __name__ == "__main__":
     
     mesh_file = None
     
-    nelx, nely = 10, 20
+    nelx, nely = 50, 100
     lx, ly = 0.5, 1
 
     rho = 7860
@@ -27,7 +26,7 @@ if __name__ == "__main__":
     # Weight at objective function
     n1 = 1
     # Method iterations
-    max_iter = 100
+    max_iter = 150
     # Factor applied in the radius
     fac_ratio = 2.2 #2.1
     # If not None is used mode superposition method
@@ -35,7 +34,7 @@ if __name__ == "__main__":
     # Tuple with func_name2 and frequency optimized for func_name2. Associated with weight (1 - n1)
     multiobjective = ('Compliance', 0)
     # It can be 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio', 'Local Ep'
-    func_name = 'Input Power' 
+    func_name = 'Local Ep' 
     # Frequency optimized for func_name
     freq1 = 10
     # Frequency response plot
@@ -45,8 +44,8 @@ if __name__ == "__main__":
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
     # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance', 'Local Ep' -> (constraint value, frequency)
-    constr_func = ['Local Ep']
-    constr_values = [(30, 100)]
+    constr_func = ['Area', 'Local Ep']
+    constr_values = [50, (30, 100)]
     #
     passive_coord = ((0, 0.5), (0.95, 1)) # ((x_initial, x_final), (y_initial, y_final)) or None
     # Está comentado no while ainda!
@@ -62,7 +61,6 @@ if __name__ == "__main__":
     nodes = [2]
     number_deltas = 50 
     delta_interval = (1e-12, 1e-2) #(low, high)
-
     #fc_opt.finite_difference(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, p_par, q_par, passive_coord, nodes, number_deltas, delta_interval)
 
     fc_opt.exe_opt(mma, mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
