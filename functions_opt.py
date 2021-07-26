@@ -188,17 +188,25 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
     Returns:
         Objective function values.
     """
+    interval = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    func_vector = np.empty((len(interval)), dtype=complex)
+
+    l = len(interval) + 5
+    progress = 0
+    printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
     free_ind = None
     if kwargs.get('unrestricted_ind') is not None:
         free_ind = kwargs.get('unrestricted_ind')
-
-    interval = np.arange(freq_range[0], freq_range[1] + 1, delta)
-    func_vector = np.empty((len(interval)), dtype=complex)
 
     data_k, data_m, _ = solution2D(coord, connect, nelx, nely, E, v, rho, xval, x_min_m, x_min_k, p_par, q_par)
     stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta)
     if modes is not None:
         natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+    
+    progress += 5
+    printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
     for n in range(len(interval)):
         omega_par = 2 * np.pi * interval[n]
         dyna_stif = assembly_dyna_stif(omega_par, mass_matrix, damp_matrix, stif_matrix)
@@ -208,6 +216,8 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
             disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
 
         _, func_vector[n] = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+        progress += 1
+        printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
     return func_vector 
 
 def compliance(disp_vector, load_vector):

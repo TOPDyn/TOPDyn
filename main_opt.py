@@ -27,7 +27,7 @@ if __name__ == "__main__":
     const_func = 100
     
     # Factor applied in the radius
-    fac_ratio = 0.021/0.005 #2.2 #2.1
+    fac_ratio = 0.021/0.005 #raio/n.el #2.2 #2.1
 
     # If not None is used mode superposition method
     modes = None
