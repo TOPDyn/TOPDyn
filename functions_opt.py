@@ -313,15 +313,24 @@ def R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func):
     R  = const_func + 10 * np.log10(R)
     return R.real, fvirg.real
 
-def lambda_local_ep(passive_el, l_el, disp_vector, dyna_stif, coord, connect, E, v, rho):
-    ind_l_el = np.arange(0, 8 * len(passive_el)+1, 8, dtype=int)
+def lambda_local_ep(ngl, ind_passive, passive_el, l_el, disp_vector, dyna_stif, coord, connect, E, v, rho):
+    aux1 = np.zeros(ngl, dtype=complex)
     fadj = 0
     for i, el in enumerate(passive_el):
         Ke, _ = fc.matricesQ4(el, coord, connect, E, v, rho)
-        fadj += (l_el[ind_l_el[i]:ind_l_el[i+1], :].transpose() @ Ke @ l_el[ind_l_el[i]:ind_l_el[i+1], :]).transpose() @ disp_vector.conjugate()
+        aux1[ind_passive[i]] = Ke@disp_vector[ind_passive[i]].conjugate()
+        fadj += aux1
+        aux1[:] = 0 
     fadj *= -1/2
-
     lam = spsolve(dyna_stif, fadj)
+    # ind_l_el = np.arange(0, 8 * len(passive_el)+1, 8, dtype=int)
+    # fadj = 0
+    # for i, el in enumerate(passive_el):
+    #     Ke, _ = fc.matricesQ4(el, coord, connect, E, v, rho)
+    #     fadj += (l_el[ind_l_el[i]:ind_l_el[i+1], :].transpose() @ Ke @ l_el[ind_l_el[i]:ind_l_el[i+1], :]).transpose() @ disp_vector.conjugate()
+    # fadj *= -1/2
+
+    # lam = spsolve(dyna_stif, fadj)
     return lam
 
 def lambda_parameter(disp_vector, load_vector, function):
@@ -771,7 +780,7 @@ def sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2=None):
         new_deriv_f[:, col] = aux3 * np.sum(aux2, axis=1)
     return out_deriv(new_deriv_f, dfdx, df0dx2)
 
-def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr, freq_localep_constr, lx, ly, nelx, nely, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega_par, const_func, free_ind, passive_el, ind_dofs, l_el, gradients=True):
+def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr, freq_localep_constr, lx, ly, ngl, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega_par, const_func, free_ind, passive_el, ind_dofs, l_el, gradients=True):
     ''' Calculates the constraint functions and derivatives. '''
     i = 0
     j = 0
@@ -784,7 +793,7 @@ def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr
         elif constr_func[ind] == 'Local Ep':
             if (freq_localep_constr[0] == freq_localep_constr[1]) and (j == 0):
                 omega_localep = 2 * np.pi * freq_localep_constr[0]
-                ngl = 2 * ((nelx + 1) * (nely + 1))
+                #ngl = 2 * ((nelx + 1) * (nely + 1))
                 dyna_stif_localep = assembly_dyna_stif(omega_localep, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
                     natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
@@ -794,7 +803,7 @@ def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr
             
             elif not(freq_localep_constr[0] == freq_localep_constr[1]):    
                 omega_localep = 2 * np.pi * freq_localep_constr[j]
-                ngl = 2 * ((nelx + 1) * (nely + 1))
+                #ngl = 2 * ((nelx + 1) * (nely + 1))
                 dyna_stif_localep = assembly_dyna_stif(omega_localep, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
                     natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
@@ -807,13 +816,13 @@ def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr
                                                          
             if gradients:
                 aux_dfdx = derivatives_objective('Local Ep', disp_vector_localep, stif_matrix, dyna_stif_localep, mass_matrix, load_vector, fvirg, coord, connect, \
-                                                    E, v, rho, alpha_par, beta_par, omega_localep, p_par, q_par, x_min_m, x_min_k, xval, free_ind, ind_dofs, passive_el, l_el)
+                                                    E, v, rho, alpha_par, beta_par, omega_localep, p_par, q_par, x_min_m, x_min_k, xval, free_ind, ind_dofs, passive_el, l_el, ngl, ind_passive)
             j += 1
             
         elif constr_func[ind] == 'Compliance':
             if (freq_comp_constr[0] == freq_comp_constr[1]) and (i == 0):
                 omega_comp = 2 * np.pi * freq_comp_constr[0]
-                ngl = 2 * ((nelx + 1) * (nely + 1))
+                #ngl = 2 * ((nelx + 1) * (nely + 1))
                 dyna_stif_comp = assembly_dyna_stif(omega_comp, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
                     natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
@@ -823,7 +832,7 @@ def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr
 
             elif not(freq_comp_constr[0] == freq_comp_constr[1]):    
                 omega_comp = 2 * np.pi * freq_comp_constr[i]
-                ngl = 2 * ((nelx + 1) * (nely + 1))
+                #ngl = 2 * ((nelx + 1) * (nely + 1))
                 dyna_stif_comp = assembly_dyna_stif(omega_comp, mass_matrix, damp_matrix, stif_matrix)
                 if modes is not None:
                     natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
@@ -833,14 +842,14 @@ def new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr
             aux_fval, fvirg = objective_funcs('Compliance', disp_vector_comp, stif_matrix, mass_matrix, load_vector, omega_comp, const_func, None, None, None, None, None, None, None)
             if gradients:
                 aux_dfdx = derivatives_objective('Compliance', disp_vector_comp, stif_matrix, dyna_stif_comp, mass_matrix, load_vector, fvirg, coord, connect, \
-                                                    E, v, rho, alpha_par, beta_par, omega_comp, p_par, q_par, x_min_m, x_min_k, xval, free_ind, None, None, None)
+                                                    E, v, rho, alpha_par, beta_par, omega_comp, p_par, q_par, x_min_m, x_min_k, xval, free_ind)
             i += 1
         
         elif constr_func[ind] == 'R Ratio':
-            aux_fval, fvirg = objective_funcs('R Ratio', disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func, None, None, None, None, None, None, None)
+            aux_fval, fvirg = objective_funcs('R Ratio', disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func)
             if gradients:
                 aux_dfdx = derivatives_objective('R Ratio', disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, \
-                                                    E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, free_ind, None, None, None)
+                                                    E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, free_ind)
         
         if constr_values[ind] < 0:
             aux_fval *= -1
@@ -1049,7 +1058,7 @@ def objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vecto
         fvirg = f0val
     return f0val, fvirg
        
-def derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el):
+def derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind=None, ind_dofs=None, passive_el=None, l_el=None, ngl=None, ind_passive=None):
     ''' Calculate derivatite of objective function.
 
     Args:
@@ -1101,7 +1110,8 @@ def derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_m
         lam_par   = lambda_parameter_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind)
         df0dx     = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xnew, disp_vector, lam_par, fvirg, elastic_p, kinetic_e)
     elif func_name == 'Local Ep':
-        lam_par = lambda_local_ep(passive_el, l_el, disp_vector, dyna_stif, coord, connect, E, v, rho)
+        #lam_par = lambda_local_ep(passive_el, l_el, disp_vector, dyna_stif, coord, connect, E, v, rho)
+        lam_par = lambda_local_ep(ngl, ind_passive, passive_el, l_el, disp_vector, dyna_stif, coord, connect, E, v, rho)
         df0dx = derivative_local_ep(passive_el, lam_par, ind_dofs, xnew, disp_vector, connect, coord, E, v, rho, x_min_k, x_min_m, omega_par, alpha_par, beta_par, p_par, q_par)
     return df0dx
 
@@ -1178,7 +1188,7 @@ def finite_difference(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, res
     f0val_orig, fvirg_orig = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
     
     # RELACIONADO A DERIVADA
-    dw_orig[:] = derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg_orig, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xval, free_ind, ind_dofs, passive_el, l_el)[nodes, 0]
+    dw_orig[:] = derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg_orig, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xval, free_ind, ind_dofs, passive_el, l_el, ngl, ind_passive)[nodes, 0]
     progress += 5
     printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
     for i in range(number_deltas):
