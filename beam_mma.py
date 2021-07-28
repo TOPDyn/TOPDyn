@@ -131,6 +131,8 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         f_scale_localep = np.empty(len(ind_localep))
     else:
         freq_localep_constr = None
+    
+    constr_values = np.array(constr_values)
 
     # Calculate neighbors and distance
     radius = fac_ratio * lx/nelx
@@ -159,12 +161,10 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
 
         ind_dofs = fc.get_ind_dofs(connect, 2)
         ind_passive = ind_dofs[passive_el, :]
-        l_el = opt.set_l_el(passive_el, ngl, ind_passive.flatten())
     else:
         passive_el = None
         ind_dofs = None
         ind_passive = None
-        l_el = None
 
     low = xmin.copy()
     upp = xmax.copy()
@@ -189,8 +189,8 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     load_vector = fc.get_load_vector(nelx, nely, load_matrix)
     # Calculate area and derivative
     area = opt.calc_A(coord, connect[:, 1:] - 1)
+    
     # Calculate function values and gradients of the objective and constraints functions
-
     if outeriter == 0:   
         if dens_filter:
             xnew = opt.calc_xnew(H, neighbors, xval)
@@ -207,7 +207,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         
         # Constraint function              
         fval, dfdx = opt.new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr, freq_localep_constr, lx, ly, ngl, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, 
-                                             p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs, l_el)
+                                             p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs)
         
         if contr_comp:
             f_scale_comp[:] = fval[ind_comp, 0]
@@ -216,12 +216,14 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         if contr_localep:
             f_scale_localep[:] = fval[ind_localep, 0]
             fval[ind_localep, 0] = 100 * fval[ind_localep, 0]/f_scale_localep
+        
+        fval[:, 0] = fval[:, 0] - constr_values
 
         # Objective function      
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         f0_scale = f0val
         # Derivative
-        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el, ngl, ind_passive)
+        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, ngl, ind_passive)
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
             dyna_stif2 = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
@@ -233,7 +235,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             # Second objective function
             f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif2, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el, ngl, ind_passive)
+            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif2, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, ngl, ind_passive)
             # Filter
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
@@ -306,18 +308,20 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
        
         # Constraint function              
         fval, dfdx = opt.new_apply_constr_ep(fval, dfdx, constr_func, constr_values, freq_comp_constr, freq_localep_constr, lx, ly, ngl, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, 
-                                             p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs, l_el)
+                                             p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs)
         
         if contr_comp:
             fval[ind_comp, 0] = 100 * fval[ind_comp, 0]/f_scale_comp
 
         if contr_localep:
             fval[ind_localep, 0] = 100 * fval[ind_localep, 0]/f_scale_localep
+        
+        fval[:, 0] = fval[:, 0] - constr_values
 
         # Objective function 
         f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         # Derivative
-        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el, ngl, ind_passive)
+        df0dx = opt.derivatives_objective(func_name, disp_vector, stif_matrix, dyna_stif, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, ngl, ind_passive)
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
             dyna_stif2 = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
@@ -329,7 +333,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             # Second objective function
             f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif2, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, l_el, ngl, ind_passive)
+            df0dx2 = opt.derivatives_objective(func_name2, disp_vector2, stif_matrix, dyna_stif2, mass_matrix, load_vector, fvirg, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, free_ind, ind_dofs, passive_el, ngl, ind_passive)
             # Filter
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
