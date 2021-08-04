@@ -6,6 +6,185 @@ import matplotlib.pyplot as plt
 from PyQt5 import QtCore, QtGui
 from functions_2d import generate_xy_coord
 
+def legend_constr(constr_func):
+    ''' Define the labels  of the constraint functions.
+    Args:
+        constr_func (:obj:`list`): Restriction functions applied.
+
+    Returns:
+        Numpy array with the labels.
+    '''
+    label = np.empty(len(constr_func), dtype=object)
+    func, index = np.unique(constr_func, return_index=True)
+    aux = np.arange(0, len(constr_func))
+    aux2 = np.setdiff1d(aux, index)
+    label[aux2] = None
+    i = 0
+    for f in func:
+        if f =='Area':
+            label[index[i]] = 'constraint - area'
+        elif f == 'R Ratio':
+            label[index[i]] = 'constraint - r ratio'
+        elif f == 'Compliance':
+            label[index[i]] = 'constraint - compliance'
+        elif f == 'Local Ep':
+            label[index[i]] = 'constraint - local ep'
+        elif f == 'Local Ki':
+            label[index[i]] = 'constraint - local ep'
+        i += 1
+    return label
+
+def set_pen(f):
+    colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75), (255,102,0), (255,128,128), (0,51,0)]
+    
+    if f == 'Area':
+        pen_set = {'color': colors[0], 'width': 2}
+    elif f == 'R Ratio':
+        pen_set = {'color': colors[1], 'width': 2}
+    elif f == 'Compliance':
+        pen_set = {'color': colors[2], 'width': 2}
+    elif f == 'Local Ep':
+        pen_set = {'color': colors[3], 'width': 2}
+    elif f == 'Local Ki':
+        pen_set = {'color': colors[4], 'width': 2}
+    return pen_set
+
+def window_each_iter(constr_func, func_name, label):
+    """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
+
+    Args:
+        constr_func (:obj:`list`): Restriction functions applied.
+        list_iter (:obj:`list`): All iteration values.
+        list_f0val (:obj:`list`): All objective function values.
+        list_fvals (:obj:`list`): All constraint function values.
+        func_name (:obj:`str`): Objective function name.
+        label (:obj:`numpy.array`): Label of the constraint functions.
+
+    Returns:
+        Principal window, convergece graph, optimezed part.
+    """
+    win = pg.GraphicsLayoutWidget(show=True)
+    win.resize(900,600)
+    win.setWindowTitle('MMA')
+    
+    grid = mf.PColorMeshItem(cmap='grey')
+    plot = win.addPlot()
+    plot.setAspectLocked(True)
+    plot.hideAxis('bottom')
+    plot.hideAxis('left')
+    plot.addItem(grid)
+    # Plot Objective function and area
+    win.nextRow()
+    p2 = win.addPlot()
+    p2.addLegend(labelTextColor=(0,0,0), offset=(700,10))
+    p2.setLabel('left', func_name.lower())
+    p2.setLabel('bottom', "iteration") 
+    
+    curves_p2 = []
+    curves_p2.append(p2.plot(pen={'color': (0,0,0), 'width': 2}, name=func_name.lower()))
+    for ind, f in enumerate(constr_func):
+        pen_set = set_pen(f)
+        curves_p2.append(p2.plot(name=label[ind], pen=pen_set))
+    return win, p2, curves_p2, grid
+
+def simple_window():
+    """ Generate a window to plot the optimized mesh.
+
+    Returns:
+        Principal window, optimized part.
+    """
+    win = pg.GraphicsLayoutWidget(show=True)
+    win.setWindowTitle('MMA')
+
+    grid = mf.PColorMeshItem(cmap='grey')
+    plot = win.addPlot()
+    plot.setAspectLocked(True)
+    plot.hideAxis('bottom')
+    plot.hideAxis('left')
+    plot.addItem(grid)
+    pg.QtGui.QApplication.processEvents()
+    return win, grid
+
+def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, label):
+    """ Generate a window to plot the convergence graph.
+
+    Args:
+        constr_func (:obj:`list`): Restriction functions applied.
+        list_iter (:obj:`list`): All iteration values.
+        list_f0val (:obj:`list`): All objective function values.
+        list_fvals (:obj:`list`): All constraint function values.
+        func_name (:obj:`str`): Objective function name.
+        label (:obj:`numpy.array`): Label of the constraint functions.
+
+    Returns:
+        Principal window, convergece graph.
+    """
+    win = pg.GraphicsLayoutWidget(show=True, title="MMA")
+    win.resize(1000,600)
+    #p = win.addPlot(title="Convergence")
+    p = win.addPlot()
+    p.addLegend(labelTextColor=(0,0,0), offset=(800,10))
+    p.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2}, name=func_name.lower())
+    p.setLabel('left', func_name.lower())
+    p.setLabel('bottom', "iteration") 
+   
+    for ind, f in enumerate(constr_func):
+        pen_set = set_pen(f)
+        p.plot(list_iter, list_fvals[ind], pen=pen_set, name=label[ind])
+    return win, p
+
+def set_coord_grid(lx, ly, nelx, nely):
+    x, y   = generate_xy_coord(lx, ly, nelx, nely)
+    x_plot = np.repeat(x, nely+1).reshape(nelx+1, nely+1)
+    y_plot = np.tile(y, nelx+1).reshape(nelx+1, nely+1)
+    return x_plot, y_plot
+
+def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
+    grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
+
+def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func):
+    """ Update the values of the objective function and the constraint function to plot the convergence graph.
+
+    Args:
+        outeriter (:obj:`int`): Iteration value.
+    """
+    curves_funcs[0].setData(list_iter[:outeriter+1], list_f0val[:outeriter+1])
+
+    for ind in range(len(constr_func)):
+        curves_funcs[ind+1].setData(list_iter[:outeriter+1], list_fvals[:outeriter+1, ind])
+   
+def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
+    """ Update the values of the objective function and the constraint function to plot the convergence graph.
+
+    Args:
+        constr_func (:obj:`list`): Restriction functions applied.
+        p (pyqtgraph.graphicsItems.PlotItem): Convergence graph window
+        list_iter (:obj:`list`): All iteration values.
+        list_f0val (:obj:`list`): All objective function values.
+        list_fvals (:obj:`list`): All constraint function values.
+
+    Returns:
+        Convergence graph window.
+    """
+    p.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2})
+    for ind, f in enumerate(constr_func):
+        pen_set = set_pen(f)
+        p.plot(list_iter, list_fvals[ind], pen=pen_set)
+    return p
+
+def save_fig(opt_part, convergence):
+    """ Save the optimized part and the convergence graph.
+
+    Args:
+        opt_part (pyqtgraph.graphicsItems.PlotItem): Optimized part window. 
+        convergence (pyqtgraph.graphicsItems.PlotItem): Convergence graph window.
+    """   
+    exporter = pg.exporters.ImageExporter(opt_part)
+    exporter.export('optimization.png')
+
+    exporter2 = pg.exporters.ImageExporter(convergence)
+    exporter2.export('convergence.png')
+
 def compare_deriv(nodes, delta_d, dw, dw_orig):
     for ind2, node in enumerate(nodes):
         plt.figure(ind2+1)
@@ -46,194 +225,6 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
         plt.savefig("compare_freq_response.png")
 
     return ax
-
-def legend_constr(constr_func):
-    ''' Define the labels  of the constraint functions.
-    Args:
-        constr_func (:obj:`list`): Restriction functions applied.
-
-    Returns:
-        Numpy array with the labels.
-    '''
-    label = np.empty(len(constr_func), dtype=object)
-    func, index = np.unique(constr_func, return_index=True)
-    aux = np.arange(0, len(constr_func))
-    aux2 = np.setdiff1d(aux, index)
-    label[aux2] = None
-    i = 0
-    for f in func:
-        if f =='Area':
-            label[index[i]] = 'constraint - area'
-        elif f == 'R Ratio':
-            label[index[i]] = 'constraint - r ratio'
-        elif f == 'Compliance':
-            label[index[i]] = 'constraint - compliance'
-        elif f == 'Local Ep':
-            label[index[i]] = 'constraint - local ep'
-        i += 1
-    return label
-
-def window_each_iter(constr_func, func_name, xval, lx, ly, nelx, nely, label):
-    """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
-
-    Args:
-        constr_func (:obj:`list`): Restriction functions applied.
-        list_iter (:obj:`list`): All iteration values.
-        list_f0val (:obj:`list`): All objective function values.
-        list_fvals (:obj:`list`): All constraint function values.
-        func_name (:obj:`str`): Objective function name.
-        label (:obj:`numpy.array`): Label of the constraint functions.
-
-    Returns:
-        Principal window, convergece graph, optimezed part.
-    """
-    win = pg.GraphicsLayoutWidget(show=True)
-    win.resize(900,600)
-    win.setWindowTitle('MMA')
-    
-    grid = mf.PColorMeshItem(cmap='grey')
-    # x_plot, y_plot = set_coord_grid(lx, ly, nelx, nely)
-    # set_grid_data(grid, xval, x_plot, y_plot, nelx, nely)
-    plot = win.addPlot()
-    plot.setAspectLocked(True)
-    plot.hideAxis('bottom')
-    plot.hideAxis('left')
-    plot.addItem(grid)
-    # Plot Objective function and area
-    win.nextRow()
-    p2 = win.addPlot()
-    p2.addLegend(labelTextColor=(0,0,0), offset=(700,10))
-    p2.setLabel('left', func_name.lower())
-    p2.setLabel('bottom', "iteration") 
-    
-    curves_p2 = []
-    curves_p2.append(p2.plot(pen={'color': (0,0,0), 'width': 2}, name=func_name.lower()))
-
-    colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
-    for ind, f in enumerate(constr_func):
-        if f == 'Area':
-            pen_set = {'color': colors[0], 'width': 2}
-        elif f == 'R Ratio':
-            pen_set = {'color': colors[1], 'width': 2}
-        elif f == 'Compliance':
-            pen_set = {'color': colors[2], 'width': 2}
-        elif f == 'Local Ep':
-            pen_set = {'color': colors[3], 'width': 2}
-        curves_p2.append(p2.plot(name=label[ind], pen=pen_set))
-    return win, p2, curves_p2, grid
-
-def simple_window():
-    """ Generate a window to plot the optimized mesh.
-
-    Returns:
-        Principal window, optimized part.
-    """
-    win = pg.GraphicsLayoutWidget(show=True)
-    win.setWindowTitle('MMA')
-
-    grid = mf.PColorMeshItem(cmap='grey')
-    plot = win.addPlot()
-    plot.setAspectLocked(True)
-    plot.hideAxis('bottom')
-    plot.hideAxis('left')
-    plot.addItem(grid)
-    pg.QtGui.QApplication.processEvents()
-
-    return win, grid
-
-def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, label):
-    """ Generate a window to plot the convergence graph.
-
-    Args:
-        constr_func (:obj:`list`): Restriction functions applied.
-        list_iter (:obj:`list`): All iteration values.
-        list_f0val (:obj:`list`): All objective function values.
-        list_fvals (:obj:`list`): All constraint function values.
-        func_name (:obj:`str`): Objective function name.
-        label (:obj:`numpy.array`): Label of the constraint functions.
-
-    Returns:
-        Principal window, convergece graph.
-    """
-    win = pg.GraphicsLayoutWidget(show=True, title="MMA")
-    win.resize(1000,600)
-    #p = win.addPlot(title="Convergence")
-    p = win.addPlot()
-    p.addLegend(labelTextColor=(0,0,0), offset=(800,10))
-    p.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2}, name=func_name.lower())
-    p.setLabel('left', func_name.lower())
-    p.setLabel('bottom', "iteration") 
-    colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
-    for ind, f in enumerate(constr_func):
-        if f == 'Area':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2}, name=label[ind])
-        elif f == 'R Ratio':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2}, name=label[ind])
-        elif f == 'Compliance':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2}, name=label[ind])
-        elif f == 'Local Ep':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[3], 'width': 2}, name=label[ind])
-    return win, p
-
-def set_coord_grid(lx, ly, nelx, nely):
-    x, y   = generate_xy_coord(lx, ly, nelx, nely)
-    x_plot = np.repeat(x, nely+1).reshape(nelx+1, nely+1)
-    y_plot = np.tile(y, nelx+1).reshape(nelx+1, nely+1)
-    return x_plot, y_plot
-
-def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
-    grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
-
-def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func):
-    """ Update the values of the objective function and the constraint function to plot the convergence graph.
-
-    Args:
-        outeriter (:obj:`int`): Iteration value.
-
-    """
-    curves_funcs[0].setData(list_iter[:outeriter+1], list_f0val[:outeriter+1])
-
-    for ind in range(len(constr_func)):
-        curves_funcs[ind+1].setData(list_iter[:outeriter+1], list_fvals[:outeriter+1, ind])
-   
-def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
-    """ Update the values of the objective function and the constraint function to plot the convergence graph.
-
-    Args:
-        constr_func (:obj:`list`): Restriction functions applied.
-        p (pyqtgraph.graphicsItems.PlotItem): Convergence graph window
-        list_iter (:obj:`list`): All iteration values.
-        list_f0val (:obj:`list`): All objective function values.
-        list_fvals (:obj:`list`): All constraint function values.
-
-    Returns:
-        Convergence graph window.
-    """
-    p.plot(list_iter, list_f0val, pen={'color': (0,0,0), 'width': 2})
-    colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
-    for ind, f in enumerate(constr_func):
-        if f == 'Area':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[0], 'width': 2})
-        elif f == 'R Ratio':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[1], 'width': 2})
-        elif f == 'Compliance':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[2], 'width': 2})
-        elif f == 'Local Ep':
-            p.plot(list_iter, list_fvals[ind], pen={'color': colors[3], 'width': 2})
-    return p
-
-def save_fig(opt_part, convergence):
-    """ Save the optimized part and the convergence graph.
-
-    Args:
-        opt_part (pyqtgraph.graphicsItems.PlotItem): Optimized part window. 
-        convergence (pyqtgraph.graphicsItems.PlotItem): Convergence graph window.
-    """   
-    exporter = pg.exporters.ImageExporter(opt_part)
-    exporter.export('optimization.png')
-
-    exporter2 = pg.exporters.ImageExporter(convergence)
-    exporter2.export('convergence.png')
 
 def freqrsp_modes(freq_range, delta, newf, oldf, modes, func_name, save):
     """ Plot the frequency response of the function with multiple modes.

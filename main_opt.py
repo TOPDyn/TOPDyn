@@ -54,9 +54,9 @@ if __name__ == "__main__":
     # Tuple with func_name2 and frequency optimized for func_name2. Associated with weight (1 - n1)
     multiobjective = ('Compliance', 0)
     
-    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance', 'Local Ep' -> (constraint value, frequency)
+    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance', 'Local Ep', 'Local Ki' -> (constraint value, frequency)
     constr_func = ['Area', 'Local Ep']
-    constr_values = [50, (80, 50)]
+    constr_values = [50, (70, 50)]
     
     passive_coord = ((0.4, 0.6), (0.15, 0.35)) # ((x_initial, x_final), (y_initial, y_final)) or None
    
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     chtol = 1e-4 
     # Plot mesh  
-    mesh_deform = True 
+    mesh_deform = False 
     factor = 800
     save = False
     timing = False
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     max_iter = 171
 
     nodes = [2]
-    number_deltas = 50 
+    number_deltas = 50
     delta_interval = (1e-12, 1e-2) #(low, high)
 
     #fc_opt.freq_test(mesh_file, nelx, nely, lx, ly, E, v, rho, alpha_par, beta_par, eta_par, 0.5, x_min_m, x_min_k, p_par, q_par, freq_rsp, func_name, const_func, modes, fac_ratio, passive_coord, force_matrix, restri_matrix=restri_matrix)
