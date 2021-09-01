@@ -2,11 +2,14 @@ import cmath
 import os
 import numpy as np
 from time import time
-import functions_2d as fc
-import plots_opt as plt_opt
 from scipy.linalg import eigh
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
+
+import functions_deriv as df
+import functions_2d as fc
+import functions_obj as obj
+import plots_opt as plt_opt
 from mesh_process_2d import import_mesh
 
 def exe_opt(mma, mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
@@ -161,7 +164,7 @@ def get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif, load_vector, fre
         natural_frequencies = None
     return disp_vector, natural_frequencies, t_U
 
-def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, **kwargs):
+def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R, **kwargs):
     """ Calculates the objective function for a range of frequencies.
 
     Args:
@@ -222,487 +225,10 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
         else: 
             disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
 
-        _, func_vector[n] = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+        _, func_vector[n] = obj.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho, aux_R=False)
         progress += 1
         printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
     return func_vector 
-
-def elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho):
-    ep2 = 0
-    for i, ind_el in enumerate(ind_passive):
-        Ke, _ = fc.matricesQ4(passive_el[i], coord, connect, E, v, rho)
-        aux = disp_vector[ind_el].reshape(1, -1).conjugate()@Ke@disp_vector[ind_el]
-        ep2+=aux
-    fvirg = (1/4) * ep2[0].real
-    f = 100 + 10*np.log10(fvirg)
-    return f, fvirg #(1/4) * ep2[0].real
-
-def kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho):
-    ki = 0
-    for i, ind_el in enumerate(ind_passive):
-        _, Me = fc.matricesQ4(passive_el[i], coord, connect, E, v, rho)
-        aux = disp_vector[ind_el].conj().reshape(1, -1)@Me@disp_vector[ind_el]
-        ki+=aux
-    fvirg = ((omega_par**2)/4)*ki.real
-    f = 100 + 10*np.log10(fvirg)
-    return f, fvirg
-
-def compliance(disp_vector, load_vector):
-    """ Calculates the compliance function.
-
-    Args:
-        disp_vector (:obj:`numpy.array`): Displacement.
-        load_vector (:obj:`numpy.array`): Force.
-        
-    Returns:
-        Function value.
-    """
-    f = abs(np.dot(disp_vector, load_vector))
-    return f
-
-def input_power(disp_vector, load_vector, omega_par, const_func):
-    """ Calculates the input power function.
-
-    Args:
-        disp_vector (:obj:`numpy.array`): Displacement.
-        load_vector (:obj:`numpy.array`): Force.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        const_func (:obj:`float`):
-
-    Returns:
-        A tuple with the values of the input power on the logarithmic scale and the 'virgin' input power.
-    """
-    a = 1j * load_vector.conjugate()@disp_vector
-    if omega_par == 0:
-        omega_par = 1 #1e-12
-    f = 0.5 * omega_par * a.real
-    fvirg = f
-    #Log Scale
-    f = const_func + 10 * np.log10(f.real)
-    return f, fvirg
-
-def elastic_potential_energy(disp_vector, stif_matrix, const_func):
-    """ Calculates the elastic potential energy.
-
-    Args:
-        disp_vector (:obj:`numpy.array`): Displacement.
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        const_func (:obj:`float`): 
-
-    Returns:
-        A tuple with the values of the potential elastic energy on the logarithmic scale and the 'virgin' potential elastic energy.
-    """
-    elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
-    fvirg = elastic_p
-    #Log Scale
-    elastic_p = const_func + 10 * np.log10(elastic_p.real)
-    return elastic_p.real, fvirg.real
-
-def kinetic_energy(disp_vector, mass_matrix, omega_par, const_func):
-    """ Calculates the kinetic energy.
-
-    Args:
-        disp_vector (:obj:`numpy.array`): Displacement.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        const_func (:obj:`float`):
-
-    Returns:
-        A tuple with the values of the kinetic energy on the logarithmic scale and the 'virgin' kinetic energy.
-    """
-    if omega_par == 0:
-        omega_par = 1e-12
-    kinetic_e = ((1/4) * omega_par**2 * (disp_vector.conjugate()@mass_matrix@disp_vector)).real
-    fvirg = kinetic_e 
-    #Log Scale
-    kinetic_e  = const_func + 10 * np.log10(kinetic_e)
-
-    return kinetic_e.real, fvirg.real
-
-def R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func):
-    """ Calculates the strain-to-kinetic energy ratio R.
-
-    Args:
-        disp_vector (:obj:`numpy.array`): Displacement.
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        const_func (:obj:`float`):
-
-    Returns:
-        R, Rvrig 
-    """
-    elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
-    if omega_par == 0:
-        omega_par = 1e-12
-    kinetic_e = ((1/4) * omega_par**2 * (disp_vector.conjugate()@mass_matrix@disp_vector)).real
-    R = (elastic_p/kinetic_e)
-    fvirg = R
-    #Log Scale
-    R  = const_func + 10 * np.log10(R)
-    return R.real, fvirg.real
-
-def lambda_local_ep(ngl, ind_passive, passive_el, disp_vector, dyna_stif, coord, connect, E, v, rho):
-    aux1 = np.zeros(ngl, dtype=complex)
-    fadj = 0
-    for i, el in enumerate(passive_el):
-        Ke, _ = fc.matricesQ4(el, coord, connect, E, v, rho)
-        aux1[ind_passive[i]] = Ke@disp_vector[ind_passive[i]].conjugate()
-        fadj += aux1
-        aux1[:] = 0 
-    fadj *= -1/2
-    lam = spsolve(dyna_stif, fadj)
-    return lam
-
-def lambda_local_ki(ngl, ind_passive, passive_el, disp_vector, dyna_stif, omega_par, coord, connect, E, v, rho):
-    aux = np.zeros(ngl, dtype=complex)
-    fadj = 0
-    for i, el in enumerate(passive_el):
-        _, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        aux[ind_passive[i]] = Me@disp_vector[ind_passive[i]].conjugate()
-        fadj += aux
-        aux[:] = 0
-    fadj *= -(omega_par**2)/2
-    lam = spsolve(dyna_stif, fadj)
-    return lam
-
-def lambda_compliance(disp_vector, load_vector, function):
-    """ Calculates the lambda parameter of the function.
-
-    Args:
-        disp_vector (:obj:`numpy.array`): Displacement.
-        load_vector (:obj:`numpy.array`): Force vector.
-        function (:obj:`float`): Function value.
-
-    Returns:
-        Lambda parameter.
-    """
-    lam = (disp_vector.conjugate()@load_vector)/function
-    return lam
-
-def lambda_ep(disp_vector, stif_matrix, dyna_stif, free_ind):
-    """ Calculates the lambda solution of the elastic potential energy.
-
-    Args:
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix. 
-        disp_vector (:obj:`numpy.array`): Displacement.
-        free_ind (:obj:`numpy.array`): Free dofs.
-
-    Returns:
-        Lambda parameter solution.
-    """
-    lam = np.zeros(stif_matrix.shape[0], dtype=complex)
-    aux = -(1/2) * (stif_matrix[free_ind, :][:, free_ind]@disp_vector[free_ind].conjugate())
-    lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
-    return lam
-
-def lambda_ek(disp_vector, mass_matrix, dyna_stif, omega_par, free_ind):
-    """ Calculates the lambda solution of the kinetic energy.
-
-    Args:
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        dyna_stif (array): Stifness matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        free_ind (:obj:`numpy.array`): Free dofs.
-
-    Returns:
-        Lambda parameter solution.
-    """
-    lam = np.zeros(mass_matrix.shape[0], dtype=complex)
-    if omega_par == 0:
-        omega_par = 1e-12
-    aux = - (omega_par**2) * (mass_matrix[free_ind, :][:, free_ind]@disp_vector[free_ind].conjugate())
-    lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
-    return lam
-
-def lambda_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind):
-    """ Calculates the lambda solution of R.
-
-    Args:
-        disp_vector (:obj:`numpy.array`): Displacement.
-        Kd_matrix (:obj:`numpy.array`): 
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency.
-        fvirg (:obj:`float`): 'virgin' function value.
-        kinetic_e: Kinetic energy.
-        free_ind (:obj:`numpy.array`): Free dofs.
-
-    Returns:
-        Lambda parameter solution.
-    """
-    lam = np.zeros(mass_matrix.shape[0], dtype=complex)
-    if omega_par == 0:
-        omega_par = 1e-12
-    aux = - (1/(2*kinetic_e)) * ((stif_matrix[free_ind, :][:, free_ind] - (omega_par**2)*fvirg*mass_matrix[free_ind, :][:, free_ind])@disp_vector[free_ind].conjugate())
-    lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
-    return lam
-
-# Or use @nb.njit
-# @nb.jit(nopython=True)
-def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam):
-    """ calculates the derivative of the compliance function.
-
-    Args:
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio.
-        rho (:obj:`float`): Density.
-        alpha (:obj:`float`): Damping coefficient proportional to mass.
-        beta (:obj:`float`): Damping coefficient proportional to stiffness.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        p_par (:obj:`float`): Penalization power to stiffness. 
-        q_par (:obj:`float`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        lam (:obj:`float`): Lambda parameter.
-
-    Returns:
-        Derivative values.
-    """
-    deriv_f = np.empty((len(connect), 1))
-    dofs = 2
-    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
-                            dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    for el in range(len(connect)):
-        Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
-        dCe = alpha * Me + beta * dKe
-        if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
-        else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me        
-        dKed = dKe + omega_par * 1j * dCe - (omega_par**2) * dMe
-        deriv_f[el, 0] = (-lam *(disp_vector[ind].reshape(1, 8)@dKed@disp_vector[ind].reshape(8, 1)))[0,0].real
-    return deriv_f
-
-def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, fvirg):
-    """ calculates the derivative of the input power function.
-    
-    Args:
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio.
-        rho (:obj:`float`): Density.
-        alpha (:obj:`float`): Damping coefficient proportional to mass.
-        beta (:obj:`float`): Damping coefficient proportional to stiffness.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        p_par (:obj:`float`): Penalization power to stiffness. 
-        q_par (:obj:`float`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        fvirg (:obj:`float`): Input power function value.
-
-    Returns:
-        Derivative values.
-
-    """
-    deriv_f = np.empty((len(connect), 1))
-    dofs = 2
-    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
-                            dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    for el in range(len(connect)):
-        Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
-        dCe = alpha * Me + beta * dKe
-        if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
-        else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me   
-        dKed = dKe + omega_par * 1j * dCe - (omega_par**2) * dMe
-        a = 1j * (disp_vector[ind].reshape(1, 8)@dKed@disp_vector[ind].reshape(8, 1))[0,0]
-        deriv_f[el, 0] = -0.5 * omega_par * a.real
-        #Log Scale
-        deriv_f[el, 0] = 10.0*deriv_f[el, 0]*np.log10(np.exp(1))/fvirg  
-    return deriv_f
-
-def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, fvirg):
-    """ calculates the derivative of the elastic potential energy function.
-
-    Args:
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio.
-        rho (:obj:`float`): Density.
-        alpha (:obj:`float`): Damping coefficient proportional to mass.
-        beta (:obj:`float`): Damping coefficient proportional to stiffness.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        p_par (:obj:`float`): Penalization power to stiffness. 
-        q_par (:obj:`float`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        lam (:obj:`float`): Lambda parameter.
-        fvirg (:obj:`float`): Elastic potential energy function value.
-
-    Returns:
-        Derivative values.
-    """
-    deriv_ep = np.empty((len(connect), 1), dtype=complex)
-    dofs = 2
-    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
-                            dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    for el in range(len(connect)):
-        Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        ind = ind_dofs[el, :]
-        #dKe1 = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke.conjugate()
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
-        dCe = alpha * Me + beta * dKe
-        if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
-        else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
-        dKed = dKe + omega_par * 1j * dCe - (omega_par**2) * dMe             
-        deriv_ep[el, 0] = (1/4) * (disp_vector[ind].conjugate()@dKe@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
-        #Log Scale
-        deriv_ep[el, 0] = 10.0*deriv_ep[el, 0]*np.log10(np.exp(1))/fvirg
-    return deriv_ep.real
-
-def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, fvirg):
-    """ calculates the derivative of the kinetic energy function.
-
-    Args:
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio.
-        rho (:obj:`float`): Density.
-        alpha (:obj:`float`): Damping coefficient proportional to mass.
-        beta (:obj:`float`): Damping coefficient proportional to stiffness.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        p_par (:obj:`float`): Penalization power to stiffness. 
-        q_par (:obj:`float`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        lam (:obj:`float`): Lambda parameter.
-        fvirg (:obj:`float`): Kinetic energy function value.
-
-    Returns:
-        Derivative values.
-    """
-    deriv_ek = np.empty((len(connect), 1), dtype=complex)
-    dofs = 2
-    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
-                            dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    for el in range(len(connect)):
-        Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
-        dCe = alpha * Me + beta * dKe
-        if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
-        else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
-        dKed = dKe + omega_par * 1j * dCe - (omega_par**2) * dMe             
-        deriv_ek[el, 0] = ((omega_par**2)/4) * (disp_vector[ind].conjugate()@dMe@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
-        #Log Scale
-        deriv_ek[el, 0] = 10.0*deriv_ek[el, 0]*np.log10(np.exp(1))/fvirg
-    return deriv_ek.real
-
-def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, fvirg, kinetic_e):
-    """ calculates the derivative of the kinetic energy function.
-
-    Args:
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio.
-        rho (:obj:`float`): Density.
-        alpha (:obj:`float`): Damping coefficient proportional to mass.
-        beta (:obj:`float`): Damping coefficient proportional to stiffness.
-        omega_par (:obj:`float`): 2 * pi * frequency
-        p_par (:obj:`float`): Penalization power to stiffness. 
-        q_par (:obj:`float`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        lam (:obj:`float`): Lambda parameter.
-        fvirg (:obj:`float`): R Ratio function value.
-        elastic_p (:obj:`float`): Elastic potential energy function value.
-        kinetic_e (:obj:`float`): Kinetic energy function value.
-
-    Returns:
-        Derivative values.
-    """
-    deriv_R = np.empty((len(connect), 1), dtype=complex)
-    dofs = 2
-    ind_dofs = (np.array([dofs*connect[:,1]-1, dofs*connect[:,1], dofs*connect[:,2]-1, dofs*connect[:,2],
-                            dofs*connect[:,3]-1, dofs*connect[:,3], dofs*connect[:,4]-1, dofs*connect[:,4]], dtype=int)-1).T
-    for el in range(len(connect)):
-        Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
-        dCe = alpha * Me + beta * dKe
-        if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
-        else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
-        dKed = dKe + omega_par * 1j * dCe - (omega_par**2) * dMe        
-        
-        deriv_R[el, 0] = 1/(4*kinetic_e) * (disp_vector[ind].conjugate()@(dKe - (omega_par**2)*fvirg*dMe)@disp_vector[ind]).real + (lam[ind]@dKed@disp_vector[ind]).real
-        #Log Scale
-        deriv_R[el, 0] = 10.0*deriv_R[el, 0]*np.log10(np.exp(1))/fvirg
-    return deriv_R.real
-
-def derivative_local_ep(passive_el, lam, ind_dofs, xval, disp_vector, connect, coord, E, v, rho, x_min_k, x_min_m, omega_par, alpha, beta, p_par, q_par, fvirg):
-    deriv_f = np.empty((len(connect), 1), dtype=complex)
-
-    for el in range(len(connect)):
-        Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
-        dCe = alpha * Me + beta * dKe
-        
-        if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
-        else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
-        dKed = dKe + omega_par * 1j * dCe - (omega_par**2) * dMe    
-        
-        if el in passive_el:
-            deriv_f[el, 0] = (1/4) *  ((disp_vector[ind].reshape(1, -1).conjugate() @ dKe @ disp_vector[ind]) + (lam[ind].reshape(1, -1) @ dKed @ disp_vector[ind]).real)[0]
-        else:
-            deriv_f[el, 0] = ((lam[ind].reshape(1, -1) @ dKed @ disp_vector[ind]).real)[0]
-        #Log Scale
-        deriv_f[el, 0] = 10*deriv_f[el, 0] * np.log10(np.exp(1))/fvirg
-    return deriv_f.real
-
-def derivative_local_ki(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, fvirg, ind_dofs, passive_el):
-    deriv_ek = np.empty((len(connect), 1), dtype=complex)
-    for el in range(len(connect)):
-        Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
-        ind = ind_dofs[el, :]
-        dKe = p_par * (xval[el]**(p_par - 1))*(1-x_min_k) * Ke
-        dCe = alpha * Me + beta * dKe
-        if xval[el]>0.1:
-            dMe = q_par * (xval[el]**(q_par - 1))*(1-x_min_m) * Me
-        else:
-            dMe = ((9*3.512e7*xval[el]**8 - 10*2.081e8*xval[el]**9)*(1-x_min_m) ) * Me 
-        dKed = dKe + omega_par * 1j * dCe - (omega_par**2) * dMe
-
-        if el in passive_el:
-            deriv_ek[el, 0] = ((omega_par**2)/4) * disp_vector[ind].conj().reshape(1, -1)@dMe@disp_vector[ind] + (lam[ind].T@dKed@disp_vector[ind]).real   
-        else:
-            deriv_ek[el, 0] = (lam[ind]@dKed@disp_vector[ind]).real
-
-    #Log Scale
-    deriv_ek[el, 0] = 10.0*deriv_ek[el, 0]*np.log10(np.exp(1))/fvirg
-    return deriv_ek.real
 
 def set_deriv(dfdx, df0dx, df0dx2):
     if df0dx2 is not None:
@@ -854,10 +380,10 @@ def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr
                 dyna_stif_localep = assembly_dyna_stif(omega_localep, mass_matrix, damp_matrix, stif_matrix)
                 disp_vector_localep, _, _ = get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif_localep, load_vector, free_ind, omega_localep, alpha_par, beta_par, eta_par, ngl)
             
-            aux_fval, fvirg = objective_funcs('Local Ep', disp_vector_localep, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
+            aux_fval, fvirg = obj.objective_funcs('Local Ep', disp_vector_localep, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
                                                          
             if gradients:
-                aux_dfdx = derivatives_objective('Local Ep', fvirg, disp_vector_localep, coord, connect, E, v, rho, alpha_par, beta_par, omega_localep, p_par, q_par, x_min_m, x_min_k, xval, \
+                aux_dfdx = df.derivatives_objective('Local Ep', fvirg, disp_vector_localep, coord, connect, E, v, rho, alpha_par, beta_par, omega_localep, p_par, q_par, x_min_m, x_min_k, xval, \
                            dyna_stif=dyna_stif_localep, ind_dofs=ind_dofs, ngl=ngl, ind_passive=ind_passive, passive_el=passive_el)                     
 
         elif constr_func[ind] == 'Local Ki':
@@ -866,27 +392,39 @@ def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr
                 dyna_stif_localki = assembly_dyna_stif(omega_localki, mass_matrix, damp_matrix, stif_matrix)
                 disp_vector_localki, _, _ = get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif_localki, load_vector, free_ind, omega_localki, alpha_par, beta_par, eta_par, ngl)
             
-            aux_fval, fvirg = objective_funcs('Local Ki', disp_vector_localki, omega_par=omega_localki, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
+            aux_fval, fvirg = obj.objective_funcs('Local Ki', disp_vector_localki, omega_par=omega_localki, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
 
             if gradients:
-                aux_dfdx = derivatives_objective('Local Ki', fvirg, disp_vector_localki, coord, connect, E, v, rho, alpha_par, beta_par, omega_localki, p_par, q_par, x_min_m, x_min_k, xval, \
+                aux_dfdx = df.derivatives_objective('Local Ki', fvirg, disp_vector_localki, coord, connect, E, v, rho, alpha_par, beta_par, omega_localki, p_par, q_par, x_min_m, x_min_k, xval, \
                                 dyna_stif=dyna_stif_localki, ind_dofs=ind_dofs, ngl=ngl, ind_passive=ind_passive, passive_el=passive_el)
 
+        elif constr_func[ind] == 'Local R':
+            if ind_constr2[ind] == 0:
+                omega_localR = 2 * np.pi *  freq_constr[ind]
+                dyna_stif_localR = assembly_dyna_stif(omega_localR, mass_matrix, damp_matrix, stif_matrix)
+                disp_vector_localR, _, _ = get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif_localR, load_vector, free_ind, omega_localR, alpha_par, beta_par, eta_par, ngl)
+            
+            aux_fval, fvirg = obj.objective_funcs('Local R', disp_vector_localR, omega_par=omega_localR, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
+
+            if gradients:
+                aux_dfdx = df.derivatives_objective('Local R', fvirg, disp_vector_localR, coord, connect, E, v, rho, alpha_par, beta_par, omega_localR, p_par, q_par, x_min_m, x_min_k, xval, \
+                                dyna_stif=dyna_stif_localR, ind_dofs=ind_dofs, ngl=ngl, ind_passive=ind_passive, passive_el=passive_el)
+        
         elif constr_func[ind] == 'Compliance':
             if ind_constr2[ind] == 0:
                 omega_comp = 2 * np.pi *  freq_constr[ind]
                 dyna_stif_comp = assembly_dyna_stif(omega_comp, mass_matrix, damp_matrix, stif_matrix)
                 disp_vector_comp, _, _ = get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif_comp, load_vector, free_ind, omega_comp, alpha_par, beta_par, eta_par, ngl)
 
-            aux_fval, fvirg = objective_funcs('Compliance', disp_vector_comp, load_vector=load_vector)
+            aux_fval, fvirg = obj.objective_funcs('Compliance', disp_vector_comp, load_vector=load_vector)
             if gradients:
-                aux_dfdx = derivatives_objective('Compliance', disp_vector_comp, coord, connect, E, v, rho, alpha_par, beta_par, omega_comp, p_par, q_par, x_min_m, x_min_k, xval, \
+                aux_dfdx = df.derivatives_objective('Compliance', fvirg, disp_vector_comp, coord, connect, E, v, rho, alpha_par, beta_par, omega_comp, p_par, q_par, x_min_m, x_min_k, xval, \
                                                 load_vector=load_vector)
-        
+
         elif constr_func[ind] == 'R Ratio':
-            aux_fval, fvirg = objective_funcs('R Ratio', disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func)
+            aux_fval, fvirg = obj.objective_funcs('R Ratio', disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func)
             if gradients:
-                aux_dfdx = derivatives_objective('R Ratio', disp_vector,fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, \
+                aux_dfdx = df.derivatives_objective('R Ratio', disp_vector,fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, \
                                                 mass_matrix=mass_matrix, stif_matrix=stif_matrix, dyna_stif=dyna_stif, free_ind=free_ind)                                                     
         
         if constr_values[ind] < 0:
@@ -917,6 +455,7 @@ def constr_with_freq(constr_func, constr_values):
     aux_c  = None
     aux_ep = None
     aux_ki = None
+    aux_r = None
 
     for i, value in enumerate(constr_values):
         if type(value) is tuple:
@@ -936,6 +475,10 @@ def constr_with_freq(constr_func, constr_values):
                 if aux_ki is not None and aux_ki == value[1]:
                     ind_constr2[i] = 1
                 aux_ki = value[1]
+            elif constr_func[i] == 'Local R':
+                if aux_r is not None and aux_r == value[1]:
+                    ind_constr2[i] = 1
+                aux_r = value[1]
     return constr_values, freq_constr, ind_freq_constr, ind_constr2
 
 def normalize_constr(fval, f_scale_constr):
@@ -1067,208 +610,6 @@ def set_passive_el(xmin, xval, passive_el):
     
     return xmin, xval
 
-def objective_funcs(func_name, disp_vector, stif_matrix=None, mass_matrix=None, load_vector=None, omega_par=None, const_func=None, passive_el=None, ind_passive=None, coord=None, connect=None, E=None, v=None, rho=None):
-    ''' Calculate objective function.
-
-    Args:
-        func_name (:obj:`str`): Objective function used.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        load_vector (:obj:`numpy.array`): Force.
-        omega_par (:obj:`float`): 2 * pi * frequency.
-        const_func (:obj:`float`):
-        passive_el (:obj:`numpy.array`): Passive element nodes.
-        ind_passive (:obj:`numpy.array`): Index of passive elements.
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio. 
-        rho (:obj:`float`): Density.
-
-    Returns:
-        Objective function values.
-    '''
-    if func_name == "Compliance":
-        f0val = compliance(disp_vector, load_vector)
-        fvirg = f0val
-    
-    elif func_name == "Elastic Potential Energy":
-        f0val, fvirg = elastic_potential_energy(disp_vector, stif_matrix, const_func)
-    
-    elif func_name == "Input Power":
-        f0val, fvirg = input_power(disp_vector, load_vector, omega_par, const_func)
-                  
-    elif func_name == "Kinetic Energy":
-        f0val, fvirg = kinetic_energy(disp_vector, mass_matrix, omega_par, const_func)
-    
-    elif func_name == 'R Ratio':
-        f0val, fvirg = R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func)
-
-    elif func_name == 'Local Ep':
-        f0val, fvirg = elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
-
-    elif func_name == 'Local Ki':
-        f0val, fvirg = kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
-    return f0val, fvirg
-       
-def derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, load_vector=None, mass_matrix=None, stif_matrix=None, dyna_stif=None, free_ind=None, ind_dofs=None, ngl=None, ind_passive=None, passive_el=None):
-    ''' Calculate derivatite of objective function.
-
-    Args:
-        func_name (:obj:`str`): Objective function used.
-        disp_vector (:obj:`numpy.array`): Displacement.
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        load_vector (:obj:`numpy.array`): Force.
-        fvirg (:obj:`float`): 'virgin' function value.
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio. 
-        rho (:obj:`float`): Density.
-        alpha_par (:obj:`float`): Damping coefficient proportional to mass.
-        beta_par (:obj:`float`): Damping coefficient proportional to stiffness.
-        omega_par (:obj:`float`): 2 * pi * frequency.  
-        p_par (:obj:`int`): Penalization power to stiffness.
-        q_par (:obj:`int`): Penalization power to mass.
-        x_min_m (:obj:`float`): Minimum relative densities to mass. 
-        x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
-        xval (:obj:`numpy.array`): Indicates where there is mass.
-        free_ind (:obj:`numpy.array`): DOFs free.
-
-    Returns:
-        Derivative values.
-    '''
-    if func_name == "Compliance":
-        lam_par = lambda_compliance(disp_vector, load_vector, fvirg)
-        df0dx   = derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par)
-    
-    elif func_name == "Elastic Potential Energy":
-        lam_par = lambda_ep(disp_vector, stif_matrix, dyna_stif, free_ind)
-        df0dx   = derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par, fvirg)
-    
-    elif func_name == "Input Power":
-        df0dx = derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, fvirg)
-                   
-    elif func_name == "Kinetic Energy":
-        lam_par = lambda_ek(disp_vector, mass_matrix, dyna_stif, omega_par, free_ind)
-        df0dx   = derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par, fvirg)
-       
-    elif func_name == 'R Ratio':
-        if omega_par == 0:
-            omega_par = 1e-12
-        kinetic_e = ((1/4) * omega_par**2 * (disp_vector.conjugate()@mass_matrix@disp_vector)).real
-        lam_par   = lambda_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind)
-        df0dx     = derivative_R(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par, fvirg, kinetic_e)
-    
-    elif func_name == 'Local Ep':
-        lam_par = lambda_local_ep(ngl, ind_passive, passive_el, disp_vector, dyna_stif, coord, connect, E, v, rho)
-        df0dx = derivative_local_ep(passive_el, lam_par, ind_dofs, xval, disp_vector, connect, coord, E, v, rho, x_min_k, x_min_m, omega_par, alpha_par, beta_par, p_par, q_par, fvirg)
-    
-    elif func_name == 'Local Ki':
-        lam_par = lambda_local_ki(ngl, ind_passive, passive_el, disp_vector, dyna_stif, omega_par, coord, connect, E, v, rho)
-        df0dx = derivative_local_ki(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par, fvirg, ind_dofs, passive_el)
-    return df0dx
-
-def finite_difference(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, p_par=3, q_par=1, passive_coord=None, nodes=[0], number_deltas=5, delta_interval=(1e-12, 1e-2)):
-    ''' Approximate method for solving partial differential equations.
-        Args:
-            el: List of elements to be used.
-                Example: el = [0, 1, 2] 
-            number_deltas: Number of delta to calculate FDM.
-            delta_interval: Delta range used. 
-    '''
-    l = number_deltas * len(nodes) + 5
-    progress = 0
-    printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
-    low = delta_interval[0]
-    high = delta_interval[1]
-    delta_d = np.linspace(low, high, number_deltas)
-       
-    dw      = np.empty((number_deltas, len(nodes)))
-    dw_orig = np.empty(len(nodes))
-
-    if mesh_file is not None:
-        path = os.path.dirname(os.path.realpath(__file__)) 
-        m_file = os.path.join(path, mesh_file)
-        coord, connect = import_mesh(m_file)
-        ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
-        nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
-        nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
-        lx = max(coord[:, 1])
-        ly = max(coord[:, 2])
-    else:
-        coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely)
-    ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
-    
-    restri_matrix = fc.get_matrices(restri_matrix, coord, False)
-    free_ind = None
-    if restri_matrix is not None:
-        restricted_ind = fc.get_dofs(restri_matrix)
-        free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
-    
-    load_matrix = fc.get_matrices(load_matrix, coord, True)
-    load_vector = fc.get_load_vector(nelx, nely, load_matrix)
-
-    ngl = 2 * ((nelx + 1) * (nely + 1))
-    xval = 0.5 * np.ones((nelx * nely, 1))
-    if passive_coord is not None:
-        radius = fac_ratio * lx/nelx
-        _, _, centroids = get_neighbors_radius(nelx, nely, coord, connect, radius)
-        passive_el = get_passive_el(passive_coord, centroids)
-        _, xval = set_passive_el(None, xval, passive_el)
-
-        ind_dofs = fc.get_ind_dofs(connect, 2)
-        ind_passive = ind_dofs[passive_el, :]
-    else:
-        passive_el = None
-        ind_dofs = None
-        ind_passive = None
-   
-    omega1_par = 2 * np.pi * freq1  
-    
-    data_k, data_m, _ = solution2D(coord, connect, nelx, nely, E, v, rho, xval, x_min_m, x_min_k, p_par, q_par)
-    stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
-    dyna_stif = assembly_dyna_stif(omega1_par, mass_matrix, damp_matrix, stif_matrix)
-    if modes is not None:
-        natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
-        disp_vector, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
-    else: 
-        disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
-    
-    # F0VAL ORIGINAL
-    f0val_orig, fvirg_orig = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
-    
-    # RELACIONADO A DERIVADA    
-    dw_orig[:] = derivatives_objective(func_name, fvirg_orig, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xval, \
-                                       load_vector, mass_matrix, stif_matrix, dyna_stif, free_ind, ind_dofs, ngl, passive_el, ind_passive)[nodes, 0]
-    progress += 5
-    printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
-    for i in range(number_deltas):
-        for ind2, node in enumerate(nodes):
-            xval_aux = xval.copy()
-            xval_aux[node] += delta_d[i] 
-
-            data_k, data_m, _ = solution2D(coord, connect, nelx, nely, E, v, rho, xval_aux, x_min_m, x_min_k, p_par, q_par)
-            stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
-            dyna_stif = assembly_dyna_stif(omega1_par, mass_matrix, damp_matrix, stif_matrix)
-            if modes is not None:
-                natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
-                disp_vector, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
-            else: 
-                disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
-
-            f0val, fvirg = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
-            
-            #dw[i, ind2] = (fvirg - fvirg_orig)/delta_d[i]
-            dw[i, ind2] = (f0val - f0val_orig)/delta_d[i]
-            progress += 1
-            printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
-    plt_opt.compare_deriv(nodes, delta_d, dw, dw_orig)
-
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
     """ Call in a loop to create terminal progress bar.
     https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
@@ -1291,48 +632,145 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     if iteration == total: 
         print()
 
-def freqrsp_multi_modes(modes, freq_rsp, constr_func, constr_values, load_matrix, restri_matrix, coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, x_min_m, x_min_k, p_par, q_par, func_name, const_func, save=False):
-    initial_xval = set_initxval(constr_func, constr_values)
-    xval  = initial_xval * np.ones((nelx * nely, 1))
-    load_vector     = fc.get_load_vector(nelx, nely, load_matrix)
-    restricted_dofs = fc.get_dofs(restri_matrix)
-    free_ind = fc.remove_dofs(nelx, nely, restricted_dofs)
-    ngl = 2 * ((nelx + 1) * (nely + 1))
-    
-    freq_range = freq_rsp[:2]
-    delta = freq_rsp[2]    
-    
-    rows = int((freq_rsp[1] - freq_rsp[0]) /freq_rsp[2] + 1)
-    func_vector = np.empty((rows, 5), dtype=complex)
-    origin = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, None, load_vector, unrestricted_ind=free_ind)
-    for i, mode in enumerate(modes):      
-        func_vector[:, i] = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, mode, load_vector, unrestricted_ind=free_ind)
-    plt_opt.freqrsp_modes(freq_range, delta, func_vector, origin, modes, func_name, save)
+# def finite_difference(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, p_par=3, q_par=1, passive_coord=None, nodes=[0], number_deltas=5, delta_interval=(1e-12, 1e-2)):
+#     ''' Approximate method for solving partial differential equations.
+#         Args:
+#             el: List of elements to be used.
+#                 Example: el = [0, 1, 2] 
+#             number_deltas: Number of delta to calculate FDM.
+#             delta_interval: Delta range used. 
+#     '''
+#     l = number_deltas * len(nodes) + 5
+#     progress = 0
+#     printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-def freq_test(mesh_file, nelx, nely, lx, ly, E, v, rho, alpha, beta, eta, initial_xval, x_min_m, x_min_k, p_par, q_par, freq_range, func_name, const_func, modes, load_matrix, **kwargs):
-    if mesh_file is not None:
-        path = os.path.dirname(os.path.realpath(__file__)) 
-        m_file = os.path.join(path, mesh_file)
-        coord, connect = import_mesh(m_file)
-        ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
-        nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
-        nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
-        lx = max(coord[:, 1])
-        ly = max(coord[:, 2])
-    else:
-        coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely)
-    ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
-    # Force and restrictions matrix
-    load_matrix = fc.get_matrices(load_matrix, coord, True)
-    load_vector = fc.get_load_vector(nelx, nely, load_matrix)
-    if kwargs.get('restri_matrix') is not None: 
-        restri_matrix = kwargs.get('restri_matrix')
-        restri_matrix = fc.get_matrices(restri_matrix, coord, False)
-        restricted_ind = fc.get_dofs(restri_matrix)
-        free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
-    else:
-        free_ind = None
-    ngl = 2 * ((nelx + 1) * (nely + 1))
-    xval = initial_xval * np.ones((nelx * nely, 1))
-    vector = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range[:2], freq_range[2], func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
-    plt_opt.freqrsp_plot(freq_range, vector)    
+#     low = delta_interval[0]
+#     high = delta_interval[1]
+#     delta_d = np.linspace(low, high, number_deltas)
+       
+#     dw      = np.empty((number_deltas, len(nodes)))
+#     dw_orig = np.empty(len(nodes))
+
+#     if mesh_file is not None:
+#         path = os.path.dirname(os.path.realpath(__file__)) 
+#         m_file = os.path.join(path, mesh_file)
+#         coord, connect = import_mesh(m_file)
+#         ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+#         nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
+#         nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
+#         lx = max(coord[:, 1])
+#         ly = max(coord[:, 2])
+#     else:
+#         coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely)
+#     ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+    
+#     restri_matrix = fc.get_matrices(restri_matrix, coord, False)
+#     free_ind = None
+#     if restri_matrix is not None:
+#         restricted_ind = fc.get_dofs(restri_matrix)
+#         free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
+    
+#     load_matrix = fc.get_matrices(load_matrix, coord, True)
+#     load_vector = fc.get_load_vector(nelx, nely, load_matrix)
+
+#     ngl = 2 * ((nelx + 1) * (nely + 1))
+#     xval = 0.5 * np.ones((nelx * nely, 1))
+#     if passive_coord is not None:
+#         radius = fac_ratio * lx/nelx
+#         _, _, centroids = get_neighbors_radius(nelx, nely, coord, connect, radius)
+#         passive_el = get_passive_el(passive_coord, centroids)
+#         _, xval = set_passive_el(None, xval, passive_el)
+
+#         ind_dofs = fc.get_ind_dofs(connect, 2)
+#         ind_passive = ind_dofs[passive_el, :]
+#     else:
+#         passive_el = None
+#         ind_dofs = None
+#         ind_passive = None
+   
+#     omega1_par = 2 * np.pi * freq1  
+    
+#     data_k, data_m, _ = solution2D(coord, connect, nelx, nely, E, v, rho, xval, x_min_m, x_min_k, p_par, q_par)
+#     stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
+#     dyna_stif = assembly_dyna_stif(omega1_par, mass_matrix, damp_matrix, stif_matrix)
+#     if modes is not None:
+#         natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+#         disp_vector, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
+#     else: 
+#         disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
+    
+#     # F0VAL ORIGINAL
+#     f0val_orig, fvirg_orig = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+    
+#     # RELACIONADO A DERIVADA    
+#     dw_orig[:] = derivatives_objective(func_name, fvirg_orig, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xval, \
+#                                        load_vector, mass_matrix, stif_matrix, dyna_stif, free_ind, ind_dofs, ngl, passive_el, ind_passive)[nodes, 0]
+#     progress += 5
+#     printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+#     for i in range(number_deltas):
+#         for ind2, node in enumerate(nodes):
+#             xval_aux = xval.copy()
+#             xval_aux[node] += delta_d[i] 
+
+#             data_k, data_m, _ = solution2D(coord, connect, nelx, nely, E, v, rho, xval_aux, x_min_m, x_min_k, p_par, q_par)
+#             stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
+#             dyna_stif = assembly_dyna_stif(omega1_par, mass_matrix, damp_matrix, stif_matrix)
+#             if modes is not None:
+#                 natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+#                 disp_vector, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
+#             else: 
+#                 disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
+
+#             f0val, fvirg = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+            
+#             #dw[i, ind2] = (fvirg - fvirg_orig)/delta_d[i]
+#             dw[i, ind2] = (f0val - f0val_orig)/delta_d[i]
+#             progress += 1
+#             printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+#     plt_opt.compare_deriv(nodes, delta_d, dw, dw_orig)
+
+# def freqrsp_multi_modes(modes, freq_rsp, constr_func, constr_values, load_matrix, restri_matrix, coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, x_min_m, x_min_k, p_par, q_par, func_name, const_func, save=False):
+#     initial_xval = set_initxval(constr_func, constr_values)
+#     xval  = initial_xval * np.ones((nelx * nely, 1))
+#     load_vector     = fc.get_load_vector(nelx, nely, load_matrix)
+#     restricted_dofs = fc.get_dofs(restri_matrix)
+#     free_ind = fc.remove_dofs(nelx, nely, restricted_dofs)
+#     ngl = 2 * ((nelx + 1) * (nely + 1))
+    
+#     freq_range = freq_rsp[:2]
+#     delta = freq_rsp[2]    
+    
+#     rows = int((freq_rsp[1] - freq_rsp[0]) /freq_rsp[2] + 1)
+#     func_vector = np.empty((rows, 5), dtype=complex)
+#     origin = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, None, load_vector, unrestricted_ind=free_ind)
+#     for i, mode in enumerate(modes):      
+#         func_vector[:, i] = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, mode, load_vector, unrestricted_ind=free_ind)
+#     plt_opt.freqrsp_modes(freq_range, delta, func_vector, origin, modes, func_name, save)
+
+# def freq_test(mesh_file, nelx, nely, lx, ly, E, v, rho, alpha, beta, eta, initial_xval, x_min_m, x_min_k, p_par, q_par, freq_range, func_name, const_func, modes, load_matrix, **kwargs):
+#     if mesh_file is not None:
+#         path = os.path.dirname(os.path.realpath(__file__)) 
+#         m_file = os.path.join(path, mesh_file)
+#         coord, connect = import_mesh(m_file)
+#         ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+#         nelx = len(coord[coord[:, 2] == coord[0, 2]]) - 1
+#         nely = len(coord[coord[:, 1] == coord[0, 1]]) - 1
+#         lx = max(coord[:, 1])
+#         ly = max(coord[:, 2])
+#     else:
+#         coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely)
+#     ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
+#     # Force and restrictions matrix
+#     load_matrix = fc.get_matrices(load_matrix, coord, True)
+#     load_vector = fc.get_load_vector(nelx, nely, load_matrix)
+#     if kwargs.get('restri_matrix') is not None: 
+#         restri_matrix = kwargs.get('restri_matrix')
+#         restri_matrix = fc.get_matrices(restri_matrix, coord, False)
+#         restricted_ind = fc.get_dofs(restri_matrix)
+#         free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
+#     else:
+#         free_ind = None
+#     ngl = 2 * ((nelx + 1) * (nely + 1))
+#     xval = initial_xval * np.ones((nelx * nely, 1))
+#     vector = freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range[:2], freq_range[2], func_name, const_func, modes, load_vector, unrestricted_ind=free_ind)
+#     plt_opt.freqrsp_plot(freq_range, vector)    

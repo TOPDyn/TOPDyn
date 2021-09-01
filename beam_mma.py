@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import functions_2d as fc
 import plots_2d as plt_fem
 import functions_opt as opt
+import functions_obj as obj
+import functions_deriv as df
 import plots_opt as plt_opt
 from mesh_process_2d import import_mesh
 from mma_opt import mmasub, kktcheck
@@ -115,13 +117,14 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     natural_freqs = None
 
     # Constrain settings
-    aux = ['Compliance', 'Local Ep', 'Local Ki']
+    aux = ['Compliance', 'Local Ep', 'Local Ki', 'Local R']
     freq_constr_bool = any(x in aux for x in constr_func)
     if freq_constr_bool:
         constr_values, freq_constr, ind_freq_constr, ind_constr2 = opt.constr_with_freq(constr_func, constr_values)
         f_scale_constr = 100*np.ones(len(constr_values))
     else:
         freq_constr = None
+        ind_constr2 = None
     
     constr_values = np.array(constr_values)
 
@@ -201,10 +204,10 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         fval[:, 0] -= constr_values
 
         # Objective function      
-        f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+        f0val, fvirg = obj.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         f0_scale = f0val
         # Derivative
-        df0dx =  opt.derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, \
+        df0dx =  df.derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                         load_vector, mass_matrix, stif_matrix, dyna_stif, free_ind, ind_dofs, ngl, ind_passive, passive_el)
 
         # Multiobjective
@@ -213,9 +216,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             disp_vector2, _, _ = opt.get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif2, load_vector, free_ind, omega2_par, alpha_par, beta_par, eta_par, ngl)
             
             # Second objective function
-            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+            f0val2, fvirg = obj.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = opt.derivatives_objective(func_name2, fvirg, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
+            df0dx2 = df.derivatives_objective(func_name2, fvirg, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                             load_vector, mass_matrix, stif_matrix, dyna_stif2, free_ind, ind_dofs, ngl, ind_passive, passive_el)
 
             # Filter
@@ -295,9 +298,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         fval[:, 0] -= constr_values
 
         # Objective function 
-        f0val, fvirg = opt.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+        f0val, fvirg = obj.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         # Derivative
-        df0dx = opt.derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, \
+        df0dx = df.derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                         load_vector, mass_matrix, stif_matrix, dyna_stif, free_ind, ind_dofs, ngl, ind_passive, passive_el)
                 
         # Multiobjective
@@ -306,9 +309,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             disp_vector2, _, _ = opt.get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif2, load_vector, free_ind, omega2_par, alpha_par, beta_par, eta_par, ngl)
 
             # Second objective function
-            f0val2, fvirg = opt.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+            f0val2, fvirg = obj.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = opt.derivatives_objective(func_name2, fvirg, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
+            df0dx2 = df.derivatives_objective(func_name2, fvirg, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                         load_vector, mass_matrix, stif_matrix, dyna_stif2, free_ind, ind_dofs, ngl, ind_passive, passive_el)
             
             # Filter
@@ -333,7 +336,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             f0val, df0dx = opt.normalize(n1, f0_scale, f0val, df0dx)   
 
         # The residual vector of the KKT conditions is calculated
-        residu,kktnorm,residumax = \
+        _, kktnorm, _ = \
             kktcheck(m,n,xmma,ymma,zmma,lam,xsi,eta,mu,zet,s,xmin,xmax,df0dx,fval,dfdx,a0,a,c,d)
         
         chmax = max(abs(xold2 - xold1))
@@ -366,9 +369,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         delta = freq_rsp[2]
         print("Calculating the frequency response of the objective function")
         print('initial conditions')
-        f_original  = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, unrestricted_ind=free_ind)
+        f_original  = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R=False, unrestricted_ind=free_ind)
         print('optimized conditions')
-        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xnew, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, unrestricted_ind=free_ind)
+        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xnew, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R=False, unrestricted_ind=free_ind)
         ax = plt_opt.compare_freqresponse(freq_range, delta, f_optimized.real, f_original.real, func_name, save=save)
     if mesh_deform:
         disp_vector = fc.change_U_shape(disp_vector.real)

@@ -43,9 +43,9 @@ if __name__ == "__main__":
     restri_matrix = [[0, 1, 1, 1, 0.001]]
     
     # Weight at objective function
-    n1 = 1
+    n1 = 0.8
 
-    # It can be 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio', 'Local Ep'
+    # It can be 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio', 'Local Ep', 'Local Ki', 'Local R'
     func_name = 'Input Power' 
 
     # Frequency optimized for func_name
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # Tuple with func_name2 and frequency optimized for func_name2. Associated with weight (1 - n1)
     multiobjective = ('Compliance', 0)
     
-    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance', 'Local Ep', 'Local Ki' -> (constraint value, frequency)
+    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance', 'Local Ep', 'Local Ki', 'Local R' -> (constraint value, frequency)
     constr_func = ['Area', 'Local Ep']
     constr_values = [50, (70, 50)]
     

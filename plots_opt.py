@@ -30,7 +30,9 @@ def legend_constr(constr_func):
         elif f == 'Local Ep':
             label[index[i]] = 'constraint - local ep'
         elif f == 'Local Ki':
-            label[index[i]] = 'constraint - local ep'
+            label[index[i]] = 'constraint - local ki'
+        elif f == 'Local R':
+            label[index[i]] = 'constraint - local r'
         i += 1
     return label
 
@@ -47,6 +49,8 @@ def set_pen(f):
         pen_set = {'color': colors[3], 'width': 2}
     elif f == 'Local Ki':
         pen_set = {'color': colors[4], 'width': 2}
+    elif f == 'Local R':
+        pen_set = {'color': colors[5], 'width': 2}
     return pen_set
 
 def window_each_iter(constr_func, func_name, label):
