@@ -21,25 +21,24 @@ def exe_opt(mma, mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_m
         beam.main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
 
 def solution2D(coord, connect, nelx, nely, E, v, rho, xval, x_min_m, x_min_k, p_par, q_par):
-    """ Assembly matrices.
+    """ Gets values for assembling the stiffness and mass matrices.
 
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
         nelx (:obj:`int`): Number of elements on the X-axis.
         nely (:obj:`int`): Number of elements on the Y-axis.
-        ngl (:obj:`int`): Degrees of freedom.
         E (:obj:`float`): Elastic modulus.
         v (:obj:`float`): Poisson's ratio.  
         rho (:obj:`float`): Density.  
         xval (:obj:`numpy.array`): Indicates where there is mass.
         x_min_m (:obj:`float`): Minimum relative densities to mass. 
         x_min_k (:obj:`float`): Minimum relative densities to stiffness.
-        p_par (:obj:`int`): Penalization power to stiffness.
+        p_par (:obj:`int`): Penalization power to c.
         q_par (:obj:`int`): Penalization power to mass. 
 
     Returns:
-        A tuple with stiffnes, mass and time to assembly the matrices.
+        A tuple with stiffness matrix, mass matrix and time to assembly the matrices.
     """
     t01 = time() 
     data_k = np.zeros((nelx * nely, 64), dtype=complex)
@@ -58,26 +57,51 @@ def solution2D(coord, connect, nelx, nely, E, v, rho, xval, x_min_m, x_min_k, p_
     return data_k.flatten(), data_m.flatten(), t_assembly
     
 def assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta):
+    """ Assembly of stiffness and mass matrices. #TODO: SNO ASSEMBLY
+
+    Args:
+        data_k (:obj:`numpy.array`): Data to assemble stiffness matrix.
+        data_m (:obj:`numpy.array`): Data to assemble mass matrix.
+        ind_rows (:obj:`numpy.array`): Node indices to make the assembly.
+        ind_cols (:obj:`numpy.array`): Node indices to make the assembly.
+        ngl (:obj:`int`): Degrees of freedom.
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        
+    Returns:
+        A tuple with stiffness matrix, mass matrix and #TODO NOME DESSA MATRIZ.
+    """
     stif_matrix = csc_matrix((data_k, (ind_rows, ind_cols)), shape=(ngl, ngl))
     mass_matrix = csc_matrix((data_m, (ind_rows, ind_cols)), shape=(ngl, ngl))
     damp_matrix = alpha * mass_matrix + (beta) * stif_matrix
     return stif_matrix.real, mass_matrix.real, damp_matrix.real
 
 def assembly_dyna_stif(omega_par, mass_matrix, damp_matrix, stif_matrix):
+    """ Assembly the dynamic stiffness matrix.
+
+    Args: #TODO
+        omega_par (:obj:`float`): 2 pi frequency.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        damp_matrix, 
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+    
+    Returns:
+        Dynamic stiffness matrix.
+    """
     return -(omega_par**2) * mass_matrix + 1j * omega_par * damp_matrix + stif_matrix
 
 def harmonic_problem(ngl, dyna_stif, load_vector, free_ind=None):
-    ''' Calculate displacement.
+    """ Calculates displacement.
 
     Args:
         ngl (:obj:`int`): Degrees of freedom.
         dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix. 
-        load_vector (:obj:`numpy.array`): Force.
+        load_vector (:obj:`numpy.array`): Force vector.
         free_ind (:obj:`numpy.array`): Free dofs. 
         
     Returns:
         A tuple with displacement vector and time.
-    '''
+    """
     t02 = time()
     if free_ind is not None:
         disp_vector = np.zeros((ngl), dtype=complex)
@@ -156,6 +180,24 @@ def mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vecto
     return disp_vector, t_superp
 
 def get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif, load_vector, free_ind, omega_par, alpha_par, beta_par, eta_par, ngl):
+    """ Calculates displacement vector.
+
+    Args:
+        modes (:obj:`int`): The number of eigenvalues and eigenvectors desired.
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix. 
+        dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
+        load_vector (:obj:`numpy.array`): Force vector.
+        free_ind (:obj:`numpy.array`): Free dofs. 
+        omega_par (:obj:`float`): 2 pi frequency.
+        alpha_par (:obj:`float`): Damping coefficient proportional to mass. 
+        beta_par (:obj:`float`): Damping coefficient proportional to stiffness.  
+        eta_par (:obj:`float`): Damping coefficient. 
+        ngl (:obj:`int`): Degrees of freedom.
+
+    Returns:
+       displacement vector, natural frequencies if using modal analysis and time to calculate the displacement vector.
+    """
     if modes is not None:
         natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
         disp_vector, t_U = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega_par, alpha_par, beta_par, eta_par, free_ind)
@@ -164,14 +206,14 @@ def get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif, load_vector, fre
         natural_frequencies = None
     return disp_vector, natural_frequencies, t_U
 
-def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R, **kwargs):
+def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha, beta, eta, xval, x_min_m, x_min_k, p_par, q_par, freq_range, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R, **kwargs):
     """ Calculates the objective function for a range of frequencies.
 
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
-        ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
-        ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
+        ind_rows (:obj:`numpy.array`): Node indices to make the assembly.
+        ind_cols (:obj:`numpy.array`): Node indices to make the assembly.
         nelx (:obj:`int`): Number of elements on the X-axis.
         nely (:obj:`int`): Number of elements on the Y-axis.
         ngl (:obj:`int`): Degrees of freedom.
@@ -189,16 +231,18 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
         freq_range (:obj:`list`): Frequency range.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the objective function. 
+            Third value is the step between each calculation of the objective function. 
         func_name (:obj:`str`): Objective function used.
         const_func (:obj:`float`):
         modes (:obj:`int`): The number of eigenvalues and eigenvectors desired.
-        load_vector (:obj:`numpy.array`): Force.
+        load_vector (:obj:`numpy.array`): Force vector.
+        passive_el (:obj:`numpy.array`): Passive element nodes.
+        ind_passive (:obj:`numpy.array`): Index of passive elements.
 
     Returns:
-        Objective function values.
+        Objective function for the frequency range.
     """
-    interval = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    interval = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
     func_vector = np.empty((len(interval)), dtype=complex)
 
     l = len(interval) + 5
@@ -231,6 +275,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
     return func_vector 
 
 def set_deriv(dfdx, df0dx, df0dx2):
+    """ Auxiliary function. """
     if df0dx2 is not None:
         cols = 2 + dfdx.shape[0]
     else:
@@ -248,6 +293,7 @@ def set_deriv(dfdx, df0dx, df0dx2):
     return np.empty((df0dx.shape[0], cols)), all_deriv_f, cols
 
 def out_deriv(all_deriv, dfdx, df0dx2):
+    """ Auxiliary function. """
     aux = dfdx.shape[0]
     if df0dx2 is None:
         return all_deriv[:, :aux].T, all_deriv[:, aux].reshape(-1, 1), None
@@ -255,7 +301,7 @@ def out_deriv(all_deriv, dfdx, df0dx2):
         return all_deriv[:, :aux].T, all_deriv[:, aux].reshape(-1, 1), all_deriv[:, aux+1].reshape(-1, 1)
 
 def get_neighbors_radius(nelx, nely, coord, connect, radius):
-    """ Check neighboring elements that have the centroid within the predetermined radius.
+    """ Check neighboring elements that have the centroid within the predetermined radius. TODO:S
 
     Args:
         nelx (:obj:`int`): Number of elements on the x axis.
@@ -301,7 +347,7 @@ def get_neighbors_radius(nelx, nely, coord, connect, radius):
     return neighbors, H, centroids
 
 def density_filter(H1, neighbors, dfdx, df0dx, df0dx2=None):
-    """ Apply the density filter to the derivative of the functions (constrain, objective and multiobjective).
+    """ Applies the density filter to the derivative of the functions (constrain, objective and multiobjective).
 
     Args:
         H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
@@ -322,7 +368,7 @@ def density_filter(H1, neighbors, dfdx, df0dx, df0dx2=None):
     return out_deriv(new_deriv_f1, dfdx, df0dx2)
 
 def normalize(n, f0_scale, f0val, df0dx):
-    """ Apply the sensitivity filter to the derivative of the functions (constrain, objective and multiobjective).
+    """ Normalizes objective functions and it's derivative.
 
     Args:
         n (:obj:`float`): Weight associated with function.
@@ -338,7 +384,7 @@ def normalize(n, f0_scale, f0val, df0dx):
     return f0val, df0dx
 
 def sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2=None):
-    """ Apply the sensitivity filter to the derivative of the functions (constrain, objective and multiobjective).
+    """ Applies the sensitivity filter to the derivative of the functions (constrain, objective and multiobjective).
 
     Args:
         H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
@@ -364,7 +410,7 @@ def sensitivity_filter(H, neighbors, x_min_k, xval, dfdx, df0dx, df0dx2=None):
     return out_deriv(new_deriv_f, dfdx, df0dx2)
 
 def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr2, lx, ly, ngl, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, p_par, q_par, x_min_m, x_min_k, area, xval, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega_par, const_func, free_ind, passive_el, ind_dofs, gradients=True):
-    ''' Calculates the constraint functions and derivatives. '''
+    """ Calculates constraint functions and derivative functions. """
     if passive_el is not None:
         ind_passive = ind_dofs[passive_el, :]
 
@@ -438,7 +484,7 @@ def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr
     return fval, dfdx
 
 def constr_with_freq(constr_func, constr_values):
-    ''' Separates the constraint value and the frequency of the constrain function.
+    """ Separates the constraint value and the frequency of the constrain function.
 
     Args:
         constr_values (:obj:`list`): Values of constraint functions applied.
@@ -446,7 +492,7 @@ def constr_with_freq(constr_func, constr_values):
 
     Returns:
         constr_values, freq_constr, ind_freq_constr
-    '''
+    """
     freq_constr = np.empty(len(constr_func))
     freq_constr.fill(np.nan)
     ind_freq_constr = []
@@ -482,11 +528,20 @@ def constr_with_freq(constr_func, constr_values):
     return constr_values, freq_constr, ind_freq_constr, ind_constr2
 
 def normalize_constr(fval, f_scale_constr):
+    """ Normalizes constraint functions.
+
+    Args:
+        f_scale_constr (:obj:`float`): Value of the function.
+        fval (:obj:`numpy.array`): Constraint functions.
+    
+    Returns:
+        Normalized functions.
+    """
     fval[:, 0] = 100 * fval[:, 0]/f_scale_constr
     return fval
 
 def update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_values):
-    """ Add new values to list of functions to plot convergence
+    """ Adds new values to list of functions to plot convergence
 
     Args:
         outit (:obj:`int`): Iteration.
@@ -546,7 +601,7 @@ def total_area(lx, ly, area, xval):
     return (100/(lx * ly)) * np.sum(xval * area)
 
 def calc_xnew(H, neighbors, xval):
-    """ Recalculate xval.
+    """ Recalculates xval.
 
     Args:
         H (:obj:`csc_matrix`): Radius subtracted from the distance between the element and the neighbors.
@@ -562,7 +617,7 @@ def calc_xnew(H, neighbors, xval):
     return xe.reshape(-1, 1)
 
 def set_initxval(constr_func, constr_values):
-    """ Calculate the initial value of xval.
+    """ Calculates the initial value of xval.
 
     Args:
         constr_func (:obj:`list`): constraint functions applied.
@@ -579,7 +634,7 @@ def set_initxval(constr_func, constr_values):
     return initial_xval
 
 def get_passive_el(passive_coord, centroids):
-    ''' Get index of passive elements .
+    """ Gets index of passive elements .
     
     Args:
         passive_coord (:obj:`tuple`): Region that the shape will not be changed.
@@ -587,12 +642,12 @@ def get_passive_el(passive_coord, centroids):
 
     Returns:
         Index of passive elements.
-    '''
+    """
     mask = (centroids[:, 0] >= passive_coord[0][0]) & (centroids[:, 0] <= passive_coord[0][1]) & (centroids[:, 1] >= passive_coord[1][0]) & (centroids[:, 1] <= passive_coord[1][1])
     return (mask > 0).nonzero()[0]
 
 def set_passive_el(xmin, xval, passive_el):
-    ''' Set the values of passive elements.
+    """ Sets the values of passive elements.
 
     Args:
         xmin (:obj:`numpy.array`): 
@@ -601,7 +656,7 @@ def set_passive_el(xmin, xval, passive_el):
 
     Returns:
         A tuple with updated xmin and xval.
-    '''
+    """
     if xmin is not None:
         xmin[passive_el] = 0.99
     
@@ -610,7 +665,25 @@ def set_passive_el(xmin, xval, passive_el):
     
     return xmin, xval
 
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+def create_header(multiobj_bool, constr_func):
+    """ Creates header to save data.
+    Args:
+        multiobj_bool (:obj:`bool`): True if multiobjective function is used.
+        constr_func (:obj:`list`)  : Constraint functions applied.
+    
+    Returns:
+        Header.
+    """
+    if multiobj_bool:
+        header = "iter,f0val,fvirg,f0val2,fvirg2"
+    else:
+        header = "iter,f0val,fvirg"
+
+    for func in constr_func:
+        header += ',' + func
+    return header
+
+def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
     """ Call in a loop to create terminal progress bar.
     https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
     
@@ -633,13 +706,13 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
         print()
 
 # def finite_difference(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, p_par=3, q_par=1, passive_coord=None, nodes=[0], number_deltas=5, delta_interval=(1e-12, 1e-2)):
-#     ''' Approximate method for solving partial differential equations.
+#     """ Approximate method for solving partial differential equations.
 #         Args:
 #             el: List of elements to be used.
 #                 Example: el = [0, 1, 2] 
 #             number_deltas: Number of delta to calculate FDM.
 #             delta_interval: Delta range used. 
-#     '''
+#     """
 #     l = number_deltas * len(nodes) + 5
 #     progress = 0
 #     printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)

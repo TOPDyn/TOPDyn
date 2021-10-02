@@ -106,11 +106,19 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     else:
         coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely, timing=timing)
     ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
-    # Force and restrictions matrix
+
+    # Load matrix
     load_matrix = fc.get_matrices(load_matrix, coord, True)
-    restri_matrix = fc.get_matrices(restri_matrix, coord, False)
+
+    # Get free indexes  
+    free_ind = None
+    if restri_matrix is not None:
+        restri_matrix = fc.get_matrices(restri_matrix, coord, False)
+        restricted_ind = fc.get_dofs(restri_matrix)
+        free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
     
     func_name2, freq2 = multiobjective
+    multiobj_bool = (func_name2 is not None) and (n1 != 1)
     omega1_par = 2 * np.pi * freq1
     omega2_par = 2 * np.pi * freq2   
     ngl = 2 * ((nelx + 1) * (nely + 1))
@@ -172,15 +180,24 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     path = os.path.dirname(os.path.realpath(__file__))
     file = os.path.join(path, "MMA_BEAM2.log")
     logger = setup_logger(file)
-    # Get free indexes  
-    free_ind = None
-    if restri_matrix is not None:
-        restricted_ind = fc.get_dofs(restri_matrix)
-        free_ind = fc.remove_dofs(nelx, nely, restricted_ind)
+
     # Calculate load
     load_vector = fc.get_load_vector(nelx, nely, load_matrix)
+
     # Calculate area and derivative
     area = opt.calc_A(coord, connect[:, 1:] - 1)
+
+    if save:
+        folder_name = 'data'
+        directory = os.path.join(os.path.dirname(__file__), folder_name)
+        os.makedirs(directory, exist_ok=True)
+
+        xnew_dir = os.path.join(directory, 'xnew')
+        os.makedirs(xnew_dir, exist_ok=True)
+
+        save_fval = np.empty((max_iter + 1, len(constr_func)))
+        save_f0val1 = np.empty(max_iter + 1)
+        save_fvirg1 = np.empty(max_iter + 1)
     
     # Calculate function values and gradients of the objective and constraints functions
     if outeriter == 0:   
@@ -197,12 +214,6 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         fval, dfdx = opt.apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr2, lx, ly, ngl, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, \
             p_par, q_par, x_min_m, x_min_k, area, xnew, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs)
 
-        if freq_constr_bool:
-            f_scale_constr[ind_freq_constr] = fval[ind_freq_constr, 0]
-            fval = opt.normalize_constr(fval, f_scale_constr)
-                
-        fval[:, 0] -= constr_values
-
         # Objective function      
         f0val, fvirg = obj.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         f0_scale = f0val
@@ -210,17 +221,35 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         df0dx =  df.derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                         load_vector, mass_matrix, stif_matrix, dyna_stif, free_ind, ind_dofs, ngl, ind_passive, passive_el)
 
+        if save:
+            np.savetxt(os.path.join(xnew_dir, 'xnew'+'_'+str(outit)+'.txt'), xnew)
+            save_fval[outit,:] = fval[:,0]              
+            save_fvirg1[outit] = fvirg
+            save_f0val1[outit] = f0val
+
+        if freq_constr_bool:
+            f_scale_constr[ind_freq_constr] = fval[ind_freq_constr, 0]
+            fval = opt.normalize_constr(fval, f_scale_constr)
+                
+        fval[:, 0] -= constr_values
+
         # Multiobjective
         if (func_name2 is not None) and (n1 != 1):
             dyna_stif2 = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
             disp_vector2, _, _ = opt.get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif2, load_vector, free_ind, omega2_par, alpha_par, beta_par, eta_par, ngl)
             
             # Second objective function
-            f0val2, fvirg = obj.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+            f0val2, fvirg2 = obj.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = df.derivatives_objective(func_name2, fvirg, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
+            df0dx2 = df.derivatives_objective(func_name2, fvirg2, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                             load_vector, mass_matrix, stif_matrix, dyna_stif2, free_ind, ind_dofs, ngl, ind_passive, passive_el)
 
+            if save:
+                save_f0val2 = np.empty(max_iter + 1)
+                save_fvirg2 = np.empty(max_iter + 1)
+                save_f0val2[outit] = f0val2
+                save_fvirg2[outit] = fvirg2
+            
             # Filter
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
@@ -258,11 +287,11 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     labels_constr = plt_opt.legend_constr(constr_func)
     if each_iter:
         win, p2, curves_funcs, grid = plt_opt.window_each_iter(constr_func, func_name, labels_constr)
+        plt_opt.set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func)
     else:
         gv, grid = plt_opt.simple_window()
     x_plot, y_plot = plt_opt.set_coord_grid(lx, ly, nelx, nely)
     plt_opt.set_grid_data(grid, xnew, x_plot, y_plot, nelx, nely)
-    plt_opt.set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func)
     pg.QtGui.QApplication.processEvents()
     
     kktnorm = kkttol+10
@@ -291,29 +320,39 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         # Constraint function              
         fval, dfdx = opt.apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr2, lx, ly, ngl, coord, connect, E, v, rho, alpha_par, beta_par, eta_par, \
             p_par, q_par, x_min_m, x_min_k, area, xnew, modes, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, load_vector, omega1_par, const_func, free_ind, passive_el, ind_dofs)       
-        
-        if freq_constr_bool:
-            fval = opt.normalize_constr(fval, f_scale_constr)
-        
-        fval[:, 0] -= constr_values
 
         # Objective function 
         f0val, fvirg = obj.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
         # Derivative
         df0dx = df.derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                         load_vector, mass_matrix, stif_matrix, dyna_stif, free_ind, ind_dofs, ngl, ind_passive, passive_el)
-                
+
+        if save:
+            np.savetxt(os.path.join(xnew_dir, 'xnew'+'_'+str(outit)+'.txt'), xnew)
+            save_fval[outit,:] = fval[:,0]             
+            save_fvirg1[outit] = fvirg
+            save_f0val1[outit] = f0val
+
+        if freq_constr_bool:
+            fval = opt.normalize_constr(fval, f_scale_constr)
+        
+        fval[:, 0] -= constr_values
+        
         # Multiobjective
-        if (func_name2 is not None) and (n1 != 1):
+        if multiobj_bool:
             dyna_stif2 = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
             disp_vector2, _, _ = opt.get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif2, load_vector, free_ind, omega2_par, alpha_par, beta_par, eta_par, ngl)
 
             # Second objective function
-            f0val2, fvirg = obj.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+            f0val2, fvirg2 = obj.objective_funcs(func_name2, disp_vector2, stif_matrix, mass_matrix, load_vector, omega2_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             # Derivative
-            df0dx2 = df.derivatives_objective(func_name2, fvirg, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
+            df0dx2 = df.derivatives_objective(func_name2, fvirg2, disp_vector2, coord, connect, E, v, rho, alpha_par, beta_par, omega2_par, p_par, q_par, x_min_m, x_min_k, xnew, \
                                         load_vector, mass_matrix, stif_matrix, dyna_stif2, free_ind, ind_dofs, ngl, ind_passive, passive_el)
             
+            if save:
+                save_f0val2[outit] = f0val2
+                save_fvirg2[outit] = fvirg2
+
             # Filter
             if dens_filter:
                 dfdx, df0dx, df0dx2 = opt.density_filter(H, neighbors, dfdx, df0dx, df0dx2)
@@ -353,8 +392,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     # Plot convergence
     if not each_iter:
         win, p2 = plt_opt.win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, labels_constr)
-    if save:
-        plt_opt.save_fig(grid, p2)
+
     tf = time()
     if timing:
         if modes is not None:
@@ -365,19 +403,55 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         print("Time to process: " + str(round((tf - t0), 6)) + '[s]')
     
     if len(freq_rsp) == 3:
-        freq_range = freq_rsp[:2]
-        delta = freq_rsp[2]
         print("Calculating the frequency response of the objective function")
         print('initial conditions')
-        f_original  = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R=False, unrestricted_ind=free_ind)
+        f_original  = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xval_original, x_min_m, x_min_k, p_par, q_par, freq_rsp, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R=False, unrestricted_ind=free_ind)
         print('optimized conditions')
-        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xnew, x_min_m, x_min_k, p_par, q_par, freq_range, delta, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R=False, unrestricted_ind=free_ind)
-        ax = plt_opt.compare_freqresponse(freq_range, delta, f_optimized.real, f_original.real, func_name, save=save)
+        f_optimized = opt.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho, alpha_plot, beta_plot, eta_plot, xnew, x_min_m, x_min_k, p_par, q_par, freq_rsp, func_name, const_func, modes, load_vector, passive_el, ind_passive, aux_R=False, unrestricted_ind=free_ind)
+        fig_freq, ax = plt_opt.compare_freqresponse(freq_rsp, f_optimized.real, f_original.real, func_name)
+    
     if mesh_deform:
         disp_vector = fc.change_U_shape(disp_vector.real)
         coord_U = fc.apply_U(disp_vector, coord, factor)
         collection = plt_fem.build_collection(coord_U, connect[:, 1:])
-        ax1 = plt_fem.plot_collection(lx, ly, coord_U, collection, load_matrix, restri_matrix, save=save)
+        fig_mesh, ax1 = plt_fem.plot_collection(lx, ly, coord_U, collection, load_matrix, restri_matrix)
+
+    if save:
+        if multiobj_bool:
+            ind_fval = 5
+            aux_multi = 2
+        else:
+            ind_fval = 3
+            aux_multi = 0
+         
+        data = np.empty((outit+1, 3+len(constr_func)+aux_multi))
+        data[:, 0] = list_iter[:outit+1]
+
+        data[:, 1] = save_f0val1[:outit+1]
+        data[:, 2] = save_fvirg1[:outit+1]
+
+        if multiobj_bool:
+            data[:, 3] = save_f0val2[:outit+1]
+            data[:, 4] = save_fvirg2[:outit+1]
+
+        data[:, ind_fval:] = save_fval[:outit+1,:]
+
+        header = opt.create_header(multiobj_bool, constr_func)
+        np.savetxt(os.path.join(directory, 'functions.txt'), data, delimiter=",", header=header, comments='')
+
+        np.savetxt(os.path.join(directory, 'frequency_rsp.txt'), np.column_stack((f_original, f_optimized)), delimiter=",", header="orig,opt", comments='')
+
+        img_dir = os.path.join(directory, 'images')
+        os.makedirs(img_dir, exist_ok=True)
+
+        plt_opt.save_fig(grid, os.path.join(img_dir, 'opt.png'), pg_graph=True)
+        plt_opt.save_fig(p2, os.path.join(img_dir, 'convergence.png'), pg_graph=True)
+
+        if len(freq_rsp) == 3:
+            plt_opt.save_fig(fig_freq, os.path.join(img_dir, 'freqrsp.png'), pg_graph=False)
+        if mesh_deform:
+            plt_opt.save_fig(fig_mesh, os.path.join(img_dir, 'mesh.png'), pg_graph=False)
+
     print('Done!')
     plt.show()
     app.exec_()

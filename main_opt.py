@@ -36,11 +36,11 @@ if __name__ == "__main__":
     force_matrix = []
     y_val = np.arange(0.23, 0.27, 0.005)
     for y in y_val:
-        aux = [1, y, 0, -1, 1000]
+        aux = {"x_coord":1, "y_coord":y, "x_direc":0, "y_direc":-1, "force":1000}
         force_matrix.append(aux)
     
     # Create constrain nodes matrix
-    restri_matrix = [[0, 1, 1, 1, 0.001]]
+    restri_matrix = [{"coord":0, "axis":1, "eps":0.001, "constrain_disp_x":1, "constrain_disp_y":1}]
     
     # Weight at objective function
     n1 = 0.8

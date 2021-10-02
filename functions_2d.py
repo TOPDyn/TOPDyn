@@ -21,7 +21,6 @@ def shapeQ4(ssx, ttx):
     #derivatives
     dphi = np.array([[-(1-ttx),  (1-ttx), (1+ttx), -(1+ttx)],
                      [-(1-ssx), -(1+ssx), (1+ssx),  (1-ssx)]], dtype=float)/numerator
-    #
     return phi, dphi
 
 def matricesQ4(ee, coord, connect, E, v, rho):
@@ -58,17 +57,16 @@ def matricesQ4(ee, coord, connect, E, v, rho):
         detJAC = JAC[0,0]*JAC[1,1] - JAC[0,1]*JAC[1,0]
         iJAC = (1/detJAC)*np.array([[JAC[1,1], -JAC[0,1]], [-JAC[1,0], JAC[0,0]]], dtype=float)
         dphi_t = iJAC @ dphi
-        #
+        
         B = np.array([[dphi_t[0,0], 0, dphi_t[0,1], 0, dphi_t[0,2], 0, dphi_t[0,3], 0],
                       [0, dphi_t[1,0], 0, dphi_t[1,1], 0, dphi_t[1,2], 0, dphi_t[1,3]],
                       [dphi_t[1,0], dphi_t[0,0], dphi_t[1,1], dphi_t[0,1],dphi_t[1,2], dphi_t[0,2], dphi_t[1,3], dphi_t[0,3]]], dtype=float)
-        #
+        
         N = np.array([[phi[0], 0, phi[1], 0, phi[2], 0, phi[3], 0],
                       [0, phi[0], 0, phi[1], 0, phi[2], 0, phi[1]]], dtype=float)
-        #
+        
         Ke += B.T@(cttv@B)*(detJAC*wps)
         Me += rho*N.T@N*(detJAC*wps)
-        #
     return Ke.real, Me.real
 
 def generate_xy_coord(lx, ly, nelx, nely):
@@ -254,62 +252,64 @@ def get_size_el(coord):
     ly = max(coord[:, 2])
     return lx, ly
 
-def get_matrices(matrix, coord, force):
-    """ Get force matrix and restri_matrix.
+def turn_into_np(dicti_matrix, force):
+    """ Transforms dictionaries into numpy array.
+    Args:
+        dicti_matrix (:obj:`list`): List of dictionaries passed by the user.
+        force (:obj:`bool`): True if encountering force matrix.
+    Returns:
+        numpy array.
+    """
+    index_by_coord = []
+    index_by_col   = []
+    matrix = []
+    for i, dict_row in enumerate(dicti_matrix):
+        if not("eps" in dict_row):
+            if force:
+                aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["x_direc"], dict_row["y_direc"], dict_row["force"], 0]  
+            else:
+                aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], 0] 
+            index_by_coord.append(i)
+        
+        elif "eps" in dict_row:
+            if force:
+                aux = [dict_row["coord"], dict_row["axis"], dict_row["x_direc"], dict_row["y_direc"], dict_row["force"], dict_row["eps"]] 
+            else:
+                aux = [dict_row["coord"], dict_row["axis"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], dict_row["eps"]]
+            index_by_col.append(i)
+        
+        matrix.append(aux)
 
+    matrix_F = np.array(matrix)
+    return index_by_coord, index_by_col, matrix_F
+
+def get_matrices(matrix, coord, force):
+    """ Gets the force matrix or the contraint matrix.
     Args:
         matrix (:obj:`list`): List passed by the user. 
         coord (:obj:`numpy.array`): Coordinates of the element.
         force (:obj:`bool`): True if encountering force matrix.
-
     Returns:
         force_matrix or restri_matrix.
     """
     if force:
-        index_by_coord, index_by_col, np_matrix = get_ind_matrices(matrix, 5, 6)
-        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col, 5)
+        index_by_coord, index_by_col, np_matrix = turn_into_np(matrix, force=True)
+        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col)
         nodes_matrix = get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, [1,2,3], [2,3,4], 4)
     else:
-        index_by_coord, index_by_col, np_matrix = get_ind_matrices(matrix, 4, 5)
-        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col, 4)
+        index_by_coord, index_by_col, np_matrix = turn_into_np(matrix, force=False)
+        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col)
         nodes_matrix = get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, [1,2], [2,3], 3)
     return nodes_matrix.astype(int)
 
-def get_ind_matrices(matrix, by_coord, by_col):
-    """ Get if is passed the column or coordinate.
-
-    Args:
-        matrix (:obj:`list`): List passed by the user. 
-        by_coord (:obj:`int`): Length of list if it coordinates were passed.
-        by_col (:obj:`int`): Length of list if column was passed.
-
-    Returns:
-        index_by_coord, index_by_col, matrix_F
-    """
-    index_by_coord = []
-    index_by_col   = []
-    for i, list_row in enumerate(matrix):
-        if len(list_row) == by_coord:
-            list_row.append(0)
-            index_by_coord.append(i)
-        elif len(list_row) == by_col:
-            index_by_col.append(i)
-        else:
-            #TODO: Fazer algo melhor hehe
-            print("ERRADO!")
-    matrix_F = np.array(matrix)
-    return index_by_coord, index_by_col, matrix_F
-
-def get_nodes(coord, np_matrix, index_by_coord, index_by_col, ind):
-    """ Get nodes by the coordinate or column
-
+def get_nodes(coord, np_matrix, index_by_coord, index_by_col):
+    """ Gets nodes by a coordinate or a column.
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         np_matrix (:obj:`numpy.array`): List passed to an array.
-        index_by_coord (:obj:`list`): Indexes of elements passed by coordinates.
-        index_by_col (:obj:`list`): Indexes of elements passed by columns.
+        index_by_coord (:obj:`list`): indices of elements passed by coordinates.
+        index_by_col (:obj:`list`): indices of elements passed by columns.
         ind (:obj:`int`): The column that has the margin of error.
-
     Returns:
         Nodes.
     """
@@ -321,24 +321,22 @@ def get_nodes(coord, np_matrix, index_by_coord, index_by_col, ind):
 
     if len(index_by_col) > 0:
         for index in index_by_col:
-            aux = get_nodes1d(coord, int(np_matrix[index, 0]), np_matrix[index, ind], int(np_matrix[index, 1]))
+            aux = get_nodes1d(coord, int(np_matrix[index, 0]), np_matrix[index, -1], int(np_matrix[index, 1]))
             nodes_col.append(aux)
     return nodes_coord, nodes_col 
 
 def get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, ind1, ind2, total_cols):
-    """ Create matrix with nodes.
-
+    """ Creates the node matrix.
     Args:
         nodes_coord (:obj:`list`): Nodes passed by coordinate.
         nodes_col (:obj:`list`): Nodes passed by column.
         coord (:obj:`numpy.array`): Coordinates of the element.
         matrix (:obj:`numpy.array`): List passed to an array.
-        index_by_coord (:obj:`list`): Indexes of elements passed by coordinates.
-        index_by_col (:obj:`list`): Indexes of elements passed by columns.
+        index_by_coord (:obj:`list`): indices of elements passed by coordinates.
+        index_by_col (:obj:`list`): indices of elements passed by columns.
         ind1 (:obj:`int`): Indices of matrix with nodes.
         ind2 (:obj:`int`): Indices of matrix passed by user.
         total_cols (:obj:`int`): Number of columns desired for the matrix.
-
     Returns:
         matrix with nodes.
     """
@@ -499,7 +497,7 @@ def apply_U(disp_vector, coord, factor):
     new_coord[:, 1:] += disp_vector * factor
     return new_coord
 
-def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_rsp, delta, node_plot, load_vector, **kwargs):
+def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_rsp, node_plot, load_vector, **kwargs):
     """ Get the displacement values for a specific node.
 
     Args:
@@ -518,7 +516,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alph
         freq_rsp (:obj:`list`): Frequency range.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the objective function. 
+            Third value is the step between each calculation of the objective function. 
         node_plot (:obj:`int`): Node to salve the displacement.
         load_vector (:obj:`numpy.array`): Force.
 
@@ -528,7 +526,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alph
     free_ind = None
     if kwargs.get('unrestricted_ind') is not None:
         free_ind = kwargs.get('unrestricted_ind')
-    interval = np.arange(freq_rsp[0], freq_rsp[1] + 1, delta)
+    interval = np.arange(freq_rsp[0], freq_rsp[1] + 1, freq_rsp[2])
     vector_U = np.empty((len(interval)), dtype=complex)
     force_ind = get_dofs(node_plot)
     stif_matrix, mass_matrix = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho)

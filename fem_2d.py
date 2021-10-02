@@ -52,38 +52,49 @@ def main(mesh_file, nelx, nely, lx, ly, force_matrix, restri_matrix=None, E=210e
     else:
         coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely, timing=timing)
     ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
-    # Force and restrictions matrix
+
+    # Force matrix
     force_matrix = fc.get_matrices(force_matrix, coord, True)
-    restri_matrix = fc.get_matrices(restri_matrix, coord, False)
+        
     # Get free indexes
     free_ind = None
     if restri_matrix is not None:
+        restri_matrix = fc.get_matrices(restri_matrix, coord, False)
         restricted_dofs = fc.get_dofs(restri_matrix)
         free_ind = fc.remove_dofs(nelx, nely, restricted_dofs)
+    
     # Calculate force
     load_vector = fc.get_load_vector(nelx, nely, force_matrix)
+    
     # Calculate displacement vector
     stif_matrix, mass_matrix = fc.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho)
     ngl = 2 * ((nelx + 1) * (nely + 1))
     disp_vector = fc.harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq=freq, ngl=ngl, timing=timing, load_vector=load_vector, unrestricted_ind=free_ind)
+    
     # Mesh with displacement
     disp_vector = fc.change_U_shape(disp_vector.real)
     coord_U = fc.apply_U(disp_vector, coord, factor)
     collection = plt_fem.build_collection(coord_U, connect[:, 1:])
+    fig_mesh, ax1 = plt_fem.plot_collection(lx, ly, coord_U, collection, force_matrix, restri_matrix)
+
     if len(freq_rsp) == 3:
-        ax1 = plt_fem.plot_collection(lx, ly, coord_U, collection, force_matrix, restri_matrix, save=save)
-        freq_range = freq_rsp[:2]
-        delta = freq_rsp[2]
         if node_plot is None:
             node_plot = np.array(force_matrix[0,0], 0, 1, dtype='int').reshape(1, 3)
         else:
             aux = fc.get_nodes_by_coord(coord, [node_plot[:2]])
             node_plot = np.array([aux[0], node_plot[2], node_plot[3]], dtype='int').reshape(1, 3)
         print("Calculating the frequency response of the objective function")
-        vector_U = fc.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_range, delta, node_plot, load_vector, unrestricted_ind=free_ind)
-        ax2 = plt_fem.plot_freqresponse(node_plot[0,0], freq_range, delta, vector_U.real, save=save)
-        print('Done!')
-        plt.show()
-    else:
-        ax = plt_fem.plot_collection(lx, ly, coord_U, collection, force_matrix, restri_matrix, save=save)
-        plt.show()
+        vector_U = fc.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_rsp, node_plot, load_vector, unrestricted_ind=free_ind)
+        fig_freq, ax2 = plt_fem.plot_freqresponse(node_plot[0,0], freq_rsp, vector_U.real)
+
+    if save:
+        folder_name = 'images'
+        directory = os.path.join(os.path.dirname(__file__), folder_name)
+        os.makedirs(directory, exist_ok=True)
+
+        plt_fem.save_fig(fig_mesh, os.path.join(directory, 'mesh.png'))
+        if len(freq_rsp) == 3:
+            plt_fem.save_fig(fig_freq, os.path.join(directory, 'freqrsp.png'))
+
+    print('Done!')
+    plt.show()

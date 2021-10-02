@@ -4,6 +4,21 @@ import cmath
 import numpy as np
 
 def R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, aux_R=True):
+    """ Calculates the local strain-to-kinetic energy ratio function.
+    Args:
+        omega_par (:obj:`float`): 2 * pi * frequency.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        passive_el (:obj:`numpy.array`, optional): Passive element nodes.
+        ind_passive (:obj:`numpy.array`, optional): Index of passive elements.
+        coord (:obj:`numpy.array`, optional): Coordinates of the element.
+        connect (:obj:`numpy.array`, optional): Element connectivity.
+        E (:obj:`float`, optional): Elastic modulus.
+        v (:obj:`float`, optional): Poisson's ratio. 
+        rho (:obj:`float`, optional): Density.
+        aux_R (:obj:`bool`, optional): If True fvirg is a tuple with local kinetic energy and local elastic potential energy.
+    Returns:
+        Local strain-to-kinetic energy ratio on the logarithmic scale and the non-logarithmic strain-to-kinetic energy ratio.
+    """
     _, ep = elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
 
     _, ki = kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
@@ -18,6 +33,19 @@ def R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connec
     return f, fvirg
 
 def elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho):
+    """ Calculates the local elastic potential energy function.
+    Args:
+        disp_vector (:obj:`numpy.array`): Displacement.
+        passive_el (:obj:`numpy.array`, optional): Passive element nodes.
+        ind_passive (:obj:`numpy.array`, optional): Index of passive elements.
+        coord (:obj:`numpy.array`, optional): Coordinates of the element.
+        connect (:obj:`numpy.array`, optional): Element connectivity.
+        E (:obj:`float`, optional): Elastic modulus.
+        v (:obj:`float`, optional): Poisson's ratio. 
+        rho (:obj:`float`, optional): Density.
+    Returns:
+        Local elastic potential energy on the logarithmic scale and the non-logarithmic local elastic potential energy.
+    """
     ep2 = 0
     for i, ind_el in enumerate(ind_passive):
         Ke, _ = fc.matricesQ4(passive_el[i], coord, connect, E, v, rho)
@@ -29,6 +57,20 @@ def elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect
     return f, fvirg
 
 def kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho):
+    """ Calculates the local kinetic energy function.
+    Args:
+        omega_par (:obj:`float`): 2 * pi * frequency.
+        disp_vector (:obj:`numpy.array`): Displacement.
+        passive_el (:obj:`numpy.array`, optional): Passive element nodes.
+        ind_passive (:obj:`numpy.array`, optional): Index of passive elements.
+        coord (:obj:`numpy.array`, optional): Coordinates of the element.
+        connect (:obj:`numpy.array`, optional): Element connectivity.
+        E (:obj:`float`, optional): Elastic modulus.
+        v (:obj:`float`, optional): Poisson's ratio. 
+        rho (:obj:`float`, optional): Density.
+    Returns:
+        Local kinetic energy on the logarithmic scale and the non-logarithmic local kinetic energy.
+    """
     ki = 0
     for i, ind_el in enumerate(ind_passive):
         _, Me = fc.matricesQ4(passive_el[i], coord, connect, E, v, rho)
@@ -41,28 +83,25 @@ def kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connec
 
 def compliance(disp_vector, load_vector):
     """ Calculates the compliance function.
-
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
         load_vector (:obj:`numpy.array`): Force.
         
     Returns:
-        Function value.
+        non-logarithmic compliance.
     """
     f = abs(np.dot(disp_vector, load_vector))
     return f
 
 def input_power(disp_vector, load_vector, omega_par, const_func):
     """ Calculates the input power function.
-
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
         load_vector (:obj:`numpy.array`): Force.
-        omega_par (:obj:`float`): 2 * pi * frequency
+        omega_par (:obj:`float`): 2 * pi * frequency.
         const_func (:obj:`float`):
-
     Returns:
-        A tuple with the values of the input power on the logarithmic scale and the 'virgin' input power.
+        Input power on the logarithmic scale and the non-logarithmic input power.
     """
     a = 1j * load_vector.conjugate()@disp_vector
     if omega_par == 0:
@@ -74,15 +113,13 @@ def input_power(disp_vector, load_vector, omega_par, const_func):
     return f, fvirg
 
 def elastic_potential_energy(disp_vector, stif_matrix, const_func):
-    """ Calculates the elastic potential energy.
-
+    """ Calculates the elastic potential energy function.
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         const_func (:obj:`float`): 
-
     Returns:
-        A tuple with the values of the potential elastic energy on the logarithmic scale and the 'virgin' potential elastic energy.
+        Potential elastic energy on the logarithmic scale and the non-logarithmic potential elastic energy.
     """
     elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
     fvirg = elastic_p.real
@@ -91,16 +128,14 @@ def elastic_potential_energy(disp_vector, stif_matrix, const_func):
     return elastic_p, fvirg
 
 def kinetic_energy(disp_vector, mass_matrix, omega_par, const_func):
-    """ Calculates the kinetic energy.
-
+    """ Calculates the kinetic energy function.
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
         mass_matrix (:obj:`numpy.array`): Mass matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency
+        omega_par (:obj:`float`): 2 * pi * frequency.
         const_func (:obj:`float`):
-
     Returns:
-        A tuple with the values of the kinetic energy on the logarithmic scale and the 'virgin' kinetic energy.
+        Kinetic energy on the logarithmic scale and the non-logarithmic kinetic energy.
     """
     if omega_par == 0:
         omega_par = 1e-12
@@ -112,16 +147,14 @@ def kinetic_energy(disp_vector, mass_matrix, omega_par, const_func):
 
 def R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func):
     """ Calculates the strain-to-kinetic energy ratio R.
-
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         mass_matrix (:obj:`numpy.array`): Mass matrix.
-        omega_par (:obj:`float`): 2 * pi * frequency
+        omega_par (:obj:`float`): 2 * pi * frequency.
         const_func (:obj:`float`):
-
     Returns:
-        R, Rvrig 
+        Strain-to-kinetic energy ratio on the logarithmic scale and the non-logarithmic strain-to-kinetic energy ratio.
     """
     elastic_p = ((1/4) * (disp_vector.reshape(1, -1).conjugate()@stif_matrix@disp_vector))[0]
     if omega_par == 0:
@@ -134,26 +167,25 @@ def R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func):
     return R.real, fvirg.real
 
 def objective_funcs(func_name, disp_vector, stif_matrix=None, mass_matrix=None, load_vector=None, omega_par=None, const_func=None, passive_el=None, ind_passive=None, coord=None, connect=None, E=None, v=None, rho=None, aux_R=True):
-    ''' Calculate objective function.
-
+    ''' Calculates the objective function.
     Args:
         func_name (:obj:`str`): Objective function used.
         disp_vector (:obj:`numpy.array`): Displacement.
-        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        mass_matrix (:obj:`numpy.array`): Mass matrix.
-        load_vector (:obj:`numpy.array`): Force.
-        omega_par (:obj:`float`): 2 * pi * frequency.
+        stif_matrix (:obj:`numpy.array`, optional): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`, optional): Mass matrix.
+        load_vector (:obj:`numpy.array`, optional): Force.
+        omega_par (:obj:`float`, optional): 2 * pi * frequency.
         const_func (:obj:`float`):
-        passive_el (:obj:`numpy.array`): Passive element nodes.
-        ind_passive (:obj:`numpy.array`): Index of passive elements.
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio. 
-        rho (:obj:`float`): Density.
-
+        passive_el (:obj:`numpy.array`, optional): Passive element nodes.
+        ind_passive (:obj:`numpy.array`, optional): Index of passive elements.
+        coord (:obj:`numpy.array`, optional): Coordinates of the element.
+        connect (:obj:`numpy.array`, optional): Element connectivity.
+        E (:obj:`float`, optional): Elastic modulus.
+        v (:obj:`float`, optional): Poisson's ratio. 
+        rho (:obj:`float`, optional): Density.
+        aux_R (:obj:`bool`, optional): If True fvirg is a tuple with local kinetic energy and local elastic potential energy.
     Returns:
-        Objective function values.
+        Objective function on the logarithmic scale and the non-logarithmic objective function.
     '''
     if func_name == "Compliance":
         f0val = compliance(disp_vector, load_vector)
@@ -179,10 +211,4 @@ def objective_funcs(func_name, disp_vector, stif_matrix=None, mass_matrix=None, 
     
     elif func_name == 'Local R':
         f0val, fvirg = R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, aux_R)
-
-    import sys
-    if not isinstance(f0val, float):
-        sys.exit('f0val')
-    if not isinstance(fvirg, float):
-        sys.exit('fvirg')
     return f0val, fvirg

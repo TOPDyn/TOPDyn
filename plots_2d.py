@@ -51,7 +51,7 @@ def build_collection(coord, connect, disp_vector=None, timing=False):
 
     return pc
 
-def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None, save=False):
+def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None):
     """ Plot mesh, force arrows and constrain nodes. 
 
     Args:
@@ -61,7 +61,6 @@ def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None, sav
         pc (matplotlib.collections): Matplotlib collection object.
         load_matrix (:obj:`numpy.array`, optional): The columns are respectively node, x direction, y direction, force value. 
         restri_matrix (:obj:`numpy.array`, optional)= The columns are respectively node, x direction, y direction. Defaults to None. 
-        save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
 
     Returns:
         Matplotlib axes object.
@@ -74,21 +73,20 @@ def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None, sav
     ax.plot(x, y, ls = "", color = "black")
     max_size, min_size = get_size(lx, ly)
     size = 0.06 * coord[:, max_size].max() - coord[:, max_size].min()
+    
     # Plot force arrows
     if load_matrix is not None:
         ax = plot_force(ax, coord, load_matrix, min_size, size)
+    
     # Plot restrict nodes 
     if restri_matrix is not None:
         ax = plot_restr_nodes(ax, coord, restri_matrix)
-    #
+    
     ax.set_xlabel('X Axis')
     ax.set_ylabel('Y Axis')
     ax.set_xlim(coord[:, 1].min() - size, coord[:, 1].max() + size)
-    ax.set_ylim(coord[:, 2].min() - size, coord[:, 2].max() + size)
-    if save:
-        plt.savefig("mesh.png")
-    
-    return ax
+    ax.set_ylim(coord[:, 2].min() - size, coord[:, 2].max() + size)   
+    return fig, ax
 
 def get_size(lx, ly):
     """ Get columns with maximum and minimum length.
@@ -124,19 +122,17 @@ def plot_force(ax, coord, load_matrix, min_size, size):
     """
     factor = coord[:, min_size].max() - coord[:, min_size].min()
     ind = (load_matrix[:, 0] - 1).astype('int')
-    for i in range(load_matrix.shape[0]):
-        # 
+    for i in range(load_matrix.shape[0]): 
         if load_matrix[i, 1] == 1:
             ax.arrow(coord[ind[i], 1], coord[ind[i], 2], size, 0, shape='full', length_includes_head=True, width = factor * 0.01)
         if load_matrix[i, 1] == -1:
             ax.arrow(coord[ind[i], 1], coord[ind[i], 2], -size, 0, shape='full', length_includes_head=True, width = factor * 0.01)
-        # 
+        
         if load_matrix[i, 2] == -1:
             ax.arrow(coord[ind[i], 1], coord[ind[i], 2], 0, -size, shape='full', length_includes_head=True, width = factor * 0.01)
-        #
+        
         if load_matrix[i, 2] == 1:
             ax.arrow(coord[ind[i], 1], coord[ind[i], 2], 0, size, shape='full', length_includes_head=True, width = factor * 0.01)
-    
     return ax
 
 def plot_restr_nodes(ax, coord, restri_matrix):
@@ -163,26 +159,24 @@ def plot_restr_nodes(ax, coord, restri_matrix):
     y_restri = (restri_matrix[:, 1] == 0) & (restri_matrix[:, 2] == 1)
     ind = restri_matrix[y_restri, 0] - 1
     plt.scatter(coord[ind, 1], coord[ind, 2], marker=(3, 0, 0), s=120, color = 'red', linestyle='None')
-
     return ax
 
-def plot_freqresponse(node, freq_range, delta, disp_vector, save=False):
+def plot_freqresponse(node, freq_range, disp_vector):
     """ Plot the frequency response.
             
     Args:    
         node (:obj:`list`): Node that was calculated the frequency response.
-        freq_range (:obj:`list`): Range of frequencies analyzed.
+        freq_range (:obj:`list`): Range of analyzed frequencies.
             First value is the minimum frequency.
             Second value is the maximum frequency.
         delta (:obj:`int`): Step between each calculation of the function. 
         disp_vector (:obj:`numpy.array`): Displacement.
-        save (:obj:`bool`, optional): True for save the graphic in PNG. Defaults to False.
        
     Returns:
         Matplotlib axes object.
     """
     fig, ax = plt.subplots()
-    x = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    x = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
     y = 10 * np.log10(abs(disp_vector))
     ax.plot(x, y)
     ax.set_title('Node' + str(node), fontsize=15)
@@ -190,35 +184,12 @@ def plot_freqresponse(node, freq_range, delta, disp_vector, save=False):
     ax.set_ylabel('displacement [N]', fontsize=16)
     ax.set_xlim(0, x[-1])
     ax.grid()
-    if save:
-        plt.savefig("freq_range.png")
+    return fig, ax
 
-    return ax
-
-def many_disp(freq_range, delta, disp_vector1, disp_vector2, disp_vector3):
-    """ Plot the frequency response of three displacement vectors.
-            
-    Args:    
-        freq_range (:obj:`list`): Range of frequencies analyzed.
-            First value is the minimum frequency.
-            Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the function. 
-        disp_vector1 (:obj:`numpy.array`): Displacement 1.
-        disp_vector2 (:obj:`numpy.array`): Displacement 2.
-        disp_vector3 (:obj:`numpy.array`): Displacement 3.
-    """
-    x = np.arange(freq_range[0], freq_range[1] + 1, delta)
-    y1 = 10 * np.log10(abs(disp_vector1))
-    y2 = 10 * np.log10(abs(disp_vector2))
-    y3 = 10 * np.log10(abs(disp_vector3))
-
-    plt.plot(x, y1, 'r')
-    plt.plot(x, y2, 'g')
-    plt.plot(x, y3, 'b')
-
-    plt.xlabel('frequency [Hz]', fontsize=16)
-    plt.ylabel('displacement [N]', fontsize=16)
-    plt.xlim(0, x[-1])
-    plt.grid()
-    plt.legend(['0', '0.5', '1'])
-    plt.show()
+def save_fig(fig, path):
+    """ TODO.
+    Args:
+        fig:
+        path: Directory to save the graph.
+    """   
+    fig.savefig(path)

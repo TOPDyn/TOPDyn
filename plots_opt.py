@@ -110,7 +110,7 @@ def simple_window():
     return win, grid
 
 def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, label):
-    """ Generate a window to plot the convergence graph.
+    """ Generates a window to plot the convergence graph.
 
     Args:
         constr_func (:obj:`list`): Restriction functions applied.
@@ -176,18 +176,21 @@ def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
         p.plot(list_iter, list_fvals[ind], pen=pen_set)
     return p
 
-def save_fig(opt_part, convergence):
-    """ Save the optimized part and the convergence graph.
-
+def save_fig(fig, path, pg_graph):
+    """ Saves the graphics: optimized part, convergence graph, frequency response graph and deformed mesh.
     Args:
-        opt_part (pyqtgraph.graphicsItems.PlotItem): Optimized part window. 
-        convergence (pyqtgraph.graphicsItems.PlotItem): Convergence graph window.
+        fig: Object with the graph. 
+            It can be: 
+                * pyqtgraph.graphicsItems.PlotItem
+                * #TODO: COLOCAR O MATPLOTLIB AQUI
+        path: Directory to save the graph.
+        pg_graph (:obj:`bool`): Specifies the type of figure.
     """   
-    exporter = pg.exporters.ImageExporter(opt_part)
-    exporter.export('optimization.png')
-
-    exporter2 = pg.exporters.ImageExporter(convergence)
-    exporter2.export('convergence.png')
+    if pg_graph:
+        exporter = pg.exporters.ImageExporter(fig)
+        exporter.export(path)
+    else:
+        fig.savefig(path)
 
 def compare_deriv(nodes, delta_d, dw, dw_orig):
     for ind2, node in enumerate(nodes):
@@ -200,24 +203,23 @@ def compare_deriv(nodes, delta_d, dw, dw_orig):
         plt.legend()
     plt.show(block=True)
 
-def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
+def compare_freqresponse(freq_range, newf, oldf, func_name):
     """ Plot the frequency response of the original and the optimized function.
 
     Args:
-        freq_range (:obj:`list`): Range of frequencies analyzed.
+        freq_range (:obj:`list`): Range of analyzed frequencies.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the function. 
+            Third value is the step between each calculation of the objective function. 
         newf (array): Optimized function.
         oldf (array): Original function.
         func_name (:obj:`str`): Objective function name.
             It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
-        save (:obj:`bool`): True for save the graphic in PNG. Defaults to False.
 
     Returns:
         A single Axes object from matplotlib.pyplot.
     """
-    freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    freq = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
     fig, ax = plt.subplots()
     ax.plot(freq, oldf, label = 'original')
     ax.plot(freq, newf, label = 'optimized')
@@ -225,10 +227,7 @@ def compare_freqresponse(freq_range, delta, newf, oldf, func_name, save):
     ax.set_ylabel(func_name.lower())
     ax.legend(loc='best', frameon=False)
     ax.set_yscale('log')
-    if save:
-        plt.savefig("compare_freq_response.png")
-
-    return ax
+    return fig, ax
 
 def freqrsp_modes(freq_range, delta, newf, oldf, modes, func_name, save):
     """ Plot the frequency response of the function with multiple modes.
@@ -270,9 +269,4 @@ def freqrsp_modes(freq_range, delta, newf, oldf, modes, func_name, save):
     plt.legend()
     if save:
         plt.savefig('all' + ".eps")   
-    plt.show()
-
-def freqrsp_plot(freq_range, vector):
-    freq = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
-    plt.plot(freq, vector)
     plt.show()
