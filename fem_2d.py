@@ -69,7 +69,7 @@ def main(mesh_file, nelx, nely, lx, ly, force_matrix, restri_matrix=None, E=210e
     # Calculate displacement vector
     stif_matrix, mass_matrix = fc.solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho)
     ngl = 2 * ((nelx + 1) * (nely + 1))
-    disp_vector = fc.harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq=freq, ngl=ngl, timing=timing, load_vector=load_vector, unrestricted_ind=free_ind)
+    disp_vector = fc.harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq=freq, ngl=ngl, timing=timing, load_vector=load_vector, free_ind=free_ind)
     
     # Mesh with displacement
     disp_vector = fc.change_U_shape(disp_vector.real)
@@ -84,7 +84,7 @@ def main(mesh_file, nelx, nely, lx, ly, force_matrix, restri_matrix=None, E=210e
             aux = fc.get_nodes_by_coord(coord, [node_plot[:2]])
             node_plot = np.array([aux[0], node_plot[2], node_plot[3]], dtype='int').reshape(1, 3)
         print("Calculating the frequency response of the objective function")
-        vector_U = fc.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_rsp, node_plot, load_vector, unrestricted_ind=free_ind)
+        vector_U = fc.freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_rsp, node_plot, load_vector, free_ind)
         fig_freq, ax2 = plt_fem.plot_freqresponse(node_plot[0,0], freq_rsp, vector_U.real)
 
     if save:

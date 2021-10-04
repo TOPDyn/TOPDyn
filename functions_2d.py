@@ -186,7 +186,7 @@ def solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, timing
         print("Time to assembly global matrices: " + str(round((tf1 - t01), 6)) + '[s]')
     return stif_matrix, mass_matrix 
 
-def harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq, ngl, timing=False, **kwargs):
+def harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq, ngl, free_ind, load_vector, timing=False):
     """ Direct method and no damping
 
     Args:
@@ -202,11 +202,8 @@ def harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq, ngl, tim
     t02 = time()
     omega = 2 * np.pi * freq
     damp_matrix = alpha * mass_matrix + (beta + eta/omega)*stif_matrix
-    if kwargs.get('load_vector') is not None:
-        load_vector = kwargs.get('load_vector')
-    #
-    if kwargs.get('unrestricted_ind') is not None:
-        free_ind = kwargs.get('unrestricted_ind')
+    
+    if free_ind is not None:
         F = load_vector[free_ind]
         K = stif_matrix[free_ind, :][:, free_ind]
         M = mass_matrix[free_ind, :][:, free_ind]
@@ -223,7 +220,6 @@ def harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, freq, ngl, tim
     tf2 = time()
     if timing:
         print("Time to solve the harmonic analysis problem: " + str(round((tf2 - t02), 6)) + '[s]')
-        #print("Total time elapsed in solution: " + str(round((tf2 - t01), 6)) + '[s]')
     return disp_vector  
 
 def get_num_el(coord):
@@ -388,7 +384,6 @@ def get_nodes1d(coord, coord_user, eps, column):
     """
     dif = np.abs(coord[:, column] - coord_user)
     mask = dif < eps
-
     return (coord[mask, 0]).astype('int')
 
 def get_dofs(nodes_dir):
@@ -440,7 +435,7 @@ def duplicate_force(force_matrix):
         force_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
     
     Returns:
-        Force values.
+        Load.
     """
     mask = ((abs(force_matrix[:, 1]) == 1.) & (abs(force_matrix[:, 2]) == 1.)).nonzero()[0]
     force_values = force_matrix[:, 3]
@@ -497,7 +492,7 @@ def apply_U(disp_vector, coord, factor):
     new_coord[:, 1:] += disp_vector * factor
     return new_coord
 
-def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_rsp, node_plot, load_vector, **kwargs):
+def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alpha, beta, eta, freq_rsp, node_plot, load_vector, free_ind):
     """ Get the displacement values for a specific node.
 
     Args:
@@ -518,21 +513,20 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho, alph
             Second value is the maximum frequency.
             Third value is the step between each calculation of the objective function. 
         node_plot (:obj:`int`): Node to salve the displacement.
-        load_vector (:obj:`numpy.array`): Force.
+        load_vector (:obj:`numpy.array`): Load.
 
     Returns:
         Displacement array.        
     """
-    free_ind = None
-    if kwargs.get('unrestricted_ind') is not None:
-        free_ind = kwargs.get('unrestricted_ind')
+    if freq_rsp[0] == 0:
+        freq_rsp[0] = 1e-12
     interval = np.arange(freq_rsp[0], freq_rsp[1] + 1, freq_rsp[2])
     vector_U = np.empty((len(interval)), dtype=complex)
     force_ind = get_dofs(node_plot)
     stif_matrix, mass_matrix = solution2D(coord, connect, ind_rows, ind_cols, nelx, nely, E, v, rho)
     ngl = 2 * ((nelx + 1) * (nely + 1))
     for n in range(len(interval)):
-        disp_vector = harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, interval[n], ngl, load_vector=load_vector, unrestricted_ind=free_ind)
+        disp_vector = harmonic_solution(stif_matrix, mass_matrix, alpha, beta, eta, interval[n], ngl, free_ind, load_vector)
         vector_U[n] = disp_vector[force_ind]
     return vector_U
 
