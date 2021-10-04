@@ -6,7 +6,7 @@ import functions_3d as fc
 import numpy_indexed as npi
 
 def all_faces(coord, connect):
-    """ Get vertice of all faces of the mesh.
+    """ Gets vertices of all faces of the mesh.
 
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
@@ -20,11 +20,10 @@ def all_faces(coord, connect):
                                 connect[:, [6,5,1,2]], connect[:, [5,8,4,1]]]).reshape(-1,4)
 
     ind_faces = npi.indices(coord[:,0], nodes_per_face.flatten()).reshape(-1, 4)
-  
     return ind_faces
 
 def free_faces(coord, connect):
-    """ Get vertices of external faces of the mesh.
+    """ Gets vertices of external faces of the mesh.
     
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
@@ -40,11 +39,10 @@ def free_faces(coord, connect):
     unique, counts = npi.count(nodes_per_face)
     unique = unique[counts<2]  
     ind_faces = npi.indices(coord[:,0], unique.flatten()).reshape(-1, 4) 
-
     return ind_faces
 
 def build_mesh(verts, ind_faces, scalars=None, timing=False):
-    """ Build the polygonal Mesh.
+    """ Builds the polygonal Mesh.
     
     Args:
         verts (:obj:`numpy.array`): Vertices of the elements.
@@ -64,7 +62,6 @@ def build_mesh(verts, ind_faces, scalars=None, timing=False):
     tf = time()
     if timing:
         print("Time to build mesh: " + str(round((tf - t0),6)) + '[s]')
-
     return mesh
 
 def plot_mesh(mesh, arrows, cones, complete=True, mesh2=None):
@@ -77,26 +74,25 @@ def plot_mesh(mesh, arrows, cones, complete=True, mesh2=None):
         complete (:obj:`bool`, optional): If true plot mesh with loads and constrain nodes. Defaults to True.
         mesh2 (:obj:`vedo.pointcloud.Points`, optional): Mesh without faces. Defaults to None.
     """
-    if mesh2 is not None:
-        if complete:
-            vt.show(mesh, arrows, cones, mesh2, __doc__, viewup='z', axes=4)
-        else:
-            vt.show(mesh, mesh2, __doc__, viewup='z', axes=4)
-    else:  
-        if complete:
-            vt.show(mesh, arrows, cones, __doc__, viewup='z', axes=4)
-        else:
-            vt.show(mesh, __doc__, viewup='z', axes=4)
+    vp = vt.Plotter()
 
+    vp += mesh
+    if complete:
+        vp += arrows
+        vp += cones
+    if mesh2 is not None:
+        vp += mesh2
+    return vp
+    
 def animation(coord, connect, amp, disp_vector):
-    ''' Plot deformed mesh animation.
+    """ Plot deformed mesh animation.
 
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
         amp (:obj:`int`): Amplitude. 
         disp_vector (:obj:`numpy.array`): Displacement.
-    '''
+    """
     vt.printc("Press F1 to exit.", c="red", invert=1)
     vp = vt.Plotter(axes=0, interactive=0)
     vp += __doc__
@@ -113,7 +109,7 @@ def animation(coord, connect, amp, disp_vector):
             vp.show()
 
 def build_arrows(load_matrix, normal_coord, timing=False):
-    """ Load arrows.
+    """ Builds load arrows.
         
     Args:  
         load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.   
@@ -170,11 +166,10 @@ def build_arrows(load_matrix, normal_coord, timing=False):
     tf = time()
     if timing:
         print("Time to build arrows: " + str(round((tf - t0),6)) + '[s]')
-
     return all_arrows
 
 def build_cones(restri_nodes, normal_coord, timing=False):
-    """ Cones to indicate constrain nodes.
+    """ Builds cones to indicate constrain nodes.
         
     Args:  
         restri_nodes (:obj:`numpy.array`): Constrain nodes.  
@@ -207,11 +202,10 @@ def build_cones(restri_nodes, normal_coord, timing=False):
     tf = time()
     if timing:
         print("Time to build cones: " + str(round((tf - t0),6)) + '[s]')
-
     return cones
 
 def get_normalized_coord(nodes, normal_coord):
-    """ Normalized coordinates.
+    """ Normalizes coordinates.
 
     Args:
         nodes (:obj:`numpy.array`): External face nodes.
@@ -222,17 +216,16 @@ def get_normalized_coord(nodes, normal_coord):
     """
     idx_node = (nodes - 1).astype('int')
     coord = normal_coord[idx_node, :]
-
     return coord
 
-def plot_freqresponse(freq_range, delta, disp_vector):
+def plot_freqresponse(freq_range, disp_vector):
     """ Plot the frequency response.
             
     Args:    
         freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the function. 
+            Third value is the step between each calculation of the function. 
         disp_vector (:obj:`numpy.array`): Displacement.
        
     Returns:
@@ -243,17 +236,16 @@ def plot_freqresponse(freq_range, delta, disp_vector):
     #p = win.addPlot(title="Convergence")
     p = win.addPlot()
     p.addLegend(labelTextColor=(0,0,0), offset=(800,10))
-    x = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    x = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
     y = 10 * np.log10(abs(disp_vector))
     p.plot(x, y, width=80, pen=(0,0,0))
     colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75)]
     p.setLabel('left', 'displacement, U [N]')
     p.setLabel('bottom', "frequency, f [Hz]") 
-
-    return win
+    return win, p
 
 def select_nodes(coord, connect, nodes):
-    ''' Select unique nodes to build the mesh.
+    """ Selects unique nodes to build the mesh.
     
     Args:
         coord (:obj:`numpy.array`): mesh coordinates.
@@ -262,9 +254,8 @@ def select_nodes(coord, connect, nodes):
 
     Returns:
         A tuple with coordinates and connectivity for the selected nodes.
-    '''
+    """
     nodes = np.array(nodes) - 1
     nodes = connect[nodes, 1:].flatten()
     index = npi.indices(coord[:, 0], np.unique(nodes))
-    
     return coord[index, :], connect[nodes,:]

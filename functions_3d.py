@@ -29,7 +29,7 @@ def shapeH8(rrx, ssx, ttx):
     phi = phi/denominator
     #derivatives
     dphi = np.zeros((3,8))
-    #
+    
     dphi[0,0]=(1.-ssx)*(1.-ttx)*(-1.)
     dphi[0,1]=(1.+ssx)*(1.-ttx)*(-1.)
     dphi[0,2]=(1.+ssx)*(1.+ttx)*(-1.)
@@ -38,7 +38,7 @@ def shapeH8(rrx, ssx, ttx):
     dphi[0,5]=(1.+ssx)*(1.-ttx)*(1.)
     dphi[0,6]=(1.+ssx)*(1.+ttx)*(1.)
     dphi[0,7]=(1.-ssx)*(1.+ttx)*(1.)
-    #
+    
     dphi[1,0]=(-1.)*(1.-ttx)*(1.-rrx)
     dphi[1,1]=(1.)*(1.-ttx)*(1.-rrx)
     dphi[1,2]=(1.)*(1.+ttx)*(1.-rrx)
@@ -47,7 +47,7 @@ def shapeH8(rrx, ssx, ttx):
     dphi[1,5]=(1.)*(1.-ttx)*(1.+rrx)
     dphi[1,6]=(1.)*(1.+ttx)*(1.+rrx)
     dphi[1,7]=(-1.)*(1.+ttx)*(1.+rrx)
-    #
+    
     dphi[2,0]=(1.-ssx)*(-1.)*(1.-rrx)
     dphi[2,1]=(1.+ssx)*(-1.)*(1.-rrx)
     dphi[2,2]=(1.+ssx)*(1.)*(1.-rrx)
@@ -56,9 +56,8 @@ def shapeH8(rrx, ssx, ttx):
     dphi[2,5]=(1.+ssx)*(-1.)*(1.+rrx)
     dphi[2,6]=(1.+ssx)*(1.)*(1.+rrx)
     dphi[2,7]=(1.-ssx)*(1.)*(1.+rrx)
-    #
+    
     dphi = dphi/denominator
-    #
     return phi, dphi
       
 def matricesH8(ee, coord, connect, E, v, rho):
@@ -142,9 +141,9 @@ def matricesH8(ee, coord, connect, E, v, rho):
         AUJJ[2,2]= 1 * ((JAC[0,0] * JAC[1,1]) - (JAC[0,1] * JAC[1,0]))
         #Inverse Jacobian
         iJAC = (1/detJAC) * AUJJ # np.linalg.inv(JAC) 
-        #
+        
         dphi_t = iJAC @ dphi
-        #
+        
         for iii in range(8):
             B[0,3*(iii)+0]=dphi_t[0,iii]
             B[0,3*(iii)+1]=0.
@@ -164,7 +163,7 @@ def matricesH8(ee, coord, connect, E, v, rho):
             B[5,3*(iii)+0]=dphi_t[2,iii]
             B[5,3*(iii)+1]=0.
             B[5,3*(iii)+2]=dphi_t[0,iii]
-        #
+
         for iii in range(8):
             N[0,3*(iii)+0]=phi[iii]
             N[0,3*(iii)+1]=0.
@@ -176,14 +175,12 @@ def matricesH8(ee, coord, connect, E, v, rho):
             N[2,3*(iii)+1]=0.
             N[2,3*(iii)+2]=phi[iii]
       
-        #
         Ke += B.T@(CTTV@B)*(detJAC*wps)
         Me += rho*N.T@N*(detJAC*wps)
-        #
     return Ke, Me
 
 def regularmeshH8(nelx, nely, nelz, lx, ly, lz):
-    """ Create a regular H8 mesh.
+    """ Creates a regular H8 mesh.
 
     Args:
         nelx (:obj:`int`): Number of elements on the X-axis.
@@ -215,10 +212,8 @@ def regularmeshH8(nelx, nely, nelz, lx, ly, lz):
 
     connect = np.array([ind_connect, b+(nelx+1), b, b+1, b+(nelx+2), \
                         b+(nelx+1)*(nely+1)+(nelx+1), b+(nelx+1)*(nely+1), \
-                        b+1+(nelx+1)*(nely+1), b+(nelx+1)*(nely+1)+(nelx+2)], dtype=int).T
-    
-    ind_rows, ind_cols = generate_ind_rows_cols(connect)
-    return coord, connect, ind_rows, ind_cols
+                        b+1+(nelx+1)*(nely+1), b+(nelx+1)*(nely+1)+(nelx+2)], dtype=int).T    
+    return coord, connect
 
 def generate_ind_rows_cols(connect):
     # processing the dofs indices (rows and columns) for assembly
@@ -237,59 +232,193 @@ def generate_ind_rows_cols(connect):
     ind_cols = (np.tile(ind_dofs, edofs)).flatten()
     return ind_rows, ind_cols
 
-   
-def solution3D(coord, connect, ind_rows, ind_cols, nelx, nely, nelz, E, v, rho, alpha, beta, eta, freq, timing=False, **kwargs):
-    """ Assembly and solution.
+def turn_into_np(dicti_matrix, force):
+    """ Transforms dictionaries into numpy array.
 
     Args:
+        dicti_matrix (:obj:`list`): List of dictionaries passed by the user.
+        force (:obj:`bool`): True if encountering force matrix.
+    Returns:
+        numpy array.
+    """
+    index_by_coord = []
+    index_by_col   = []
+    matrix = []
+    for i, dict_row in enumerate(dicti_matrix):
+        if not("eps" in dict_row):
+            if force:
+                aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["z_coord"], dict_row["x_direc"], dict_row["y_direc"], dict_row["z_direc"], dict_row["force"]]  
+            else:
+                aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["z_coord"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], dict_row["constrain_disp_z"]] 
+            index_by_coord.append(i)
+        
+        elif "eps" in dict_row:
+            if force:
+                aux = [dict_row["coord"], dict_row["axis"], dict_row["eps"], dict_row["x_direc"], dict_row["y_direc"], dict_row["z_direc"], dict_row["force"]] 
+            else:
+                aux = [dict_row["coord"], dict_row["axis"], dict_row["eps"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], dict_row["constrain_disp_z"]]
+            index_by_col.append(i)
+        
+        matrix.append(aux)
+
+    matrix_F = np.array(matrix)
+    return index_by_coord, index_by_col, matrix_F
+
+def get_matrices(matrix, coord, force):
+    """ Gets the force matrix or the contraint matrix.
+
+    Args:
+        matrix (:obj:`list`): List passed by the user. 
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        force (:obj:`bool`): True if encountering force matrix.
+    Returns:
+        force_matrix or restri_matrix.
+    """
+    if force:
+        index_by_coord, index_by_col, np_matrix = turn_into_np(matrix, force=True)
+        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col)
+        nodes_matrix = get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, [1,2,3,4], [3,4,5,6], 5)
+    else:
+        index_by_coord, index_by_col, np_matrix = turn_into_np(matrix, force=False)
+        nodes_coord, nodes_col = get_nodes(coord, np_matrix, index_by_coord, index_by_col)
+        nodes_matrix = get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, [1,2,3], [3,4,5], 4)
+    return nodes_matrix.astype(int)
+
+def get_nodes(coord, np_matrix, index_by_coord, index_by_col):
+    """ Gets nodes by a coordinate or a column.
+
+    Args:
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        np_matrix (:obj:`numpy.array`): List passed to an array.
+        index_by_coord (:obj:`list`): indices of elements passed by coordinates.
+        index_by_col (:obj:`list`): indices of elements passed by columns.
+        ind (:obj:`int`): The column that has the margin of error.
+    Returns:
+        Nodes.
+    """
+    nodes_coord = []
+    nodes_col = []
+
+    if len(index_by_coord) > 0:   
+        nodes_coord = get_nodes_by_coord(coord, np_matrix[np.ix_(index_by_coord, [0,1,2])])
+
+    if len(index_by_col) > 0:
+        for index in index_by_col:
+            aux = get_nodes1d(coord, int(np_matrix[index, 0]), np_matrix[index, 2], int(np_matrix[index, 1]))
+            nodes_col.append(aux)
+    return nodes_coord, nodes_col 
+
+def get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, ind1, ind2, total_cols):
+    """ Creates the node matrix.
+
+    Args:
+        nodes_coord (:obj:`list`): Nodes passed by coordinate.
+        nodes_col (:obj:`list`): Nodes passed by column.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        matrix (:obj:`numpy.array`): List passed to an array.
+        index_by_coord (:obj:`list`): indices of elements passed by coordinates.
+        index_by_col (:obj:`list`): indices of elements passed by columns.
+        ind1 (:obj:`int`): Indices of matrix with nodes.
+        ind2 (:obj:`int`): Indices of matrix passed by user.
+        total_cols (:obj:`int`): Number of columns desired for the matrix.
+    Returns:
+        matrix with nodes.
+    """
+    if len(nodes_col) > 0:
+        len_col = sum([len(listElem) for listElem in nodes_col])
+    else:
+        len_col = 0
+    matrix = np.empty((len(nodes_coord) + len_col, total_cols))
+
+    if len(index_by_coord) > 0:
+        matrix[:len(nodes_coord), 0] = nodes_coord
+        matrix[:len(nodes_coord), ind1] = np_matrix[np.ix_(index_by_coord, ind2)]
+    
+    if len(index_by_col) > 0:
+        aux = 0
+        for i, nodes in enumerate(nodes_col):
+            matrix[len(nodes_coord)+aux:len(nodes)+aux+len(nodes_coord), 0] = nodes
+            matrix[len(nodes_coord)+aux:len(nodes)+aux+len(nodes_coord), ind1] = np_matrix[index_by_col[i], ind2] 
+            aux += len(nodes)
+    return matrix
+
+def stif_mass_matrices(nelx, nely, nelz, coord, connect, ind_rows, ind_cols, E, v, rho, timing):
+    """ Calculates global matrices.
+
+    Args:
+        nelx (:obj:`int`): Number of elements on the X-axis.
+        nely (:obj:`int`): Number of elements on the Y-axis.
+        nelz (:obj:`int`): Number of elements on the Z-axis.
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
         ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
         ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
-        nelx (:obj:`int`): Number of elements on the X-axis.
-        nely (:obj:`int`): Number of elements on the Y-axis.
-        nelz (:obj:`int`): Number of elements on the Z-axis.
         E (:obj:`float`): Elastic modulus.
         v (:obj:`float`): Poisson's ratio.  
         rho (:obj:`float`): Density.  
-        alpha (:obj:`float`): Damping coefficient proportional to mass. 
-        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
-        eta (:obj:`float`): Damping coefficient. 
-        freq (:obj:`int`): Analyzed frequency.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
 
     Returns:
-        Displacement array.
+        Global matrices
     """
-    #
-    t01 = time()
+    tm = time()
     ngl = 3 * ((nelx + 1) * (nely + 1) * (nelz + 1))
     data_k = np.zeros((nelx * nely * nelz, 576), dtype=float)
     data_m = np.zeros((nelx * nely * nelz, 576), dtype=float)
-    #
+    
     for el in range(nelx * nely * nelz):
         Ke, Me = matricesH8(el, coord, connect, E, v, rho)
         data_k[el,:] = Ke.flatten() 
         data_m[el,:] = Me.flatten() 
-    #
+    
     data_k = data_k.flatten()
     data_m = data_m.flatten()
     stif_matrix = csc_matrix((data_k, (ind_rows, ind_cols)), shape=(ngl, ngl))
     mass_matrix = csc_matrix((data_m, (ind_rows, ind_cols)), shape=(ngl, ngl))
-    tf1 = time()
+    tmf = time()
     if timing:
-        print("Time to assembly global matrices: " + str(round((tf1 - t01), 6)) + '[s]')
-    # harmonic solution: direct method and no damping
-    t02 = time()
+        print("Time to assembly global matrices: " + str(round((tmf - tm), 6)) + '[s]')
+    return stif_matrix, mass_matrix
+
+def get_damp_matrix(mass_matrix, stif_matrix, freq, alpha, beta, eta):
+    """ Calculates TODO.
+
+    Args:
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        damp_matrix, TODO
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        freq (:obj:`int`): Analyzed frequency.
+        alpha (:obj:`float`): Damping coefficient proportional to mass. 
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.  
+        eta (:obj:`float`): Damping coefficient. 
+
+    Returns:
+        TODO 
+    """
     w = 2 * np.pi * freq
     if w == 0:
         w = 1e-12
-    damp_matrix = alpha * mass_matrix + (beta + eta/w)*stif_matrix
-    if kwargs.get('load_vector') is not None:
-        load_vector = kwargs.get('load_vector')  
-    #
-    if kwargs.get('unrestricted_ind') is not None:
-        free_ind = kwargs.get('unrestricted_ind')
+    return alpha * mass_matrix + (beta + eta/w)*stif_matrix
+
+def get_displacement(load_vector, free_ind, stif_matrix, mass_matrix, damp_matrix, freq, ngl, timing):
+    """ Harmonic solution.
+
+    Args:
+        load_vector (:obj:`numpy.array`): Load.
+        free_ind (:obj:`numpy.array`): Free dofs. 
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        damp_matrix, TODO
+        freq (:obj:`int`): Analyzed frequency.
+        ngl (:obj:`int`): Degrees of freedom.
+        timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
+
+    Returns:
+        Displacement vector.
+    """  
+    tf = time()
+    w = 2 * np.pi * freq
+    if free_ind is not None:
         F = load_vector[free_ind]
         K = stif_matrix[free_ind, :][:, free_ind]
         M = mass_matrix[free_ind, :][:, free_ind]
@@ -305,59 +434,52 @@ def solution3D(coord, connect, ind_rows, ind_cols, nelx, nely, nelz, E, v, rho, 
         disp_vector = spsolve(Kd, load_vector)
     tf2 = time()
     if timing:
-        print("Time to solve the harmonic analysis problem: " + str(round((tf2 - t02),6)) + '[s]')
-        print("Total time elapsed in solution: " + str(round((tf2 - t01),6)) + '[s]')
-    #
+        print("Time to solve the harmonic analysis problem: " + str(round((tf2 - tf), 6)) + '[s]')
     return disp_vector
 
-def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, nelz, E, v, rho, alpha, beta, eta, freq_range, delta, node_plot, load_vector, **kwargs):
-    """ Get the displacement values for a specific node.
+def freqresponse(stif_matrix, mass_matrix, load_vector, free_ind, ngl, alpha, beta, eta, freq_range, node_plot):
+    """ Frequency response.
 
     Args:
-        coord (:obj:`numpy.array`): Coordinates of the element.
-        connect (:obj:`numpy.array`): Element connectivity.
-        ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
-        ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
-        nelx (:obj:`int`): Number of elements on the X-axis.
-        nely (:obj:`int`): Number of elements on the Y-axis.
-        nelz (:obj:`int`): Number of elements on the Z-axis.
-        E (:obj:`float`): Elastic modulus.
-        v (:obj:`float`): Poisson's ratio.  
-        rho (:obj:`float`): Density.  
+        stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+        mass_matrix (:obj:`numpy.array`): Mass matrix.
+        load_vector (:obj:`numpy.array`): Load.
+        free_ind (:obj:`numpy.array`): Free dofs. 
+        ngl (:obj:`int`): Degrees of freedom.             
         alpha (:obj:`float`): Damping coefficient proportional to mass. 
         beta (:obj:`float`): Damping coefficient proportional to stiffness.  
         eta (:obj:`float`): Damping coefficient. 
-        freq_rsp (:obj:`list`): Frequency range.
+        freq_range (:obj:`list`): Frequency range.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the objective function. 
-        node_plot (:obj:`int`): Node to salve the displacement.
-        load_vector (:obj:`numpy.array`): Force.
+            Third value is the step between each calculation of the objective function. 
+        node_plot (:obj:`int`): Node to calculates the displacement.
 
     Returns:
-        Displacement array.        
+        Displacement.
     """
-    free_ind = None
-    if kwargs.get('unrestricted_ind') is not None:
-        free_ind = kwargs.get('unrestricted_ind')
-    interval = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    interval = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
+    
     vector_U = np.empty((len(interval)), dtype=complex)
     force_ind = get_dofs(node_plot)
-    for n in range(len(interval)):
-        disp_vector = solution3D(coord, connect, ind_rows, ind_cols, nelx, nely, nelz, E, v, rho, alpha, beta, eta, freq=interval[n], load_vector = load_vector, unrestricted_ind = free_ind)
+    
+    for n, f in enumerate(interval):#range(len(interval)):
+        damp_matrix = get_damp_matrix(mass_matrix, stif_matrix, f, alpha, beta, eta)
+        disp_vector = get_displacement(load_vector, free_ind, stif_matrix, mass_matrix, damp_matrix, f, ngl, timing=False)      
         vector_U[n] = disp_vector[force_ind]
         print('It.', n)
+    np.savetxt("U_errado", vector_U)
     return vector_U
 
 def change_U_shape(disp_vector):
-    ''' Transform displacement vector in matrix.
+    """ Transforms displacement vector in matrix.
     
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
     
     Returns: 
         Displacement of each axis.
-    '''
+    """
     new_U = np.empty((int(len(disp_vector)/3), 3))
     new_U[:,0] = disp_vector[0:len(disp_vector):3]
     new_U[:,1] = disp_vector[1:len(disp_vector):3]
@@ -366,7 +488,7 @@ def change_U_shape(disp_vector):
     return new_U
 
 def apply_U(disp_vector, coord, factor):
-    ''' Apply displacement to coordinates. 
+    """ Applies displacement to coordinates. 
 
     Args:
         disp_vector (:obj:`numpy.array`): Displacement.
@@ -375,14 +497,14 @@ def apply_U(disp_vector, coord, factor):
     
     Returns: 
         Displaced mesh coordinates.
-    '''
+    """
     new_coord = coord.copy()
     new_coord[:, 1:] += disp_vector * factor
 
     return new_coord
 
 def get_nodes_by_coord(coord, coord_user):
-    ''' Get node numbers by coordinate.
+    """ Gets node numbers by coordinate.
 
     Args:
         coord (:obj:`numpy.array`): mesh coordinates.
@@ -390,14 +512,14 @@ def get_nodes_by_coord(coord, coord_user):
     
     Returns: 
         Nodes of the coordinates provided.
-    '''
+    """
     mytree = spatial.cKDTree(coord[:, [1,2,3]])
     _, ind_nodes = mytree.query(coord_user)
     nodes = coord[ind_nodes, 0]
     return nodes
 
 def get_nodes1d(coord, coord_user, eps, column):
-    ''' Get node numbers that are equal to coord.
+    """ Gets node numbers that are equal to coord.
 
     Args:
         coord (:obj:`numpy.array`): mesh coordinates.
@@ -407,13 +529,13 @@ def get_nodes1d(coord, coord_user, eps, column):
 
     Returns:
         Nodes.
-    '''
+    """
     dif = np.abs(coord[:, column] - coord_user)
     mask = dif < eps
     return (coord[mask, 0]).astype('int')
 
 def get_dofs(nodes_direct):
-    ''' Get DOFs that meet the specified direction.
+    """ Gets DOFs that meet the specified direction.
 
     Args:
         nodes_dir (:obj:`numpy.array`): [nodes numbers, x_direction, y_direction, z_direction].
@@ -421,7 +543,7 @@ def get_dofs(nodes_direct):
     
     Returns: 
         DOFs of each node in array nodes.
-    '''
+    """
     dofs = 3
     all_dofs = []
     mask = abs(nodes_direct[:, 1]) == 1
@@ -434,11 +556,10 @@ def get_dofs(nodes_direct):
     all_dofs.extend((dofs * nodes_direct[mask, 0]) - 1)
 
     all_dofs.sort()
-
     return np.array(all_dofs, dtype='int')
 
 def remove_dofs(nelx, nely, nelz, del_dofs):
-    """ Delete specific DOFs from all DOFs.
+    """ Deletes specific DOFs from all DOFs.
     
     Args: 
         nelx (:obj:`int`): Number of elements on the X-axis.
@@ -456,7 +577,7 @@ def duplicate_force(load_matrix):
     """ Doubled force value.
 
     Args:
-        load_matrix (:obj:`numpy.array`): Force.
+        load_matrix (:obj:`numpy.array`): Load.
     
     Returns:
         Load values.
@@ -475,29 +596,25 @@ def duplicate_force(load_matrix):
 
     return load_vector
 
-def get_load_vector(nelx, nely, nelz, load_matrix):
+def get_load_vector(ngl, load_matrix):
     """ Creates the load vector.
 
     Args:
-        nelx (:obj:`int`): Number of elements on the X-axis.
-        nely (:obj:`int`): Number of elements on the Y-axis.
-        nelz (:obj:`int`): Number of elements on the Z-axis.
-        load_matrix (:obj:`numpy.array`): Force.
+        ngl (:obj:`int`): Degrees of freedom.
+        load_matrix (:obj:`numpy.array`): Load.
 
     Returns:
         Loading vector.
     """
-    ngl = 3 * ((nelx + 1) * (nely + 1) * (nelz + 1))
     load_vector = np.zeros(ngl, dtype=complex)
     if len(load_matrix) > 1:
         load_matrix = load_matrix[np.argsort(load_matrix[:, 0])]  
     force_ind = get_dofs(load_matrix)
     load_vector[force_ind] = duplicate_force(load_matrix)
-
     return load_vector
 
 def get_max_min_freq(freq_range, delta, disp_vector):
-    """ Get the frequency with the minimum and maximum displacement, respectively.
+    """ Gets the frequency with the minimum and maximum displacement, respectively.
 
     Args:
         freq_range (:obj:`list`): The initial and final frequency.
