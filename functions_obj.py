@@ -187,28 +187,28 @@ def objective_funcs(func_name, disp_vector, stif_matrix=None, mass_matrix=None, 
     Returns:
         Objective function on the logarithmic scale and the non-logarithmic objective function.
     '''
-    if func_name == "Compliance":
+    if func_name == "compliance":
         f0val = compliance(disp_vector, load_vector)
         fvirg = f0val
     
-    elif func_name == "Elastic Potential Energy":
+    elif func_name == "elastic_potential_energy":
         f0val, fvirg = elastic_potential_energy(disp_vector, stif_matrix, const_func)
     
-    elif func_name == "Input Power":
+    elif func_name == "input_power":
         f0val, fvirg = input_power(disp_vector, load_vector, omega_par, const_func)
                   
-    elif func_name == "Kinetic Energy":
+    elif func_name == "kinetic_energy":
         f0val, fvirg = kinetic_energy(disp_vector, mass_matrix, omega_par, const_func)
     
-    elif func_name == 'R Ratio':
+    elif func_name == "r_ratio":
         f0val, fvirg = R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func)
 
-    elif func_name == 'Local Ep':
+    elif func_name == "local_ep":
         f0val, fvirg = elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
 
-    elif func_name == 'Local Ki':
+    elif func_name == "local_ki":
         f0val, fvirg = kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
     
-    elif func_name == 'Local R':
+    elif func_name == "local_r":
         f0val, fvirg = R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, aux_R)
     return f0val, fvirg

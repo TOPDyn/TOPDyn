@@ -15,7 +15,7 @@ import plots_opt as plt_opt
 from mesh_process_2d import import_mesh
 from mma_opt import mmasub, kktcheck
 
-def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=['Area'], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
+def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=["area"], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     """ 
     Args:
         nelx (:obj:`int`): Number of elements on the x-axis.
@@ -23,37 +23,41 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         lx (:obj:`float`): x-axis length.
         ly (:obj:`float`): x-axis length.
         func_name (:obj:`str`): Objective function used.
-            It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
+            It can be "compliance", "input_power", "elastic_potential_energy", "kinetic_energy", "r_ratio", "local_ep", "local_ki" or "local_r".
+            The objective functions "local_ep", "local_ki" and "local_r" are designed to passive elements.
             If the multiobjective function is being calculated, weight n1 is assigned.
-        load_matrix (:obj:`numpy.array`): It's a list of lists. The list can be:
-            * [x_coordinate, y_coordinate, force_applied_x, force_applied_y, force_value]
-
-            * [value_coordinate, column_to_compare, force_applied_x, force_applied_y, force_value, error_margin]
-
-            It is possible to merge the two options. Examples:
-                load_matrix = [[1, 1, 0, -1, 100]] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1)
-                load_matrix = [[0, 1, 1, 0, 200, 0.001]] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0
-                load_matrix = [[1, 1, 0, -1, 100], [0, 1, -1, 0, 200, 0.001]] -> Apply the two options above.
-        restri_matrix (:obj:`numpy.array`, optional): It's a list of lists. Defaults to None. 
-            * [x_coordinate, y_coordinate, constrain_disp_x, constrain_disp_y]
-
-            * [value_coordinate, column_to_compare, constrain_disp_x, constrain_disp_y, error_margin]
+        load_matrix (:obj:`numpy.array`): List of dictionaries.
+            The dictionary can be:
+                * {"coord":value_coordinate, "axis":column_to_compare, "eps":error_margin, "x_direc":force_applied_x, "y_direc":force_applied_y, "force":force_value}
+                * {"x_coord":x_coordinate, "y_coord":y_coordinate, "apply_x":force_applied_x, "apply_y":force_applied_y, "force":force_value}
+            It's possible to merge the two options. Examples:
+                * load_matrix = [{"x_coord":1, "y_coord":1, "apply_x":0, "apply_y":-1, "force":100}] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1).
+                * load_matrix = [{"coord":0, "axis":1,  "eps":0.001, "x_direc":1, "y_direc":0, "force":200}] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0.
+                * load_matrix = [{"x_coord":1, "y_coord":1, "apply_x":0, "apply_y":-1, "force":100}, {"coord":0, "axis":1,  "eps":0.001, "x_direc":1, "y_direc":0, "force":200}] -> Apply the two options above.
+        restri_matrix (:obj:`numpy.array`, optional): List of dictionaries. Defaults to None. 
+            The dictionary can be:
+                * {"x_coord":x_coordinate, "y_coord":y_coordinate, "constrain_disp_x":constrain_disp_x, "constrain_disp_y":constrain_disp_y}
+                * {"coord":value_coordinate, "axis":column_to_compare, "eps":error_margin, "constrain_disp_x":constrain_disp_x, "constrain_disp_y":constrain_disp_y} 
+            It's possible to merge the two options. Examples:
+                * restri_matrix = [{"x_coord":0, "y_coord":0.25, "constrain_disp_x":1, "constrain_disp_y":0}] -> Constrain the nodes in X direction at coordinate (0, 0.25).
+                * restri_matrix = [{"coord":0, "axis":1, "eps":0.001, "constrain_disp_x":0, "constrain_disp_y":1}] -> Constrain the nodes in Y direction to all the nodes with x=0.
+                * restri_matrix = [{"x_coord":0, "y_coord":0.25, "constrain_disp_x":1, "constrain_disp_y":0}, {"coord":0, "axis":1, "eps":0.001, "constrain_disp_x":0, "constrain_disp_y":1}] -> Apply the two options above. 
         freq1 (:obj:`int`, optional): Optimized frequency. Defaults to 180.
-        constr_func (:obj:`list`, optional): Constraint functions applied. Defaults to 'Area'.
-            It can be: 'Area', 'R Ratio' or 'Compliance.
+        constr_func (:obj:`list`, optional): Constraint functions applied. Defaults to "area".
+            It can be: "area", "r_ratio", "compliance", "local_ep", "local_ki" or "local_r".
             The first function in the list will be used to define the initial value of xval.
             If the same function is passed 2x,the box constraint is used. Negative values indicate the lower constraint.
             Example:
-                constr_func   = ['Area', 'Area']
+                constr_func   = ["area", "area"]
                 constr_values = [50, -20]
         constr_values (:obj:`list`, optional): Values of constraint functions applied. Defaults to 50.
             Value in position i relates to the function in position i of the list constr_func.
             It can be a maximum of 6 values.
             constr_values[i] < 0 = lower constraint
             constr_values[i] > 0 = upper constraint
-            If 'Compliance' is passed a tuple with constraint value and frequency respectively.
+            If "compliance", "local_ep", "local_ki" or "local_r" is passed a tuple with constraint value and frequency respectively.
             Example: 
-                constr_func   = ['Area', 'Area', 'Compliance, 'R Ratio]
+                constr_func   = ["area", "area", "compliance", "r_ratio"]
                 constr_values = [50, -20, (50, 1000), 10]
         n1 (:obj:`float`, optional): Weight n1 used in func_name. Defaults to 1.
             If n1 < 0: Maximize objective function
@@ -92,6 +96,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         save (:obj:`bool`, optional): if True save the optimization and frequency response graphs as PNG. Defaults to False.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
     """
+    # Check function names
+    opt.check_func_name(func_name, multiobjective[0], constr_func)
+    
     t0 = time()
     # FEM settings
     if mesh_file is not None:
@@ -125,7 +132,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     natural_freqs = None
 
     # Constrain settings
-    aux = ['Compliance', 'Local Ep', 'Local Ki', 'Local R']
+    aux = ["compliance", "local_ep", "local_ki", "local_r"]
     freq_constr_bool = any(x in aux for x in constr_func)
     if freq_constr_bool:
         constr_values, freq_constr, ind_freq_constr, ind_constr2 = opt.constr_with_freq(constr_func, constr_values)
@@ -234,7 +241,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         fval[:, 0] -= constr_values
 
         # Multiobjective
-        if (func_name2 is not None) and (n1 != 1):
+        if multiobj_bool:
             dyna_stif2 = opt.assembly_dyna_stif(omega2_par, mass_matrix, damp_matrix, stif_matrix)
             disp_vector2, _, _ = opt.get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif2, load_vector, free_ind, omega2_par, alpha_par, beta_par, eta_par, ngl)
             

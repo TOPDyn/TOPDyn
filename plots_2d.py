@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.collections as cl
 
 def show_nodes(coord):
-    """ Plot nodes of mesh.
+    """ Plot nodes of the mesh.
 
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
@@ -27,7 +27,7 @@ def build_collection(coord, connect, disp_vector=None, timing=False):
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
-        disp_vector (:obj:`numpy.array`): Displacement.
+        disp_vector (:obj:`numpy.array`, optional): Displacement.
         timing (:obj:`bool`, optional): If True shows the time to build the mesh. Defaults to False.
      
     Returns:
@@ -63,7 +63,7 @@ def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None):
         restri_matrix (:obj:`numpy.array`, optional)= The columns are respectively node, x direction, y direction. Defaults to None. 
 
     Returns:
-        Matplotlib axes object.
+        A figure object and a single Axes object from matplotlib.pyplot.
     """
     fig, ax = plt.subplots()
     ax.add_collection(pc)
@@ -89,7 +89,7 @@ def plot_collection(lx, ly, coord, pc, load_matrix=None, restri_matrix=None):
     return fig, ax
 
 def get_size(lx, ly):
-    """ Get columns with maximum and minimum length.
+    """ Gets columns with maximum and minimum length.
 
     Args:
         lx (:obj:`float`): X-axis length.
@@ -104,7 +104,6 @@ def get_size(lx, ly):
     else:
         max_size = 2
         min_size = 1
-
     return max_size, min_size
 
 def plot_force(ax, coord, load_matrix, min_size, size):
@@ -173,7 +172,7 @@ def plot_freqresponse(node, freq_range, disp_vector):
         disp_vector (:obj:`numpy.array`): Displacement.
        
     Returns:
-        Matplotlib axes object.
+        A figure object and a single Axes object from matplotlib.pyplot.
     """
     fig, ax = plt.subplots()
     x = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
@@ -187,9 +186,10 @@ def plot_freqresponse(node, freq_range, disp_vector):
     return fig, ax
 
 def save_fig(fig, path):
-    """ TODO.
+    """ Saves figure.
+
     Args:
-        fig:
+        fig: Object with the graph. 
         path: Directory to save the graph.
     """   
     fig.savefig(path)

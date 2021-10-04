@@ -7,13 +7,14 @@ from PyQt5 import QtCore, QtGui
 from functions_2d import generate_xy_coord
 
 def legend_constr(constr_func):
-    ''' Define the labels  of the constraint functions.
+    """ Defines the labels  of the constraint functions.
+
     Args:
         constr_func (:obj:`list`): Restriction functions applied.
 
     Returns:
         Numpy array with the labels.
-    '''
+    """
     label = np.empty(len(constr_func), dtype=object)
     func, index = np.unique(constr_func, return_index=True)
     aux = np.arange(0, len(constr_func))
@@ -21,51 +22,48 @@ def legend_constr(constr_func):
     label[aux2] = None
     i = 0
     for f in func:
-        if f =='Area':
-            label[index[i]] = 'constraint - area'
-        elif f == 'R Ratio':
-            label[index[i]] = 'constraint - r ratio'
-        elif f == 'Compliance':
-            label[index[i]] = 'constraint - compliance'
-        elif f == 'Local Ep':
-            label[index[i]] = 'constraint - local ep'
-        elif f == 'Local Ki':
-            label[index[i]] = 'constraint - local ki'
-        elif f == 'Local R':
-            label[index[i]] = 'constraint - local r'
+        if f =="area":
+            label[index[i]] = "constraint - area"
+        elif f == "r_ratio":
+            label[index[i]] = "constraint - r ratio"
+        elif f == "compliance":
+            label[index[i]] = "constraint - compliance"
+        elif f == "local_ep":
+            label[index[i]] = "constraint - local ep"
+        elif f == "local_ki":
+            label[index[i]] = "constraint - local ki"
+        elif f == "local_r":
+            label[index[i]] = "constraint - local r"
         i += 1
     return label
 
 def set_pen(f):
     colors = [(43,174,179), (64,66,114), (255,110,60), (255,215,75), (255,102,0), (255,128,128), (0,51,0)]
     
-    if f == 'Area':
+    if f == "area":
         pen_set = {'color': colors[0], 'width': 2}
-    elif f == 'R Ratio':
+    elif f == "r_ratio":
         pen_set = {'color': colors[1], 'width': 2}
-    elif f == 'Compliance':
+    elif f == "compliance":
         pen_set = {'color': colors[2], 'width': 2}
-    elif f == 'Local Ep':
+    elif f == "local_ep":
         pen_set = {'color': colors[3], 'width': 2}
-    elif f == 'Local Ki':
+    elif f == "local_ki":
         pen_set = {'color': colors[4], 'width': 2}
-    elif f == 'Local R':
+    elif f == "local_r":
         pen_set = {'color': colors[5], 'width': 2}
     return pen_set
 
 def window_each_iter(constr_func, func_name, label):
-    """ Generate a window to plot the optimized mesh and the convergence graph in the same window.
+    """ Generates a window to plot the optimized mesh and the convergence graph in the same window.
 
     Args:
         constr_func (:obj:`list`): Restriction functions applied.
-        list_iter (:obj:`list`): All iteration values.
-        list_f0val (:obj:`list`): All objective function values.
-        list_fvals (:obj:`list`): All constraint function values.
         func_name (:obj:`str`): Objective function name.
         label (:obj:`numpy.array`): Label of the constraint functions.
 
     Returns:
-        Principal window, convergece graph, optimezed part.
+        Principal window, convergece graph, optimized part.
     """
     win = pg.GraphicsLayoutWidget(show=True)
     win.resize(900,600)
@@ -92,7 +90,7 @@ def window_each_iter(constr_func, func_name, label):
     return win, p2, curves_p2, grid
 
 def simple_window():
-    """ Generate a window to plot the optimized mesh.
+    """ Generates a window to plot the optimized mesh.
 
     Returns:
         Principal window, optimized part.
@@ -138,6 +136,11 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, l
     return win, p
 
 def set_coord_grid(lx, ly, nelx, nely):
+    """ Defines dimensions of the optimized part.
+
+    Args:
+        grid, xval, x_plot, y_plot, nelx, nely #TODO
+    """
     x, y   = generate_xy_coord(lx, ly, nelx, nely)
     x_plot = np.repeat(x, nely+1).reshape(nelx+1, nely+1)
     y_plot = np.tile(y, nelx+1).reshape(nelx+1, nely+1)
@@ -147,7 +150,7 @@ def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
     grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
 
 def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func):
-    """ Update the values of the objective function and the constraint function to plot the convergence graph.
+    """ Updates values of the objective function and the constraint function to plot the convergence graph.
 
     Args:
         outeriter (:obj:`int`): Iteration value.
@@ -158,7 +161,7 @@ def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, co
         curves_funcs[ind+1].setData(list_iter[:outeriter+1], list_fvals[:outeriter+1, ind])
    
 def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
-    """ Update the values of the objective function and the constraint function to plot the convergence graph.
+    """ Updates values of the objective function and the constraint function to plot the convergence graph.
 
     Args:
         constr_func (:obj:`list`): Restriction functions applied.
@@ -178,11 +181,12 @@ def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
 
 def save_fig(fig, path, pg_graph):
     """ Saves the graphics: optimized part, convergence graph, frequency response graph and deformed mesh.
+
     Args:
         fig: Object with the graph. 
             It can be: 
                 * pyqtgraph.graphicsItems.PlotItem
-                * #TODO: COLOCAR O MATPLOTLIB AQUI
+                * matplotlib.pyplot.figure
         path: Directory to save the graph.
         pg_graph (:obj:`bool`): Specifies the type of figure.
     """   
@@ -191,17 +195,6 @@ def save_fig(fig, path, pg_graph):
         exporter.export(path)
     else:
         fig.savefig(path)
-
-def compare_deriv(nodes, delta_d, dw, dw_orig):
-    for ind2, node in enumerate(nodes):
-        plt.figure(ind2+1)
-        plt.plot(delta_d, dw[:, ind2], marker='o', label='FDM')
-        plt.plot(delta_d, np.repeat(dw_orig[ind2], len(delta_d)), marker='o', label='Analytical Method')
-        plt.title('Node ' + str(node), fontsize=18)
-        plt.xlabel(r'$\Delta D_i$', fontsize=18)
-        plt.ylabel(r'$\frac{d \alpha}{d D_i}$', fontsize=18) #, rotation=0
-        plt.legend()
-    plt.show(block=True)
 
 def compare_freqresponse(freq_range, newf, oldf, func_name):
     """ Plot the frequency response of the original and the optimized function.
@@ -214,10 +207,10 @@ def compare_freqresponse(freq_range, newf, oldf, func_name):
         newf (array): Optimized function.
         oldf (array): Original function.
         func_name (:obj:`str`): Objective function name.
-            It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
+            It can be: "compliance", "input_power", "elastic_potential_energy", "kinetic_energy" or "r_ratio".
 
     Returns:
-        A single Axes object from matplotlib.pyplot.
+        A figure object and a single Axes object from matplotlib.pyplot.
     """
     freq = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
     fig, ax = plt.subplots()
@@ -229,22 +222,22 @@ def compare_freqresponse(freq_range, newf, oldf, func_name):
     ax.set_yscale('log')
     return fig, ax
 
-def freqrsp_modes(freq_range, delta, newf, oldf, modes, func_name, save):
+def freqrsp_modes(freq_range, newf, oldf, modes, func_name, save):
     """ Plot the frequency response of the function with multiple modes.
 
     Args:
         freq_range (:obj:`list`): Range of frequencies analyzed.
             First value is the minimum frequency.
             Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the function. 
+            Third value is the step between each calculation of the objective function. 
         newf (:obj:`numpy.array`): Optimized function.
         oldf (:obj:`numpy.array`): Original function.
         modes (:obj:`list`): Analyzed modes. 
         func_name (:obj:`str`): Objective function name.
-            It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.
-        save (:obj:`bool`): True for save the graphic in PNG. Defaults to False.
+            It can be: "compliance", "input_power", "elastic_potential_energy", "kinetic_energy" or "r_ratio".
+        save (:obj:`bool`): True for save the graphic in PNG.
     """
-    freq = np.arange(freq_range[0], freq_range[1] + 1, delta)
+    freq = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
     
     for i, mode in enumerate(modes):
         plt.figure(i+1)
@@ -270,3 +263,14 @@ def freqrsp_modes(freq_range, delta, newf, oldf, modes, func_name, save):
     if save:
         plt.savefig('all' + ".eps")   
     plt.show()
+
+def compare_deriv(nodes, delta_d, dw, dw_orig):
+    for ind2, node in enumerate(nodes):
+        plt.figure(ind2+1)
+        plt.plot(delta_d, dw[:, ind2], marker='o', label='FDM')
+        plt.plot(delta_d, np.repeat(dw_orig[ind2], len(delta_d)), marker='o', label='Analytical Method')
+        plt.title('Node ' + str(node), fontsize=18)
+        plt.xlabel(r'$\Delta D_i$', fontsize=18)
+        plt.ylabel(r'$\frac{d \alpha}{d D_i}$', fontsize=18) #, rotation=0
+        plt.legend()
+    plt.show(block=True)

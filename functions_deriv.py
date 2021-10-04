@@ -404,28 +404,28 @@ def derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, r
     Returns:
         Derivative of the specified function.
     """
-    if func_name == "Compliance":
+    if func_name == "compliance":
         lam_par = lambda_compliance(disp_vector, load_vector, fvirg)
         df0dx   = derivative_compliance(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par)
     
-    elif func_name == "Elastic Potential Energy":
+    elif func_name == "elastic_potential_energy":
         lam_par = lambda_ep(disp_vector, stif_matrix, dyna_stif, free_ind)
         df0dx   = derivative_ep(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par)
         #Log Scale
         df0dx[:, 0] = 10.0*df0dx[:, 0]*np.log10(np.exp(1))/fvirg
 
-    elif func_name == "Input Power":
+    elif func_name == "input_power":
         df0dx = derivative_input_power(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector)
         #Log Scale
         df0dx[:, 0] = 10.0*df0dx[:, 0]*np.log10(np.exp(1))/fvirg 
 
-    elif func_name == "Kinetic Energy":
+    elif func_name == "kinetic_energy":
         lam_par = lambda_ek(disp_vector, mass_matrix, dyna_stif, omega_par, free_ind)
         df0dx   = derivative_ek(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par)
         #Log Scale
         df0dx[:, 0] = 10.0*df0dx[:, 0]*np.log10(np.exp(1))/fvirg
 
-    elif func_name == 'R Ratio':
+    elif func_name == "r_ratio":
         if omega_par == 0:
             omega_par = 1e-12
         kinetic_e = ((1/4) * omega_par**2 * (disp_vector.conjugate()@mass_matrix@disp_vector)).real
@@ -434,19 +434,19 @@ def derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, r
         #Log Scale
         df0dx[:, 0] = 10.0*df0dx[:, 0]*np.log10(np.exp(1))/fvirg
 
-    elif func_name == 'Local Ep':
+    elif func_name == "local_ep":
         lam_par = lambda_local_ep(ngl, ind_passive, passive_el, disp_vector, dyna_stif, coord, connect, E, v, rho)
         df0dx = derivative_local_ep(passive_el, lam_par, ind_dofs, xval, disp_vector, connect, coord, E, v, rho, x_min_k, x_min_m, omega_par, alpha_par, beta_par, p_par, q_par)
         #Log Scale
         df0dx[:, 0] = 10*df0dx[:, 0] * np.log10(np.exp(1))/fvirg
 
-    elif func_name == 'Local Ki':
+    elif func_name == "local_ki":
         lam_par = lambda_local_ki(ngl, ind_passive, passive_el, disp_vector, dyna_stif, omega_par, coord, connect, E, v, rho)
         df0dx = derivative_local_ki(coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam_par, ind_dofs, passive_el)
         #Log Scale
         df0dx[:, 0] = 10.0*df0dx[:, 0]*np.log10(np.exp(1))/fvirg
 
-    elif func_name == 'Local R':        
+    elif func_name == "local_r":        
         lam_par = lambda_local_ep(ngl, ind_passive, passive_el, disp_vector, dyna_stif, coord, connect, E, v, rho)
         df_ep = derivative_local_ep(passive_el, lam_par, ind_dofs, xval, disp_vector, connect, coord, E, v, rho, x_min_k, x_min_m, omega_par, alpha_par, beta_par, p_par, q_par)
 

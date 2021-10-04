@@ -45,17 +45,17 @@ if __name__ == "__main__":
     # Weight at objective function
     n1 = 0.8
 
-    # It can be 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio', 'Local Ep', 'Local Ki', 'Local R'
-    func_name = 'Input Power' 
+    # It can be "compliance", "input_power", "elastic_potential_energy", "kinetic_energy", "r_ratio", "local_ep", "local_ki" or "local_r"
+    func_name = "input_power" 
 
     # Frequency optimized for func_name
     freq1 = 50 
     
     # Tuple with func_name2 and frequency optimized for func_name2. Associated with weight (1 - n1)
-    multiobjective = ('Compliance', 0)
+    multiobjective = ("compliance", 0)
     
-    # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance', 'Local Ep', 'Local Ki', 'Local R' -> (constraint value, frequency)
-    constr_func = ['Area', 'Local Ep']
+    # Constraint - The first function in the list is used to define the initial value of xval. "compliance", "local_ep", "local_ki", "local_r" -> (constraint value, frequency)(constraint value, frequency)
+    constr_func = ["area", "local_ep"]
     constr_values = [50, (70, 50)]
     
     passive_coord = ((0.4, 0.6), (0.15, 0.35)) # ((x_initial, x_final), (y_initial, y_final)) or None
