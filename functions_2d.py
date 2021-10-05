@@ -250,9 +250,11 @@ def get_size_el(coord):
 
 def turn_into_np(dicti_matrix, force):
     """ Transforms dictionaries into numpy array.
+
     Args:
         dicti_matrix (:obj:`list`): List of dictionaries passed by the user.
         force (:obj:`bool`): True if encountering force matrix.
+        
     Returns:
         numpy array.
     """
@@ -281,10 +283,12 @@ def turn_into_np(dicti_matrix, force):
 
 def get_matrices(matrix, coord, force):
     """ Gets the force matrix or the contraint matrix.
+
     Args:
         matrix (:obj:`list`): List passed by the user. 
         coord (:obj:`numpy.array`): Coordinates of the element.
         force (:obj:`bool`): True if encountering force matrix.
+
     Returns:
         force_matrix or restri_matrix.
     """
@@ -300,12 +304,14 @@ def get_matrices(matrix, coord, force):
 
 def get_nodes(coord, np_matrix, index_by_coord, index_by_col):
     """ Gets nodes by a coordinate or a column.
+
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         np_matrix (:obj:`numpy.array`): List passed to an array.
         index_by_coord (:obj:`list`): indices of elements passed by coordinates.
         index_by_col (:obj:`list`): indices of elements passed by columns.
         ind (:obj:`int`): The column that has the margin of error.
+
     Returns:
         Nodes.
     """
@@ -317,12 +323,13 @@ def get_nodes(coord, np_matrix, index_by_coord, index_by_col):
 
     if len(index_by_col) > 0:
         for index in index_by_col:
-            aux = get_nodes1d(coord, int(np_matrix[index, 0]), np_matrix[index, -1], int(np_matrix[index, 1]))
+            aux = get_nodes1d(coord, np_matrix[index, 0], np_matrix[index, -1], int(np_matrix[index, 1]))
             nodes_col.append(aux)
     return nodes_coord, nodes_col 
 
 def get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, ind1, ind2, total_cols):
     """ Creates the node matrix.
+
     Args:
         nodes_coord (:obj:`list`): Nodes passed by coordinate.
         nodes_col (:obj:`list`): Nodes passed by column.
@@ -333,6 +340,7 @@ def get_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, 
         ind1 (:obj:`int`): Indices of matrix with nodes.
         ind2 (:obj:`int`): Indices of matrix passed by user.
         total_cols (:obj:`int`): Number of columns desired for the matrix.
+
     Returns:
         matrix with nodes.
     """
@@ -390,8 +398,9 @@ def get_dofs(nodes_dir):
     """ Get DOFs that meet the specified direction.
 
     Args:
-        nodes_dir (:obj:`numpy.array`): [nodes numbers, x_direction, y_direction].
-            x_direction and y_direction can be -1, 0 or 1
+        nodes_dir (:obj:`numpy.array`): [nodes numbers, x direction, y direction].
+            
+            * x direction and y direction can be -1, 0 or 1.
     
     Returns: 
         DOFs of each node in array nodes.

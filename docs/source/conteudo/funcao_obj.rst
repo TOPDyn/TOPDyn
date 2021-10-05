@@ -1,31 +1,53 @@
 Objective functions 
 =====================================
 
-
 TOPDyn has the following objective functions: 
 
-- Input power
+    - Input power
 
-- Compliance
+    - Compliance
 
-- Elastic Potential Energy
+    - Elastic Potential Energy
 
-- Kinetic Energy
+    - Kinetic Energy
 
-- R Ratio
+    - Strain-to-kinetic energy ratio
+
+    - Local strain-to-kinetic energy ratio
+
+    - Local elastic potential energy
+
+    - Local kinetic energy
 
 
-To use one objective function is necessary to pass to the argument **func_name** the name of the function as a string, the frequency that pretends to be optimized, argument **freq1** (the default value is 180 Hz), and make sure the weight applied (parameter **n1**) to function is 1. If the value of n1 is negative, then the function is maximized. The code below shows how is the definition of these parameters in Python language.
+To use an objective function is necessary to pass to the argument **func_name** the name of the function as a string. In the code, objective functions are called as:
+
+    - Input power -> 'input_power'
+
+    - Compliance -> 'compliance'
+
+    - Elastic Potential Energy -> 'elastic_potential_energy'
+
+    - Kinetic Energy -> 'kinetic_energy'
+
+    - Strain-to-kinetic energy ratio -> 'r_ratio'
+
+    - Local strain-to-kinetic energy ratio -> 'local_r'
+
+    - Local elastic potential energy -> 'local_ep'
+
+    - Local kinetic energy -> 'local_ki'
+
+Also, can be defined the frequency that pretends to be optimized, argument **freq1**, and the weight applied (parameter **n1**) to the objective function. If the weight **n1** applied is negative, then the function is maximized. The code below shows how is the definition of these parameters in Python language.
 
 .. code-block:: python
 
-    func_name = 'Elastic Potential Energy'
-    freq1 = 275
+    func_name = 'input_power'
+    freq1 = 50
     n1 = 1
 
 
 In order to be able to optimize two objective functions, they must be combined to minimize both. Thus, the following multi-objective function is proposed:
-
 
 .. math::
 
@@ -35,8 +57,30 @@ where F1 is the function passed in the parameter **func_name**, and F2 is the fu
 
 .. code-block:: python
 
-    multiobjective = ('Compliance', 0)
-    func_name = 'Input Power'
-    freq1 = 245
+    multiobjective = ('compliance', 0)
+    func_name = 'input_power'
+    freq1 = 50
     n1 = 0.99
+
+Passive elements
+==============================
+
+Region in which you don't want to change the shape. This region of passive elements is defined in parameter **passive_coord** as:
+
+.. code-block::
+
+    ((initial x-axis coordinate, final x-axis coordinate), (initial y-axis coordinate, final y-axis coordinate))
+
+In the Figure 2 is created a mesh with:
+
+    - nelx, nely = 50, 100
+    - lx, ly = 0.5, 1
+    - passive_coord = ((0, 0.5), (0.95, 1))
+
+.. figure:: /conteudo/images/banquinho.PNG
+   :scale: 50 %
+   :align: center
+
+   Figure 2: Load applied at all nodes with Y = 0.1.
+
 

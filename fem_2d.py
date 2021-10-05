@@ -13,18 +13,15 @@ def main(mesh_file, nelx, nely, lx, ly, force_matrix, restri_matrix=None, E=210e
         lx (:obj:`float`): x-axis length.
         ly (:obj:`float`): y-axis length.
         force_matrix (:obj:`numpy.array`): It's a list of lists. The list can be:
+            
             * [x_coordinate, y_coordinate, force_applied_x, force_applied_y, force_value]
-
             * [value_coordinate, column_to_compare, force_applied_x, force_applied_y, force_value, error_margin]
 
-            It is possible to merge the two options. Examples:
-                force_matrix = [[1, 1, 0, -1, 100]] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1)
-                force_matrix = [[0, 1, 1, 0, 200, 0.001]] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0
-                force_matrix = [[1, 1, 0, -1, 100], [0, 1, -1, 0, 200, 0.001]] -> Apply the two options above.
         restri_matrix (:obj:`numpy.array`, optional): It's a list of lists. Defaults to None. 
+            
             * [x_coordinate, y_coordinate, constrain_disp_x, constrain_disp_y]
-
             * [value_coordinate, column_to_compare, constrain_disp_x, constrain_disp_y, error_margin]
+
         E (:obj:`float`, optional): Elastic modulus. Defaults to 210e9.
         v (:obj:`float`, optional): Poisson's ratio. Defaults to 0.3. 
         rho (:obj:`float`, optional): Density. Defaults to 7860.
@@ -34,12 +31,16 @@ def main(mesh_file, nelx, nely, lx, ly, force_matrix, restri_matrix=None, E=210e
         factor (:obj:`float`, optional): Factor to deform the mesh. Defaults to 1000.
         freq (:obj:`int`, optional): Optimized frequency. Defaults to 180.
         node_plot (:obj:`list`, optional): The node coordinate to plot the frequency response graph. Defaults to None.
-            The elements are respectively node, x direction, y direction.
-            If None the first element of the force matrix and the z direction is used.
+            
+            * The elements are respectively node, x direction, y direction.
+            * If None the first element of the force matrix and the z direction is used.
+        
         freq_rsp (:obj:`list`, optional): If len is 3, a frequency response graph of the original and optimized structure is generated. Defaults to [].
-            First value is the minimum frequency of the graph.
-            Second value is the maximum frequency of the graph.
-            Third value is the step between each calculation of the objective function. 
+            
+            * First value is the minimum frequency of the graph.
+            * Second value is the maximum frequency of the graph.
+            * Third value is the step between each calculation of the objective function. 
+        
         save (:obj:`bool`, optional): if True save the optimization and frequency response graphs as PNG. Defaults to False.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
     """

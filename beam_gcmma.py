@@ -24,48 +24,45 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
         lx (:obj:`float`): X-axis length.
         ly (:obj:`float`): Y-axis length.
         func_name (:obj:`str`): Objective function used.
-            It can be "compliance", "input_power", "elastic_potential_energy", "kinetic_energy", "r_ratio", "local_ep", "local_ki" or "local_r".
-            The objective functions "local_ep", "local_ki" and "local_r" are designed to passive elements.
-            If the multiobjective function is being calculated, weight n1 is assigned.
-        load_matrix (:obj:`numpy.array`): List of dictionaries.
-            The dictionary can be:
+            
+            * It can be "compliance", "input_power", "elastic_potential_energy", "kinetic_energy", "r_ratio", "local_ep", "local_ki" or "local_r".
+            * The objective functions "local_ep", "local_ki" and "local_r" are designed to passive elements.
+            * If the multiobjective function is being calculated, weight n1 is assigned.
+        load_matrix (:obj:`numpy.array`): List of dictionaries. The dictionary can be:
+                
                 * {"coord":value_coordinate, "axis":column_to_compare, "eps":error_margin, "x_direc":force_applied_x, "y_direc":force_applied_y, "force":force_value}
                 * {"x_coord":x_coordinate, "y_coord":y_coordinate, "apply_x":force_applied_x, "apply_y":force_applied_y, "force":force_value}
-            It's possible to merge the two options. Examples:
-                * load_matrix = [{"x_coord":1, "y_coord":1, "apply_x":0, "apply_y":-1, "force":100}] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1).
-                * load_matrix = [{"coord":0, "axis":1,  "eps":0.001, "x_direc":1, "y_direc":0, "force":200}] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0.
-                * load_matrix = [{"x_coord":1, "y_coord":1, "apply_x":0, "apply_y":-1, "force":100}, {"coord":0, "axis":1,  "eps":0.001, "x_direc":1, "y_direc":0, "force":200}] -> Apply the two options above.
-        restri_matrix (:obj:`numpy.array`, optional): List of dictionaries. Defaults to None. 
-            The dictionary can be:
+        restri_matrix (:obj:`numpy.array`, optional): List of dictionaries. Defaults to None. The dictionary can be:
+                
                 * {"x_coord":x_coordinate, "y_coord":y_coordinate, "constrain_disp_x":constrain_disp_x, "constrain_disp_y":constrain_disp_y}
                 * {"coord":value_coordinate, "axis":column_to_compare, "eps":error_margin, "constrain_disp_x":constrain_disp_x, "constrain_disp_y":constrain_disp_y} 
-            It's possible to merge the two options. Examples:
-                * restri_matrix = [{"x_coord":0, "y_coord":0.25, "constrain_disp_x":1, "constrain_disp_y":0}] -> Constrain the nodes in X direction at coordinate (0, 0.25).
-                * restri_matrix = [{"coord":0, "axis":1, "eps":0.001, "constrain_disp_x":0, "constrain_disp_y":1}] -> Constrain the nodes in Y direction to all the nodes with x=0.
-                * restri_matrix = [{"x_coord":0, "y_coord":0.25, "constrain_disp_x":1, "constrain_disp_y":0}, {"coord":0, "axis":1, "eps":0.001, "constrain_disp_x":0, "constrain_disp_y":1}] -> Apply the two options above. 
         freq1 (:obj:`int`, optional): Optimized frequency. Defaults to 180.
         constr_func (:obj:`list`, optional): Constraint functions applied. Defaults to "area".
-            It can be: "area", "r_ratio", "compliance", "local_ep", "local_ki" or "local_r".
-            The first function in the list will be used to define the initial value of xval.
-            If the same function is passed 2x,the box constraint is used. Negative values indicate the lower constraint.
-            Example:
-                constr_func   = ["area", "area"]
-                constr_values = [50, -20]
+            
+            * It can be: "area", "r_ratio", "compliance", "local_ep", "local_ki" or "local_r".
+            * The first function in the list will be used to define the initial value of xval.
+            * If the same function is passed 2x,the box constraint is used. Negative values indicate the lower constraint.
+            * Example:
+                * constr_func   = ["area", "area"]
+                * constr_values = [50, -20]
         constr_values (:obj:`list`, optional): Values of constraint functions applied. Defaults to 50.
-            Value in position i relates to the function in position i of the list constr_func.
-            It can be a maximum of 6 values.
-            constr_values[i] < 0 = lower constraint
-            constr_values[i] > 0 = upper constraint
-            If "compliance", "local_ep", "local_ki" or "local_r" is passed a tuple with constraint value and frequency respectively.
-            Example: 
-                constr_func   = ["area", "area", "compliance", "r_ratio"]
-                constr_values = [50, -20, (50, 1000), 10]
+            
+            * Value in position i relates to the function in position i of the list constr_func.
+            * It can be a maximum of 6 values.
+            * constr_values[i] < 0 = lower constraint
+            * constr_values[i] > 0 = upper constraint
+            * If "compliance", "local_ep", "local_ki" or "local_r" is passed a tuple with constraint value and frequency respectively.
+            * Example: 
+                * constr_func   = ["area", "area", "compliance", "r_ratio"]
+                * constr_values = [50, -20, (50, 1000), 10]
         n1 (:obj:`float`, optional): Weight n1 used in func_name. Defaults to 1.
-            If n1 < 0: Maximize objective function
-            If n1 > 0: Minimize objective function
+            
+            * If n1 < 0: Maximize objective function
+            * If n1 > 0: Minimize objective function
         multiobjective (:obj:`tuple`, optional): Second function and frequency in the multiobjective. Defaults to (None, 0). 
-            First value is the second function of the multiobjective function. The assigned weight is (1 - n1).
-            Second value is the frequency that func_name2 is being optimized.            
+            
+            * First value is the second function of the multiobjective function. The assigned weight is (1 - n1).
+            * Second value is the frequency that func_name2 is being optimized.            
         const_func (:obj:`float`, optional): Defaults to 100. 
         fac_ratio(:obj:`float`, optional): Factor applied in the radius to get elements in the vicinity of each element. Defaults to 2.1.
         modes (:obj:`int`, optional): If not None is used the Mode Superposition Method to calculate the displacement. Defaults to None.
@@ -83,11 +80,13 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
         p_par (:obj:`int`, optional): Penalization power to stiffness. Defaults to 3.
         q_par (:obj:`int`, optional): Penalization power to mass. Defaults to 1. 
         passive_coord (:obj:`tuple`): Region that the shape will not be changed. Defaults to None. 
-                Example: ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))
+                
+                * Example: ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))
         freq_rsp (:obj:`list`, optional): If len is 3, a frequency response graph of the original and optimized structure is generated. Defaults to [].
-            First value is the minimum frequency of the graph.
-            Second value is the maximum frequency of the graph.
-            Third value is the step between each calculation of the objective function. 
+            
+            * First value is the minimum frequency of the graph.
+            * Second value is the maximum frequency of the graph.
+            * Third value is the step between each calculation of the objective function. 
         chtol (:obj:`float`, optional): Stopping criterion. Defaults to 1e-4
         dens_filter (:obj:`bool`, optional): If True use density filter and False use sensitivity filter. Defaults to True.
         each_iter (:obj:`bool`, optional): If True plots the convergence graph for each iteration of the optimization. Defaults to True. 

@@ -1,16 +1,34 @@
-These how-to guides will step you through common tasks in using and configuring a TOPDyn setup.
-
-Figure 1 shows a diagram with the structure of TOPDyn.
-
-.. figure:: /conteudo/images/diagram.png
-   :scale: 50 %
-   :align: center
-
-   Figure 1: TOPDyn structure.
-
-Box constraint to Area and R ratio
+Constraint functions
 ======================================
-An interval is defined for the Area value or R Ratio. For that, put a positive value that is the upper limit and a negative value that is the lower limit. Figure 2 reproduces the constrain of the code below.
+
+It's possible to define a maximum value for the constraint or a box constraint like showed in the Figure 2.
+
+The constraint functions that can be used are:
+   - Area
+   - Strain-to-kinetic energy ratio
+   - Compliance
+   - Local kinetic energy
+   - Local elastic potential energy
+   - Local strain-to-kinetic energy ratio
+
+In the code they are passed respectively as:
+   - Area -> area
+   - Strain-to-kinetic energy ratio -> r_ratio
+   - Compliance -> compliance
+   - Local kinetic energy -> local_ki
+   - Local elastic potential energy -> local_ep
+   - Local strain-to-kinetic energy ratio -> local_r
+
+For the last four constraint functions (compliance, local_ki, local_ep, local_r) is necessary to pass the frequency that will be used. For example:
+
+.. code-block:: python
+
+   constr_func = ['local_ep']
+   constr_values = [(70, 50)]
+
+It means that the constraint for the local elastic potential energy is 70 and the frequency that it will be calculate is 50 Hz.
+
+To use a box constraint is necessary to put a positive value that is the upper limit and a negative value that is the lower limit. Figure 1 reproduces the constrain of the code below.
 
 .. code-block:: python
 
@@ -18,9 +36,9 @@ An interval is defined for the Area value or R Ratio. For that, put a positive v
    constr_values = [30, -10]
 
 .. figure:: /conteudo/images/box_constrain.png
-   :scale: 50 %
+   :scale: 70 %
    :align: center
 
-   Figure 2: Area constraint.
+   Figure 1: Area constraint.
 
 

@@ -304,7 +304,7 @@ def get_nodes(coord, np_matrix, index_by_coord, index_by_col):
 
     if len(index_by_col) > 0:
         for index in index_by_col:
-            aux = get_nodes1d(coord, int(np_matrix[index, 0]), np_matrix[index, 2], int(np_matrix[index, 1]))
+            aux = get_nodes1d(coord, np_matrix[index, 0], np_matrix[index, 2], int(np_matrix[index, 1]))
             nodes_col.append(aux)
     return nodes_coord, nodes_col 
 
@@ -381,11 +381,10 @@ def stif_mass_matrices(nelx, nely, nelz, coord, connect, ind_rows, ind_cols, E, 
     return stif_matrix, mass_matrix
 
 def get_damp_matrix(mass_matrix, stif_matrix, freq, alpha, beta, eta):
-    """ Calculates TODO.
+    """ Calculates damping matrix.
 
     Args:
         mass_matrix (:obj:`numpy.array`): Mass matrix.
-        damp_matrix, TODO
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         freq (:obj:`int`): Analyzed frequency.
         alpha (:obj:`float`): Damping coefficient proportional to mass. 
@@ -393,7 +392,7 @@ def get_damp_matrix(mass_matrix, stif_matrix, freq, alpha, beta, eta):
         eta (:obj:`float`): Damping coefficient. 
 
     Returns:
-        TODO 
+        Damping matrix. 
     """
     w = 2 * np.pi * freq
     if w == 0:
@@ -408,7 +407,7 @@ def get_displacement(load_vector, free_ind, stif_matrix, mass_matrix, damp_matri
         free_ind (:obj:`numpy.array`): Free dofs. 
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         mass_matrix (:obj:`numpy.array`): Mass matrix.
-        damp_matrix, TODO
+        damp_matrix (:obj:`numpy.array`): Damping matrix.
         freq (:obj:`int`): Analyzed frequency.
         ngl (:obj:`int`): Degrees of freedom.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.
@@ -450,9 +449,10 @@ def freqresponse(stif_matrix, mass_matrix, load_vector, free_ind, ngl, alpha, be
         beta (:obj:`float`): Damping coefficient proportional to stiffness.  
         eta (:obj:`float`): Damping coefficient. 
         freq_range (:obj:`list`): Frequency range.
-            First value is the minimum frequency.
-            Second value is the maximum frequency.
-            Third value is the step between each calculation of the objective function. 
+            
+            * First value is the minimum frequency.
+            * Second value is the maximum frequency.
+            * Third value is the step between each calculation of the objective function. 
         node_plot (:obj:`int`): Node to calculates the displacement.
 
     Returns:

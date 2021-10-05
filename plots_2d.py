@@ -166,9 +166,10 @@ def plot_freqresponse(node, freq_range, disp_vector):
     Args:    
         node (:obj:`list`): Node that was calculated the frequency response.
         freq_range (:obj:`list`): Range of analyzed frequencies.
-            First value is the minimum frequency.
-            Second value is the maximum frequency.
-        delta (:obj:`int`): Step between each calculation of the function. 
+            
+            * First value is the minimum frequency.
+            * Second value is the maximum frequency.
+            * Third value is the step between each calculation of the function. 
         disp_vector (:obj:`numpy.array`): Displacement.
        
     Returns:

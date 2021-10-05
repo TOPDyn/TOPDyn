@@ -136,11 +136,7 @@ def win_convergence(constr_func, list_iter, list_f0val, list_fvals, func_name, l
     return win, p
 
 def set_coord_grid(lx, ly, nelx, nely):
-    """ Defines dimensions of the optimized part.
-
-    Args:
-        grid, xval, x_plot, y_plot, nelx, nely #TODO
-    """
+    """ Defines dimensions of the optimized part.   """
     x, y   = generate_xy_coord(lx, ly, nelx, nely)
     x_plot = np.repeat(x, nely+1).reshape(nelx+1, nely+1)
     y_plot = np.tile(y, nelx+1).reshape(nelx+1, nely+1)
@@ -150,11 +146,7 @@ def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
     grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
 
 def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func):
-    """ Updates values of the objective function and the constraint function to plot the convergence graph.
-
-    Args:
-        outeriter (:obj:`int`): Iteration value.
-    """
+    """ Updates values of the objective function and the constraint function to plot the convergence graph.   """
     curves_funcs[0].setData(list_iter[:outeriter+1], list_f0val[:outeriter+1])
 
     for ind in range(len(constr_func)):
@@ -183,10 +175,7 @@ def save_fig(fig, path, pg_graph):
     """ Saves the graphics: optimized part, convergence graph, frequency response graph and deformed mesh.
 
     Args:
-        fig: Object with the graph. 
-            It can be: 
-                * pyqtgraph.graphicsItems.PlotItem
-                * matplotlib.pyplot.figure
+        fig: Object with the graph. It can be: - pyqtgraph.graphicsItems.PlotItem or - matplotlib.pyplot.figure.
         path: Directory to save the graph.
         pg_graph (:obj:`bool`): Specifies the type of figure.
     """   

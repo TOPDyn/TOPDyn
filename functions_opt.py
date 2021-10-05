@@ -58,7 +58,7 @@ def solution2D(coord, connect, nelx, nely, E, v, rho, xval, x_min_m, x_min_k, p_
     return data_k.flatten(), data_m.flatten(), t_assembly
     
 def assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta):
-    """ Assembly of stiffness and mass matrices. #TODO: SNO ASSEMBLY
+    """ Assembly of stiffness and mass matrices.
 
     Args:
         data_k (:obj:`numpy.array`): Data to assemble stiffness matrix.
@@ -70,7 +70,7 @@ def assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta):
         beta (:obj:`float`): Damping coefficient proportional to stiffness.
         
     Returns:
-        A tuple with stiffness matrix, mass matrix and #TODO NOME DESSA MATRIZ.
+        A tuple with stiffness matrix, mass matrix and damping matrix.
     """
     stif_matrix = csc_matrix((data_k, (ind_rows, ind_cols)), shape=(ngl, ngl))
     mass_matrix = csc_matrix((data_m, (ind_rows, ind_cols)), shape=(ngl, ngl))
@@ -80,10 +80,10 @@ def assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta):
 def assembly_dyna_stif(omega_par, mass_matrix, damp_matrix, stif_matrix):
     """ Assembly the dynamic stiffness matrix.
 
-    Args: #TODO
+    Args:
         omega_par (:obj:`float`): 2 pi frequency.
         mass_matrix (:obj:`numpy.array`): Mass matrix.
-        damp_matrix, 
+        damp_matrix (:obj:`numpy.array`): Damping matrix. 
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
     
     Returns:
@@ -97,7 +97,7 @@ def harmonic_problem(ngl, dyna_stif, load_vector, free_ind=None):
     Args:
         ngl (:obj:`int`): Degrees of freedom.
         dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix. 
-        load_vector (:obj:`numpy.array`): Force vector.
+        load_vector (:obj:`numpy.array`): Load.
         free_ind (:obj:`numpy.array`): Free dofs. 
         
     Returns:
@@ -148,7 +148,7 @@ def mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vecto
     
     Args:
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
-        load_vector (:obj:`numpy.array`): Force.
+        load_vector (:obj:`numpy.array`): Load.
         omega_par (:obj:`float`): 2 pi frequency
         alpha (:obj:`float`): Damping coefficient proportional to mass. 
         beta (:obj:`float`): Damping coefficient proportional to stiffness.
@@ -188,7 +188,7 @@ def get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif, load_vector, fre
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         mass_matrix (:obj:`numpy.array`): Mass matrix. 
         dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
-        load_vector (:obj:`numpy.array`): Force vector.
+        load_vector (:obj:`numpy.array`): Load.
         free_ind (:obj:`numpy.array`): Free dofs. 
         omega_par (:obj:`float`): 2 pi frequency.
         alpha_par (:obj:`float`): Damping coefficient proportional to mass. 
@@ -236,7 +236,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
         func_name (:obj:`str`): Objective function used.
         const_func (:obj:`float`):
         modes (:obj:`int`): The number of eigenvalues and eigenvectors desired.
-        load_vector (:obj:`numpy.array`): Force vector.
+        load_vector (:obj:`numpy.array`): Load.
         passive_el (:obj:`numpy.array`): Passive element nodes.
         ind_passive (:obj:`numpy.array`): Index of passive elements.
 
@@ -302,7 +302,7 @@ def out_deriv(all_deriv, dfdx, df0dx2):
         return all_deriv[:, :aux].T, all_deriv[:, aux].reshape(-1, 1), all_deriv[:, aux+1].reshape(-1, 1)
 
 def get_neighbors_radius(nelx, nely, coord, connect, radius):
-    """ Check neighboring elements that have the centroid within the predetermined radius. TODO:S
+    """ Check neighboring elements that have the centroid within the predetermined radius.
 
     Args:
         nelx (:obj:`int`): Number of elements on the x axis.
@@ -686,6 +686,7 @@ def check_func_name(func_name, func_name2, constr_func):
 
 def create_header(multiobj_bool, constr_func):
     """ Creates header to save data.
+
     Args:
         multiobj_bool (:obj:`bool`): True if multiobjective function is used.
         constr_func (:obj:`list`)  : Constraint functions applied.
@@ -704,17 +705,18 @@ def create_header(multiobj_bool, constr_func):
 
 def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
     """ Call in a loop to create terminal progress bar.
-    https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
+
+    `Code link <https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console>`_
     
     Args:
-        iteration   (:obj:`int`): current iteration 
-        total       (:obj:`int`): total iterations 
-        prefix      (:obj:`str`, optional): prefix string 
-        suffix      (:obj:`str`, optional): suffix string 
-        decimals    (:obj:`int`, optional): positive number of decimals in percent complete 
-        length      (:obj:`int`, optional): character length of bar 
-        fill        (:obj:`str`, optional): bar fill character 
-        printEnd    (:obj:`str`, optional): end character (e.g. "\r", "\r\n") 
+        iteration (:obj:`int`): current iteration.
+        total (:obj:`int`): total iterations.
+        prefix (:obj:`str`, optional): prefix string.
+        suffix (:obj:`str`, optional): suffix string.
+        decimals (:obj:`int`, optional): positive number of decimals in percent complete.
+        length (:obj:`int`, optional): character length of bar.
+        fill (:obj:`str`, optional): bar fill character.
+        printEnd (:obj:`str`, optional): end character.
     """
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
@@ -726,11 +728,13 @@ def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, l
 
 def finite_difference(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, p_par=3, q_par=1, passive_coord=None, nodes=[0], number_deltas=5, delta_interval=(1e-12, 1e-2)):
     """ Approximate method for solving partial differential equations.
+
         Args:
-            el: List of elements to be used.
-                Example: el = [0, 1, 2] 
-            number_deltas: Number of delta to calculate FDM.
-            delta_interval: Delta range used. 
+            el (:obj:`list`): List of elements to be used.
+                
+                * Example: el = [0, 1, 2] 
+            number_deltas (:obj:`int`): Number of delta to calculate FDM.
+            delta_interval (:obj:`float`): Delta range used. 
     """
     l = number_deltas * len(nodes) + 5
     progress = 0
@@ -850,7 +854,7 @@ def freq_test(mesh_file, nelx, nely, lx, ly, E, v, rho, alpha, beta, eta, initia
         coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely)
     ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
     
-    # Force and restrictions matrix
+    # Load and constraint matrix
     load_matrix = fc.get_matrices(load_matrix, coord, True)
     load_vector = fc.get_load_vector(nelx, nely, load_matrix)
 

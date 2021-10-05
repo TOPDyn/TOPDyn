@@ -8,6 +8,7 @@ from mesh_process_3d import import_mesh
 
 def main(mesh_file, nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=None, num_el=15, E=210e9, v=0.3, rho=7860, alpha=1e-1, beta=1e-7, eta=1e-8, factor=1e9, freq=180, freq_range=[], plot_type="deformed", complete=True, amp=1e9, node_plot=None, timing=False):
     """
+
     Args:
         mesh_file (:obj:`iges`): iges file.
         nelx (int): Number of elements on the X-axis.
@@ -16,20 +17,14 @@ def main(mesh_file, nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=Non
         lx (:obj:`float`): X-axis length.
         ly (:obj:`float`): Y-axis length.
         lz (:obj:`float`): Z-axis length.
-        load_matrix (:obj:`numpy.array`): List of dictionaries.
-            The dictionary can be:
+        load_matrix (:obj:`numpy.array`): List of dictionaries. The dictionary can be:
+                
                 * {"coord":value_coordinate, "axis":column_to_compare, "eps":error_margin, "x_direc":force_applied_x, "y_direc":force_applied_y, "z_direc":force_applied_z, "force":force_value}
                 * {"x_coord":x_coordinate, "y_coord":y_coordinate, "apply_x":force_applied_x, "apply_y":force_applied_y, "apply_z":force_applied_z, "force":force_value}
-            It's possible to merge the two options. Examples:
-                * load_matrix = [{"x_coord":1, "y_coord":1, "z_coord":1, "apply_x":0, "apply_y":-1, "apply_y":0, "force":100}] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1,1).
-                * load_matrix = [{"coord":0, "axis":1,  "eps":0.001, "x_direc":1, "y_direc":0,  "z_direc":0, "force":200}] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0.
-        restri_matrix (:obj:`numpy.array`, optional): List of dictionaries. Defaults to None. 
-            The dictionary can be:
+        restri_matrix (:obj:`numpy.array`, optional): List of dictionaries. Defaults to None. The dictionary can be:
+                
                 * {"x_coord":x_coordinate, "y_coord":y_coordinate, "z_coord":z_coordinate, "constrain_disp_x":constrain_disp_x, "constrain_disp_y":constrain_disp_y, "constrain_disp_z":constrain_disp_z}
                 * {"coord":value_coordinate, "axis":column_to_compare, "eps":error_margin, "constrain_disp_x":constrain_disp_x, "constrain_disp_y":constrain_disp_y, "constrain_disp_z":constrain_disp_z} 
-            It's possible to merge the two options. Examples:
-                * restri_matrix = [{"x_coord":0, "y_coord":0.25, "y_coord":0.15, "constrain_disp_x":1, "constrain_disp_y":0,  "constrain_disp_z":0}] -> Constrain the nodes in X direction at coordinate (0, 0.25,0.15).
-                * restri_matrix = [{"coord":0, "axis":1, "eps":0.001, "constrain_disp_x":0, "constrain_disp_y":1, "constrain_disp_z":0}] -> Constrain the nodes in Y direction to all the nodes with x=0.
         num_el (:obj:`int`, optional): Number of elements when passing an iges file. Defaults to 15.
         E (:obj:`float`, optional): Elastic modulus. Defaults to 210e9.
         v (:obj:`float`, optional): Poisson's ratio. Defaults to 0.3. 
@@ -40,15 +35,17 @@ def main(mesh_file, nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=Non
         factor (:obj:`float`, optional): Factor to deform the mesh. Defaults to 1e9.
         freq (:obj:`int`, optional): Optimized frequency. Defaults to 180.
         freq_range (:obj:`list`, optional): If len is 3, a frequency response graph of the original and optimized structure is generated. Defaults to [].
-            First value is the minimum frequency of the graph.
-            Second value is the maximum frequency of the graph.
-            Third value is the step between each calculation of the objective function. 
+            
+            * First value is the minimum frequency of the graph.
+            * Second value is the maximum frequency of the graph.
+            * Third value is the step between each calculation of the objective function. 
         plot_type (:obj:`str`, optional): The type of the plot. It can be "deformed", "non_and_deformed", "colorful" and "animation". Defaults to "deformed".
         complete (:obj:`bool`, optional): If the arrows and cones will be plotted. Defaults to True.
         amp (:obj:`int`, optional): Amplitude to generate deformation animation. Defaults to 1e9.
         node_plot (:obj:`numpy.array`, optional): The node to plot the frequency response graph. Defaults to first element of load_matrix.
-            The columns are respectively node, x direction, y direction, z direction.
-            It is a 1x4 matrix.
+            
+            * The columns are respectively node, x direction, y direction, z direction.
+            * It is a 1x4 matrix.
         timing (:obj:`bool`, optional): If True shows the process optimization time. Defaults to False.           
     """
     if mesh_file is not None:
@@ -102,12 +99,12 @@ def main(mesh_file, nelx, nely, nelz, lx, ly, lz, load_matrix, restri_matrix=Non
     else:
         mesh = plt_3d.build_mesh(coord_U[:, 1:], faces, timing=timing)
     
+    arrows, cones = None, None
     if complete:
-        normalized_coord = mesh.points()
-        arrows = plt_3d.build_arrows(load_matrix, normalized_coord, timing=timing)
-        cones = plt_3d.build_cones(restri_matrix, normalized_coord, timing=timing)
-    else:
-        arrows, cones = None, None
+        #normalized_coord = mesh.points()
+        arrows = plt_3d.build_arrows(load_matrix, coord_U[:, 1:], timing=timing)
+        if restri_matrix is not None:
+            cones = plt_3d.build_cones(restri_matrix, coord_U[:, 1:], timing=timing)    
     
     vp_mesh = plt_3d.plot_mesh(mesh, arrows, cones, complete, mesh1)
     

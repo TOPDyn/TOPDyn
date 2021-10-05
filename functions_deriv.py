@@ -6,6 +6,7 @@ from scipy.sparse.linalg import spsolve
 
 def lambda_local_ep(ngl, ind_passive, passive_el, disp_vector, dyna_stif, coord, connect, E, v, rho):
     """ Calculates the lambda parameter of the local elastic potential energy function.
+
     Args:
         ngl (:obj:`int`): Degrees of freedom.
         ind_passive (:obj:`numpy.array`): Index of passive elements.
@@ -18,6 +19,7 @@ def lambda_local_ep(ngl, ind_passive, passive_el, disp_vector, dyna_stif, coord,
         E (:obj:`float`): Elastic modulus.
         v (:obj:`float`): Poisson's ratio.
         rho (:obj:`float`): Density.
+
     Returns:
         Lambda parameter solution.
     """
@@ -34,6 +36,7 @@ def lambda_local_ep(ngl, ind_passive, passive_el, disp_vector, dyna_stif, coord,
 
 def lambda_local_ki(ngl, ind_passive, passive_el, disp_vector, dyna_stif, omega_par, coord, connect, E, v, rho):
     """ Calculates the lambda parameter of the local kinetic energy function.
+
     Args:
         ngl (:obj:`int`): Degrees of freedom.
         ind_passive (:obj:`numpy.array`): Index of passive elements.
@@ -46,6 +49,7 @@ def lambda_local_ki(ngl, ind_passive, passive_el, disp_vector, dyna_stif, omega_
         E (:obj:`float`): Elastic modulus.
         v (:obj:`float`): Poisson's ratio.
         rho (:obj:`float`): Density.
+
     Returns:
         Lambda parameter solution.
     """
@@ -62,10 +66,12 @@ def lambda_local_ki(ngl, ind_passive, passive_el, disp_vector, dyna_stif, omega_
 
 def lambda_compliance(disp_vector, load_vector, function):
     """ Calculates the lambda parameter of the compliance function.
+
     Args:
         disp_vector (:obj:`numpy.array`): Displacement vector.
         load_vector (:obj:`numpy.array`): Force vector.
         function (:obj:`float`): Function value.
+
     Returns:
         Lambda parameter solution.
     """
@@ -74,11 +80,13 @@ def lambda_compliance(disp_vector, load_vector, function):
 
 def lambda_ep(disp_vector, stif_matrix, dyna_stif, free_ind):
     """ Calculates the lambda solution of the elastic potential energy function.
+
     Args:
         disp_vector (:obj:`numpy.array`): Displacement vector.
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix. 
         free_ind (:obj:`numpy.array`): Free dofs.
+
     Returns:
         Lambda parameter solution.
     """
@@ -89,12 +97,14 @@ def lambda_ep(disp_vector, stif_matrix, dyna_stif, free_ind):
 
 def lambda_ek(disp_vector, mass_matrix, dyna_stif, omega_par, free_ind):
     """ Calculates the lambda solution of the kinetic energy function.
+
     Args:
         disp_vector (:obj:`numpy.array`): Displacement vector.
         mass_matrix (:obj:`numpy.array`): Mass matrix.
         dyna_stif (array): Stifness matrix.
         omega_par (:obj:`float`): 2 * pi * frequency.
         free_ind (:obj:`numpy.array`): Free dofs.
+
     Returns:
         Lambda parameter solution.
     """
@@ -107,15 +117,17 @@ def lambda_ek(disp_vector, mass_matrix, dyna_stif, omega_par, free_ind):
 
 def lambda_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind):
     """ Calculates the lambda solution of the strain-to-kinetic function.
+
     Args:
         disp_vector (:obj:`numpy.array`): Displacement vector.
         dyna_stif (array): Stifness matrix. 
         stif_matrix (:obj:`numpy.array`): Stiffness matrix.
         mass_matrix (:obj:`numpy.array`): Mass matrix.
         omega_par (:obj:`float`): 2 * pi * frequency.
-        fvirg (:obj:`float`): 'virgin' function value.
-        kinetic_e: Kinetic energy.
+        fvirg (:obj:`float`): Strain-to-kinetic function.
+        kinetic_e (:obj:`float`):: Kinetic energy.
         free_ind (:obj:`numpy.array`): Free dofs.
+
     Returns:
         Lambda parameter solution.
     """
@@ -130,6 +142,7 @@ def lambda_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg,
 # @nb.jit(nopython=True)
 def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam):
     """ calculates the derivative of the compliance function.
+
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
@@ -146,6 +159,7 @@ def derivative_compliance(coord, connect, E, v, rho, alpha, beta, omega_par, p_p
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement vector.
         lam (:obj:`float`): Lambda parameter.
+
     Returns:
         Derivative of the compliance function.
     """
@@ -184,6 +198,7 @@ def derivative_input_power(coord, connect, E, v, rho, alpha, beta, omega_par, p_
         x_min_k (:obj:`float`): Minimum relative densities to stiffness. 
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement vector.
+        
     Returns:
         Derivative of the input power function.
     """
@@ -224,7 +239,7 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement.
         lam (:obj:`float`): Lambda parameter.
-        fvirg (:obj:`float`): Elastic potential energy function value.
+        fvirg (:obj:`float`): Elastic potential energy function.
 
     Returns:
         Derivative elastic potential energy function.
@@ -249,6 +264,7 @@ def derivative_ep(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
 
 def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam):
     """ Calculates the derivative of the kinetic energy function.
+
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
@@ -265,6 +281,7 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
         xval (:obj:`numpy.array`): Indicates where there is mass.
         disp_vector (:obj:`numpy.array`): Displacement vector.
         lam (:obj:`float`): Lambda parameter.
+
     Returns:
         Derivative of the kinetic energy function.
     """
@@ -287,6 +304,7 @@ def derivative_ek(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_pa
 
 def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, fvirg, kinetic_e):
     """ Calculates the derivative of the strain-to-kinetic function.
+
     Args:
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
@@ -305,6 +323,7 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par
         lam (:obj:`float`): Lambda parameter.
         fvirg (:obj:`float`): Strain-to-kinetic function.
         kinetic_e (:obj:`float`): Kinetic energy function.
+
     Returns:
         Derivative of the strain-to-kinetic function function.
     """
@@ -328,7 +347,30 @@ def derivative_R(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par
     return deriv_R
 
 def derivative_local_ep(passive_el, lam, ind_dofs, xval, disp_vector, connect, coord, E, v, rho, x_min_k, x_min_m, omega_par, alpha, beta, p_par, q_par):
+    """ Calculates the derivative of the local elastic potential energy function.
 
+    Args:
+        passive_el (:obj:`numpy.array`): Passive element nodes.
+        lam (:obj:`float`): Lambda parameter.
+        ind_dofs (:obj:`numpy.array`, optional): TODO
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement vector.
+        connect (:obj:`numpy.array`): Element connectivity.
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio. 
+        rho (:obj:`float`): Density.
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        omega_par (:obj:`float`): 2 * pi * frequency.
+        alpha (:obj:`float`): Damping coefficient proportional to mass.
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        p_par (:obj:`int`): Penalization power to stiffness.
+        q_par (:obj:`int`): Penalization power to mass.       
+        
+    Returns:
+        Derivative of the local elastic potential energy function.
+    """
     deriv_f = np.empty((len(connect), 1), dtype=complex)
 
     for el in range(len(connect)):
@@ -350,6 +392,30 @@ def derivative_local_ep(passive_el, lam, ind_dofs, xval, disp_vector, connect, c
     return deriv_f
 
 def derivative_local_ki(coord, connect, E, v, rho, alpha, beta, omega_par, p_par, q_par, x_min_m, x_min_k, xval, disp_vector, lam, ind_dofs, passive_el):
+    """ Calculates the derivative of the local kinetic energy function.
+
+    Args:
+        coord (:obj:`numpy.array`): Coordinates of the element.
+        connect (:obj:`numpy.array`): Element connectivity.
+        E (:obj:`float`): Elastic modulus.
+        v (:obj:`float`): Poisson's ratio. 
+        rho (:obj:`float`): Density.
+        alpha (:obj:`float`): Damping coefficient proportional to mass.
+        beta (:obj:`float`): Damping coefficient proportional to stiffness.
+        omega_par (:obj:`float`): 2 * pi * frequency.
+        p_par (:obj:`int`): Penalization power to stiffness.
+        q_par (:obj:`int`): Penalization power to mass. 
+        x_min_m (:obj:`float`): Minimum relative densities to mass. 
+        x_min_k (:obj:`float`): Minimum relative densities to stiffness.
+        xval (:obj:`numpy.array`): Indicates where there is mass.
+        disp_vector (:obj:`numpy.array`): Displacement vector.        
+        lam (:obj:`float`): Lambda parameter.
+        ind_dofs (:obj:`numpy.array`, optional): TODO
+        passive_el (:obj:`numpy.array`): Passive element nodes.
+        
+    Returns:
+        Derivative of the local input power energy function.
+    """ 
     deriv_ek = np.empty((len(connect), 1), dtype=complex)
     for el in range(len(connect)):
         Ke, Me = fc.matricesQ4(el, coord, connect, E, v, rho)
@@ -369,14 +435,25 @@ def derivative_local_ki(coord, connect, E, v, rho, alpha, beta, omega_par, p_par
     return deriv_ek
 
 def derivative_local_R(df_ep, df_ki, fvirg):
+    """ Calculates the derivative of the local strain-to-kinetic function.
+
+    Args:
+        df_ep (:obj:`numpy.array`): Elastic potential energy derivative.
+        df_ki (:obj:`numpy.array`): Kinetic energy derivative.
+        fvirg (:obj:`float`): Local strain-to-kinetic function.
+
+    Returns:
+        Derivative of the local strain-to-kinetic function function.
+    """
     #fvirg = (ep,ki)
     return df_ep * (1/fvirg[1]) - (fvirg[0]/fvirg[1]**2)*df_ki
 
 def derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, load_vector=None, mass_matrix=None, stif_matrix=None, dyna_stif=None, free_ind=None, ind_dofs=None, ngl=None, ind_passive=None, passive_el=None):
     """ Calculates the derivative of the specified function.
+
     Args:
         func_name (:obj:`str`): Objective function used.
-        fvirg (:obj:`float`): 'virgin' function value.
+        fvirg (:obj:`float`): Non-logarithm function value.
         disp_vector (:obj:`numpy.array`): Displacement vector.
         coord (:obj:`numpy.array`): Coordinates of the element.
         connect (:obj:`numpy.array`): Element connectivity.
@@ -401,6 +478,7 @@ def derivatives_objective(func_name, fvirg, disp_vector, coord, connect, E, v, r
         ngl (:obj:`int`): Degrees of freedom.
         ind_passive (:obj:`numpy.array`, optional): Index of passive elements.
         passive_el (:obj:`numpy.array`, optional): Passive element nodes.
+
     Returns:
         Derivative of the specified function.
     """

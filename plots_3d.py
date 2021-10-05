@@ -56,9 +56,9 @@ def build_mesh(verts, ind_faces, scalars=None, timing=False):
     t0 = time()
     mesh = vt.Mesh([verts, ind_faces])
     if scalars is not None:
-        mesh.pointColors(scalars, cmap="cool").addScalarBar().normalize()
+        mesh.pointColors(scalars, cmap="cool").addScalarBar()#.normalize()
     else:
-        mesh.lineColor('black').lineWidth(1).color('grey').normalize()
+        mesh.lineColor('black').lineWidth(1).color('grey')#.normalize()
     tf = time()
     if timing:
         print("Time to build mesh: " + str(round((tf - t0),6)) + '[s]')
@@ -223,9 +223,10 @@ def plot_freqresponse(freq_range, disp_vector):
             
     Args:    
         freq_range (:obj:`list`): Range of frequencies analyzed.
-            First value is the minimum frequency.
-            Second value is the maximum frequency.
-            Third value is the step between each calculation of the function. 
+            
+            * First value is the minimum frequency.
+            * Second value is the maximum frequency.
+            * Third value is the step between each calculation of the function. 
         disp_vector (:obj:`numpy.array`): Displacement.
        
     Returns:

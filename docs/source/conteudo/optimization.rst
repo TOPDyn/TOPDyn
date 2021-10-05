@@ -1,21 +1,32 @@
 Optimization
 ======================
 
-
-GCMMA 
----------------
-.. automodule:: beam_gcmma
-   :members:
-
 MMA
 ---------------
 .. automodule:: beam_mma
    :members:
 
 
+GCMMA 
+---------------
+.. automodule:: beam_gcmma
+   :members:
+
+
 General functions
 ---------------------
 .. automodule:: functions_opt
+   :members:
+
+Objective functions
+----------------------
+.. automodule:: functions_obj
+   :members:
+
+
+Derived Objective functions
+------------------------------
+.. automodule:: functions_deriv
    :members:
 
 

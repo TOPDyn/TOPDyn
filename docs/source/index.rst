@@ -46,6 +46,7 @@ The authors are members of MOPT - Multidisciplinary Optimization Group, from Fed
    conteudo/funcao_obj
    conteudo/forca2d
    conteudo/nodes2d
+   conteudo/forca3d
    conteudo/nodes3d
 
 .. toctree::
