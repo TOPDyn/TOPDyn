@@ -38,9 +38,9 @@ Update your video card drivers.
 
 - More about MMA and GCMMA: [Krister Svanberg](https://people.kth.se/~krille/).
 
-Each API has a **main** file with an usage example and It's the place where you must put your code.
+> :raised_hand: Each API has a **main file** with an usage example and It's the place where you must put your code. :raised_hand:
 
-## Documentation 
+## :closed_book: Documentation 
 
 Can be found [here](https://topdyn.readthedocs.io/en/latest/).
 
