@@ -83,4 +83,17 @@ In the Figure 2 is created a mesh with:
 
    Figure 2: Load applied at all nodes with Y = 0.1.
 
+IGES file
+==============
+
+The IGES file takes precedence over the number of elements and the size of the elements, that is,
+
+    - If parameter **mesh_file** is different from None, the coordinates from the IGES file will be considered.
+
+    - If parameter **mesh_file** is None, the coordinates from parameters **nelx**, **nely**, **lx** and **ly** will be considered.
+
+In the 3D mesh, the number of elements that the mesh must have in each direction is also defined. 
+
+
+
 

@@ -14,15 +14,6 @@ Based on the works:
 
 - A strategy based on the strain‐to‐kinetic energy ratio to ensure stability and convergence in topology optimization of globally resonating one‐material structures. https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.6374
 
-Some features to be implemented:
-
-- Projection filters;
-
-- New convergence criteria;
-
-- Passive elements.
-
-
 **Authors**
 
 The authors are members of MOPT - Multidisciplinary Optimization Group, from Federal University of Santa Catarina (Florianópolis, SC, Brazil).

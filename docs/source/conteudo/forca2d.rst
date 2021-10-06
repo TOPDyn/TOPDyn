@@ -49,7 +49,7 @@ In Python language:
                    {"x_coord":0, "y_coord":0, "x_direc":1, "y_direc":0, "force":100}]
 
 
-.. figure:: /conteudo/images/force_node.png
+.. figure:: /conteudo/images/2d/force_node.png
    :scale: 50 %
    :align: center
 
@@ -87,7 +87,7 @@ In the example it's applied a positive force of modulus 100 N in X-direction to 
 
 The Figure 4 shows the load applied in the mesh as the example.
 
-.. figure:: /conteudo/images/force_all.png
+.. figure:: /conteudo/images/2d/force_all.png
    :scale: 70 %
    :align: center
 

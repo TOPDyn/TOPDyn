@@ -72,7 +72,7 @@ In Python language:
                   {"x_coord":1, "y_coord":0, "z_coord":1, "x_direc":0, "y_direc":1, "z_direc":0, "force":100}]
 
 
-.. figure:: /conteudo/images/3d/forca_coord.png
+.. figure:: /conteudo/images/3d/forca_coord.PNG
    :scale: 50 %
    :align: center
 
@@ -113,7 +113,7 @@ In the Figure 9, it's applied a negative load in Z-direction to all nodes with X
 
       load_matrix = [{"coord":0.5, "axis":1, "eps":0.001, "x_direc":0, "y_direc":0, "z_direc":1, "force":100}]
 
-.. figure:: /conteudo/images/3d/forca_column.png
+.. figure:: /conteudo/images/3d/forca_column.PNG
    :scale: 50 %
    :align: center
 
