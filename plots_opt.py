@@ -66,7 +66,7 @@ def window_each_iter(constr_func, func_name, label):
         Principal window, convergece graph, optimized part.
     """
     win = pg.GraphicsLayoutWidget(show=True)
-    win.resize(900,600)
+    win.showMaximized()#win.resize(900,600)
     win.setWindowTitle('MMA')
     
     grid = mf.PColorMeshItem(cmap='grey')

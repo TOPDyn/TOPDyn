@@ -15,7 +15,7 @@ import plots_opt as plt_opt
 from mesh_process_2d import import_mesh
 from mma_opt import mmasub, kktcheck
 
-def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=["area"], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], chtol=1e-4, dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
+def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=None, freq1=180, constr_func=["area"], constr_values=[50], n1=1, multiobjective=(None, 0), const_func=100, fac_ratio=2.1, modes=None, rho=7860, E=210e9, v=0.3, x_min_m=0.001, x_min_k=0.001, alpha_par=0, beta_par=5e-6, eta_par=0, alpha_plot=0, beta_plot=1e-8, eta_plot=0, p_par=3, q_par=1, passive_coord=None, freq_rsp=[], dens_filter=True, each_iter=True, max_iter=100, mesh_deform=False, factor=1000, save=False, timing=False):
     """ 
     Args:
         nelx (:obj:`int`): Number of elements on the x-axis.
@@ -94,7 +94,6 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
             * Second value is the maximum frequency of the graph.
             * Third value is the step between each calculation of the objective function. 
         
-        chtol (:obj:`float`, optional): Stopping criterion. Defaults to 1e-4
         dens_filter (:obj:`bool`, optional): If True use density filter and False use sensitivity filter. Defaults to True.
         each_iter (:obj:`bool`, optional): If True plots the convergence graph for each iteration of the optimization. Defaults to True. 
         max_iter (:obj:`int`, optional): Number of iterations. Defaults to 100. 
@@ -309,8 +308,10 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     pg.QtGui.QApplication.processEvents()
     
     kktnorm = kkttol+10
-    chmax = 10
-    while (kktnorm > kkttol) and (outit < max_iter):# and (chmax > chtol):
+    chmax = 1
+    chtol = 1e-4
+    kconv = 0
+    while (kktnorm > kkttol) and (outit < max_iter) and (kconv < 5):
         outit += 1
         outeriter += 1
         # The MMA subproblem is solved at the point xval:
@@ -392,7 +393,14 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         _, kktnorm, _ = \
             kktcheck(m,n,xmma,ymma,zmma,lam,xsi,eta,mu,zet,s,xmin,xmax,df0dx,fval,dfdx,a0,a,c,d)
         
-        chmax = max(abs(xold2 - xold1))
+        # conv. crit.
+        if outeriter > 10: 
+            chmax = max(abs(xold2 - xold1))/max(xold1)
+            if chmax < chtol:
+                kconv = kconv + 1
+        else:
+            chmax = 1
+
         # Plot xval and objective function   
         plt_opt.set_grid_data(grid, xnew, x_plot, y_plot, nelx, nely)
         list_iter, list_f0val, list_fvals = opt.update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_values)
