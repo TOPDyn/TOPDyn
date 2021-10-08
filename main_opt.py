@@ -67,7 +67,6 @@ if __name__ == "__main__":
     # If True plots the convergence graph for each iteration of the optimization
     each_iter = True
 
-    chtol = 1e-4 
     # Plot mesh  
     mesh_deform = False 
     factor = 800
@@ -84,4 +83,4 @@ if __name__ == "__main__":
 
     #fc_opt.finite_difference(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, p_par, q_par, passive_coord, nodes, number_deltas, delta_interval)
 
-    fc_opt.exe_opt(mma, mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, chtol, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
+    fc_opt.exe_opt(mma, mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix, freq1, constr_func, constr_values, n1, multiobjective, const_func, fac_ratio, modes, rho, E, v, x_min_m, x_min_k, alpha_par, beta_par, eta_par, alpha_plot, beta_plot, eta_plot, p_par, q_par, passive_coord, freq_rsp, dens_filter, each_iter, max_iter, mesh_deform, factor, save, timing)
