@@ -91,8 +91,12 @@ def lambda_ep(disp_vector, stif_matrix, dyna_stif, free_ind):
         Lambda parameter solution.
     """
     lam = np.zeros(stif_matrix.shape[0], dtype=complex)
-    aux = -(1/2) * (stif_matrix[free_ind, :][:, free_ind]@disp_vector[free_ind].conjugate())
-    lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
+    if free_ind is not None:
+        aux = -(1/2) * (stif_matrix[free_ind, :][:, free_ind]@disp_vector[free_ind].conjugate())
+        lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
+    else:
+        aux = -(1/2) * (stif_matrix@disp_vector.conjugate())
+        lam = spsolve(dyna_stif, aux)
     return lam
 
 def lambda_ek(disp_vector, mass_matrix, dyna_stif, omega_par, free_ind):
@@ -111,8 +115,12 @@ def lambda_ek(disp_vector, mass_matrix, dyna_stif, omega_par, free_ind):
     lam = np.zeros(mass_matrix.shape[0], dtype=complex)
     if omega_par == 0:
         omega_par = 1e-12
-    aux = - (omega_par**2) * (mass_matrix[free_ind, :][:, free_ind]@disp_vector[free_ind].conjugate())
-    lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
+    if free_ind is not None:
+        aux = - (omega_par**2) * (mass_matrix[free_ind, :][:, free_ind]@disp_vector[free_ind].conjugate())
+        lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
+    else:
+        aux = - (omega_par**2) * (mass_matrix@disp_vector.conjugate())
+        lam = spsolve(dyna_stif, aux)
     return lam
 
 def lambda_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg, kinetic_e, free_ind):
@@ -134,8 +142,12 @@ def lambda_R(disp_vector, dyna_stif, stif_matrix, mass_matrix, omega_par, fvirg,
     lam = np.zeros(mass_matrix.shape[0], dtype=complex)
     if omega_par == 0:
         omega_par = 1e-12
-    aux = - (1/(2*kinetic_e)) * ((stif_matrix[free_ind, :][:, free_ind] - (omega_par**2)*fvirg*mass_matrix[free_ind, :][:, free_ind])@disp_vector[free_ind].conjugate())
-    lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
+    if free_ind is not None:
+        aux = - (1/(2*kinetic_e)) * ((stif_matrix[free_ind, :][:, free_ind] - (omega_par**2)*fvirg*mass_matrix[free_ind, :][:, free_ind])@disp_vector[free_ind].conjugate())
+        lam[free_ind] = spsolve(dyna_stif[free_ind, :][:, free_ind], aux)
+    else:
+        aux = - (1/(2*kinetic_e)) * ((stif_matrix - (omega_par**2)*fvirg*mass_matrix)@disp_vector.conjugate())
+        lam = spsolve(dyna_stif, aux)
     return lam
 
 # Or use @nb.njit

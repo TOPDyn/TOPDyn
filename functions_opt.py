@@ -114,7 +114,7 @@ def harmonic_problem(ngl, dyna_stif, load_vector, free_ind=None):
     t_harmonic = str(round((tf2 - t02),6))
     return disp_vector, t_harmonic
 
-def modal_analysis(stif_matrix, mass_matrix, modes=20):
+def modal_analysis(stif_matrix, mass_matrix, free_ind, modes=20):
     """ Modal Analysis. Use eigh Scipy function.
 
     Args:
@@ -125,7 +125,14 @@ def modal_analysis(stif_matrix, mass_matrix, modes=20):
     Returns:
         A tuple with natural frequencies and modes shape.
     """
-    eigen_values, eigen_vectors = eigh(stif_matrix.todense(), b=mass_matrix.todense(), subset_by_index=[0,modes])
+    if free_ind is not None:
+        aux_stif = stif_matrix[free_ind, :][:, free_ind]
+        aux_mass = mass_matrix[free_ind, :][:, free_ind]
+    else:
+        aux_stif = stif_matrix
+        aux_mass = mass_matrix
+
+    eigen_values, eigen_vectors = eigh(aux_stif.todense(), b=aux_mass.todense(), subset_by_index=[0,modes])
 
     # mod_freqmax = 3 * freqmax
     # eigen_values, eigen_vectors = eigh(stif_matrix.todense(), b=mass_matrix.todense(), subset_by_value=[-np.inf, (2*np.pi*mod_freqmax)])
@@ -162,8 +169,11 @@ def mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vecto
     alphaV, betaV, betaH = alpha, beta, eta
 
     #natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+    if free_ind is not None:
+        F_aux = modal_shape.T @ load_vector[free_ind]
+    else:
+        F_aux = modal_shape.T @ load_vector
 
-    F_aux = modal_shape.T @ load_vector[free_ind]
     omega_n = 2*np.pi*natural_frequencies
     F_kg = (omega_n**2)
 
@@ -174,7 +184,10 @@ def mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vecto
     #disp_vector = modal_shape @ (diag @ F_aux[:,i])
     rows = stif_matrix.shape[0]
     disp_vector = np.zeros((rows), dtype=complex)
-    disp_vector[free_ind] = modal_shape @ (diag @ F_aux)
+    if free_ind is not None:
+        disp_vector[free_ind] = modal_shape @ (diag @ F_aux)
+    else:
+        disp_vector = modal_shape @ (diag @ F_aux)
 
     tf = time()
     t_superp = str(round((tf - t0), 6))
@@ -200,7 +213,7 @@ def get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif, load_vector, fre
        displacement vector, natural frequencies if using modal analysis and time to calculate the displacement vector.
     """
     if modes is not None:
-        natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+        natural_frequencies, modal_shape = modal_analysis(stif_matrix, mass_matrix, free_ind, modes=modes)
         disp_vector, t_U = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega_par, alpha_par, beta_par, eta_par, free_ind)
     else:  
         disp_vector, t_U = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
@@ -257,7 +270,7 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
     data_k, data_m, _ = solution2D(coord, connect, nelx, nely, E, v, rho, xval, x_min_m, x_min_k, p_par, q_par)
     stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha, beta)
     if modes is not None:
-        natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+        natural_frequencies, modal_shape = modal_analysis(stif_matrix, mass_matrix, free_ind, modes=modes)
     
     progress += 5
     printProgressBar(progress, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -470,10 +483,10 @@ def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr
 
         elif constr_func[ind] == "r_ratio":
             aux_fval, fvirg = obj.objective_funcs("r_ratio", disp_vector, stif_matrix, mass_matrix, load_vector, omega_par, const_func)
-            if gradients:
-                aux_dfdx = df.derivatives_objective("r_ratio", disp_vector,fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, \
-                                                mass_matrix=mass_matrix, stif_matrix=stif_matrix, dyna_stif=dyna_stif, free_ind=free_ind)                                                     
-        
+            if gradients:                                               
+                aux_dfdx = df.derivatives_objective("r_ratio", fvirg, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega_par, p_par, q_par, x_min_m, x_min_k, xval, \
+                                                mass_matrix=mass_matrix, stif_matrix=stif_matrix, dyna_stif=dyna_stif, free_ind=free_ind)
+
         if constr_values[ind] < 0:
             aux_fval *= -1
             if gradients:
@@ -789,16 +802,16 @@ def finite_difference(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, res
     stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
     dyna_stif = assembly_dyna_stif(omega1_par, mass_matrix, damp_matrix, stif_matrix)
     if modes is not None:
-        natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+        natural_frequencies, modal_shape = modal_analysis(stif_matrix, mass_matrix, free_ind, modes=modes)
         disp_vector, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
     else: 
         disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
     
     # F0VAL ORIGINAL
-    f0val_orig, fvirg_orig = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+    f0val_orig, fvirg_orig = obj.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
     
     # RELACIONADO A DERIVADA    
-    dw_orig[:] = derivatives_objective(func_name, fvirg_orig, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xval, \
+    dw_orig[:] = df.derivatives_objective(func_name, fvirg_orig, disp_vector, coord, connect, E, v, rho, alpha_par, beta_par, omega1_par, p_par, q_par, x_min_m, x_min_k, xval, \
                                        load_vector, mass_matrix, stif_matrix, dyna_stif, free_ind, ind_dofs, ngl, passive_el, ind_passive)[nodes, 0]
     
     progress += 5
@@ -812,12 +825,12 @@ def finite_difference(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, res
             stif_matrix, mass_matrix, damp_matrix = assembly_matrices(data_k, data_m, ind_rows, ind_cols, ngl, alpha_par, beta_par)
             dyna_stif = assembly_dyna_stif(omega1_par, mass_matrix, damp_matrix, stif_matrix)
             if modes is not None:
-                natural_frequencies, modal_shape = modal_analysis(stif_matrix[free_ind, :][:, free_ind], mass_matrix[free_ind, :][:, free_ind], modes=modes)
+                natural_frequencies, modal_shape = modal_analysis(stif_matrix, mass_matrix, free_ind, modes=modes)
                 disp_vector, _ = mode_superposition(natural_frequencies, modal_shape, stif_matrix, load_vector, omega1_par, alpha_par, beta_par, eta_par, free_ind)
             else: 
                 disp_vector, _ = harmonic_problem(ngl, dyna_stif, load_vector, free_ind)
 
-            f0val, fvirg = objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
+            f0val, fvirg = obj.objective_funcs(func_name, disp_vector, stif_matrix, mass_matrix, load_vector, omega1_par, const_func, passive_el, ind_passive, coord, connect, E, v, rho)
             
             #dw[i, ind2] = (fvirg - fvirg_orig)/delta_d[i]
             dw[i, ind2] = (f0val - f0val_orig)/delta_d[i]
