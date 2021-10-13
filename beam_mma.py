@@ -118,6 +118,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
         ly = max(coord[:, 2])
     else:
         coord, connect = fc.regularmeshQ4(lx, ly, nelx, nely, timing=timing)
+    ind_dofs = fc.get_ind_dofs(connect, 2)
     ind_rows, ind_cols = fc.generate_ind_rows_cols(connect)
 
     # Load matrix
@@ -171,12 +172,9 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, load_matrix, restri_matrix=No
     if passive_coord is not None:
         passive_el = opt.get_passive_el(passive_coord, centroids)
         xmin, xval = opt.set_passive_el(xmin, xval, passive_el)
-
-        ind_dofs = fc.get_ind_dofs(connect, 2)
         ind_passive = ind_dofs[passive_el, :]
     else:
         passive_el = None
-        ind_dofs = None
         ind_passive = None
 
     low = xmin.copy()

@@ -440,7 +440,7 @@ def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr
                 dyna_stif_localep = assembly_dyna_stif(omega_localep, mass_matrix, damp_matrix, stif_matrix)
                 disp_vector_localep, _, _ = get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif_localep, load_vector, free_ind, omega_localep, alpha_par, beta_par, eta_par, ngl)
             
-            aux_fval, fvirg = obj.objective_funcs("local_ep", disp_vector_localep, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
+            aux_fval, fvirg = obj.objective_funcs("local_ep", disp_vector_localep, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho, const_func=const_func)
                                                          
             if gradients:
                 aux_dfdx = df.derivatives_objective("local_ep", fvirg, disp_vector_localep, coord, connect, E, v, rho, alpha_par, beta_par, omega_localep, p_par, q_par, x_min_m, x_min_k, xval, \
@@ -452,7 +452,7 @@ def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr
                 dyna_stif_localki = assembly_dyna_stif(omega_localki, mass_matrix, damp_matrix, stif_matrix)
                 disp_vector_localki, _, _ = get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif_localki, load_vector, free_ind, omega_localki, alpha_par, beta_par, eta_par, ngl)
             
-            aux_fval, fvirg = obj.objective_funcs("local_ki", disp_vector_localki, omega_par=omega_localki, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
+            aux_fval, fvirg = obj.objective_funcs("local_ki", disp_vector_localki, omega_par=omega_localki, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho, const_func=const_func)
 
             if gradients:
                 aux_dfdx = df.derivatives_objective("local_ki", fvirg, disp_vector_localki, coord, connect, E, v, rho, alpha_par, beta_par, omega_localki, p_par, q_par, x_min_m, x_min_k, xval, \
@@ -464,7 +464,7 @@ def apply_constr(fval, dfdx, constr_func, constr_values, freq_constr, ind_constr
                 dyna_stif_localR = assembly_dyna_stif(omega_localR, mass_matrix, damp_matrix, stif_matrix)
                 disp_vector_localR, _, _ = get_disp_vector(modes, stif_matrix, mass_matrix, dyna_stif_localR, load_vector, free_ind, omega_localR, alpha_par, beta_par, eta_par, ngl)
             
-            aux_fval, fvirg = obj.objective_funcs("local_r", disp_vector_localR, omega_par=omega_localR, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho)
+            aux_fval, fvirg = obj.objective_funcs("local_r", disp_vector_localR, omega_par=omega_localR, passive_el=passive_el, ind_passive=ind_passive, coord=coord, connect=connect, E=E, v=v, rho=rho, const_func=const_func)
 
             if gradients:
                 aux_dfdx = df.derivatives_objective("local_r", fvirg, disp_vector_localR, coord, connect, E, v, rho, alpha_par, beta_par, omega_localR, p_par, q_par, x_min_m, x_min_k, xval, \

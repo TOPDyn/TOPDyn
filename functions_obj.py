@@ -1,9 +1,8 @@
 import functions_2d as fc
-
 import cmath
 import numpy as np
 
-def R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, aux_R=True):
+def R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func, aux_R=True):
     """ Calculates the local strain-to-kinetic energy ratio function.
 
     Args:
@@ -21,9 +20,9 @@ def R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connec
     Returns:
         Local strain-to-kinetic energy ratio on the logarithmic scale and the non-logarithmic strain-to-kinetic energy ratio.
     """
-    _, ep = elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
+    _, ep = elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func)
 
-    _, ki = kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
+    _, ki = kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func)
 
     f = (ep/ki).real
     if aux_R: #freqrsp
@@ -31,10 +30,10 @@ def R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connec
     else:
         fvirg = ep/ki
     #Log Scale
-    f = 100 + 10*np.log10(f)
+    f = const_func + 10 * np.log10(f)
     return f, fvirg
 
-def elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho):
+def elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func):
     """ Calculates the local elastic potential energy function.
 
     Args:
@@ -57,10 +56,10 @@ def elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect
         ep2+=aux
     fvirg = (1/4) * ep2[0].real
     #Log Scale
-    f = 100 + 10*np.log10(fvirg)
+    f = const_func + 10 * np.log10(fvirg)
     return f, fvirg
 
-def kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho):
+def kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func):
     """ Calculates the local kinetic energy function.
 
     Args:
@@ -82,9 +81,9 @@ def kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connec
         _, Me = fc.matricesQ4(passive_el[i], coord, connect, E, v, rho)
         aux = disp_vector[ind_el].conj().reshape(1, -1)@Me@disp_vector[ind_el]
         ki+=aux
-    fvirg = ((omega_par**2)/4)*ki[0].real
+    fvirg = ((omega_par**2)/4) * ki[0].real
     #Log Scale
-    f = 100 + 10*np.log10(fvirg)
+    f = const_func + 10 * np.log10(fvirg)
     return f, fvirg
 
 def compliance(disp_vector, load_vector):
@@ -221,11 +220,11 @@ def objective_funcs(func_name, disp_vector, stif_matrix=None, mass_matrix=None, 
         f0val, fvirg = R_ratio(disp_vector, stif_matrix, mass_matrix, omega_par, const_func)
 
     elif func_name == "local_ep":
-        f0val, fvirg = elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
+        f0val, fvirg = elastic_potential_local(disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func)
 
     elif func_name == "local_ki":
-        f0val, fvirg = kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho)
+        f0val, fvirg = kinetic_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func)
     
     elif func_name == "local_r":
-        f0val, fvirg = R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, aux_R)
+        f0val, fvirg = R_ratio_local(omega_par, disp_vector, passive_el, ind_passive, coord, connect, E, v, rho, const_func, aux_R)
     return f0val, fvirg
