@@ -145,12 +145,12 @@ def set_coord_grid(lx, ly, nelx, nely):
 def set_grid_data(grid, xval, x_plot, y_plot, nelx, nely):
     grid.setData(x_plot, y_plot, xval.reshape(nelx, nely, order='F'))
 
-def set_conv_data(outeriter, curves_funcs, list_iter, list_f0val, list_fvals, constr_func):
+def set_conv_data(outit, curves_funcs, list_iter, list_f0val, list_fvals, constr_func):
     """ Updates values of the objective function and the constraint function to plot the convergence graph.   """
-    curves_funcs[0].setData(list_iter[:outeriter+1], list_f0val[:outeriter+1])
+    curves_funcs[0].setData(list_iter[:outit+1], list_f0val[:outit+1])
 
     for ind in range(len(constr_func)):
-        curves_funcs[ind+1].setData(list_iter[:outeriter+1], list_fvals[:outeriter+1, ind])
+        curves_funcs[ind+1].setData(list_iter[:outit+1], list_fvals[:outit+1, ind])
    
 def update_conv(constr_func, p, list_iter, list_f0val, list_fvals):
     """ Updates values of the objective function and the constraint function to plot the convergence graph.

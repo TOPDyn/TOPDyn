@@ -305,7 +305,7 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
     plt_opt.set_grid_data(grid, xnew, x_plot, y_plot, nelx, nely)
     pg.QtGui.QApplication.processEvents()
     
-    kktnorm = kkttol+10
+    kktnorm = kkttol + 10
     fvalnew = fval
     chmax = 1
     chtol = 1e-4
@@ -408,8 +408,8 @@ def main(mesh_file, nelx, nely, lx, ly, func_name, force_matrix, restri_matrix=N
                     
                     # Sum of functions and derivatives
                     f0valnew = f0valnew + f0val2   
-                    # It is checked if the approximations have become conservative:
-                    conserv = concheck(m, epsimin, f0app, f0valnew, fapp, fvalnew)
+                # It is checked if the approximations have become conservative:
+                conserv = concheck(m, epsimin, f0app, f0valnew, fapp, fvalnew)
         
         # Some vectors are updated:
         xold2 = xold1.copy()

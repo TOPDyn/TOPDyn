@@ -569,7 +569,7 @@ def update_lists(outit, fval, f0val, list_iter, list_fvals, list_f0val, constr_v
     Returns:
         A tuple of lists with iterations, objective and constraint function.
     """
-    list_iter[outit] = outit
+    list_iter[outit] = outit+1
     list_f0val[outit] = f0val
 
     for i in range(len(constr_values)):
