@@ -256,6 +256,9 @@ def freqresponse(coord, connect, ind_rows, ind_cols, nelx, nely, ngl, E, v, rho,
     Returns:
         Objective function for the frequency range.
     """
+    if freq_range[0] == 0:
+        freq_range[0] = 1e-12
+        
     interval = np.arange(freq_range[0], freq_range[1] + 1, freq_range[2])
     func_vector = np.empty((len(interval)), dtype=complex)
 
