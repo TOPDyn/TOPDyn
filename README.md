@@ -58,5 +58,3 @@ Olavo M. Silva.
     
 
 ![alt text](https://open-pulse.github.io/OpenPulse/doc/MOPT.JPG?raw=true)
-
-**
