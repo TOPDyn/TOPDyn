@@ -8,13 +8,11 @@ from constraint import Constraint
 from passive_el import PassiveElements
 from xval import Xval
 from save_data import SaveData
-from plots_2d import PlotsFem2d
 from optimization import gcmmasub, kktcheck, asymp, concheck, raaupdate
 import numpy as np
 import os
 import sys
 import ast
-import pyqtgraph as pg
 
 def map_vector(vector, in_min, in_max, out_min, out_max):
   return (vector - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -34,66 +32,6 @@ freq2 = param["freq2"]
 multiobj_bool = (func_name2 is not None) and (param["n1"] != 1)
 omega1_par = 2 * np.pi * param["freq"]
 omega2_par = 2 * np.pi * freq2 
-
-# # If True is used the mma method. If False use the gcmma method.
-# mesh_file = None
-# nelx, nely = 50, 100
-# lx, ly = 0.5, 1
-# rho = 7860
-# E = 210e9
-# v = 0.3
-# x_min_m = 1e-12
-# x_min_k = 1e-9
-# alpha_par, beta_par, eta_par = 0, 1e-5, 0
-# alpha_plot, beta_plot, eta_plot = 0, 1e-6, 0
-# p_par = 3
-# q_par = 1
-# const_func = 100
-
-# # Create matrix of loads 
-# load_matrix = [{"coord":ly, "axis":2, "x_direc":0, "y_direc":-1, "force":10000, "eps":0.001}]
-
-# # Create constrain nodes matrix
-# constr_matrix = [{"coord":0, "axis":2, "eps":0.001, "constrain_disp_x":1, "constrain_disp_y":1}]
-
-# # Weight at objective function
-# n1 = 1
-# # Method iterations
-# max_iter = 100
-# # Factor applied in the radius
-# fac_ratio = 2.2 #2.1
-# # If not None is used mode superposition method
-# modes = None
-# # Tuple with func_name2 and frequency optimized for func_name2. Associated with weight (1 - n1)
-# multiobjective = ('compliance', 0)
-# # It can be 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'
-# func_name = 'input_power'
-# # Frequency optimized for func_name
-# freq1 = 10
-# # Frequency response plot
-# freq_rsp = [5, 500, 5]
-# # If False use sensitivity filter
-# dens_filter = True
-# # If True plots the convergence graph for each iteration of the optimization
-# each_iter = True
-# # Constraint - The first function in the list is used to define the initial value of xval. 'Compliance' -> (constraint value, frequency)
-# constr_func = [ 'area']
-# constr_values = [30]
-
-# passive_coord = ((0, 0.5), (0.95, 1)) # ((x_initial, x_final), (y_initial, y_final)) or None
-
-# # Plot mesh  
-# mesh_deform = True 
-# factor = 0
-# # Save plots
-# save = True
-# timing = False
-
-# ########### VARS ##########
-# func_name2, freq2 = multiobjective
-# multiobj_bool = (func_name2 is not None) and (n1 != 1)
-# omega1_par = 2 * np.pi * freq1
-# omega2_par = 2 * np.pi * freq2 
 
 ########## 2D #############
 mesh_2d = Mesh(False, None, param["mesh_file"], param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
@@ -201,7 +139,7 @@ if outeriter == 0:
 
     # Multiobjective
     if multiobj_bool:
-        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix, param["alpha_par"], param["beta_par"])
+        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix)
         disp_vector2, _ = fem_opt.get_disp_vector(omega2_par, stif_matrix, mass_matrix, dyna_stif2, param["alpha_par"], param["beta_par"], param["eta_par"])
         
         # Second objective function
@@ -289,7 +227,7 @@ while (kktnorm > kkttol) and (outit < param["max_iter"]) and (kconv < 5):
     
     # Multiobjective
     if multiobj_bool:
-        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix, param["alpha_par"], param["beta_par"])
+        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix)
         disp_vector2, _ = fem_opt.get_disp_vector(omega2_par, stif_matrix, mass_matrix, dyna_stif2, param["alpha_par"], param["beta_par"], param["eta_par"])
         
         # Second objective function
@@ -333,7 +271,7 @@ while (kktnorm > kkttol) and (outit < param["max_iter"]) and (kconv < 5):
             
             # Multiobjective
             if multiobj_bool:
-                dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix, param["alpha_par"], param["beta_par"])
+                dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix)
                 disp_vector2, _ = fem_opt.get_disp_vector(omega2_par, stif_matrix, mass_matrix, dyna_stif2, param["alpha_par"], param["beta_par"], param["eta_par"])
                 
                 # Second objective function
@@ -377,7 +315,7 @@ while (kktnorm > kkttol) and (outit < param["max_iter"]) and (kconv < 5):
 
     # Multiobjective
     if multiobj_bool:
-        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix, param["alpha_par"], param["beta_par"])
+        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix)
         disp_vector2, _ = fem_opt.get_disp_vector(omega2_par, stif_matrix, mass_matrix, dyna_stif2, param["alpha_par"], param["beta_par"], param["eta_par"])
         
         # Second objective function

@@ -132,7 +132,7 @@ if outeriter == 0:
 
     # Multiobjective
     if multiobj_bool:
-        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix, param["alpha_par"], param["beta_par"])
+        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix)
         disp_vector2, _ = fem_opt.get_disp_vector(omega2_par, stif_matrix, mass_matrix, dyna_stif2, param["alpha_par"], param["beta_par"], param["eta_par"])
         
         # Second objective function
@@ -223,7 +223,7 @@ while (kktnorm > kkttol) and (outit < param["max_iter"]) and (kconv < 5):
 
     # Multiobjective
     if multiobj_bool:
-        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix, param["alpha_par"], param["beta_par"])
+        dyna_stif2 = fem_opt.assembly_dyna_stif(omega2_par, stif_matrix, mass_matrix, damp_matrix)
         disp_vector2, _ = fem_opt.get_disp_vector(omega2_par, stif_matrix, mass_matrix, dyna_stif2, param["alpha_par"], param["beta_par"], param["eta_par"])
         
         # Second objective function
