@@ -15,7 +15,7 @@ import pyqtgraph as pg
 import plot_grid as mf
 from plots_2d import PlotsFem2d
 from plots_opt import PlotOpt
-from parameters import ParametersOpt, ParametersText
+from parameters import ParametersOpt, ParametersFEM2D, ParametersText
 
 class PopUp(QtWidgets.QDialog):
     def __init__(self, warnings):
@@ -68,20 +68,21 @@ class SecondWindow(QtWidgets.QDialog):
         
         # lateral menu
         left_layout = QtWidgets.QVBoxLayout()
-        self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
-        self.btn_back_menu.clicked.connect(self.go_to_screen1)
-        left_layout.addWidget(self.btn_back_menu)
+        
+        self.button_back = QtWidgets.QPushButton('Back')
+        self.button_back.clicked.connect(self.go_to_screen1)
+        left_layout.addWidget(self.button_back)
 
         self.param = param
-        #self.param.create_param_btns()
-        #self.param.set_default()
-        self.param.add_btns(left_layout)
+        self.param.add_widgtes(left_layout)
 
-        self.btn_to_load = QtWidgets.QPushButton('Next')
-        self.btn_to_load.clicked.connect(self.go_to_load)
-        left_layout.addWidget(self.btn_to_load)
-
+        self.button_run = QtWidgets.QPushButton('Run')
         self._counter_button_run = 0
+        left_layout.addWidget(self.button_run)
+
+        self.button_stop = QtWidgets.QPushButton('Stop')
+        self.button_stop.setEnabled(False)
+        left_layout.addWidget(self.button_stop)
     
         left_layout.addStretch(5)
         left_layout.setSpacing(20)
@@ -94,10 +95,10 @@ class SecondWindow(QtWidgets.QDialog):
         # window 
         self.right_widget = QtWidgets.QTabWidget()
         
-        self.param_text = ParametersText()
-        self.param_text.set_text(self.param.text)
+        param_text = ParametersText()
+        param_text.set_text(self.param.text)
         
-        self.tab1 = self.ui1()
+        self.tab1 = self.ui1(param_text.editor)
         self.right_widget.addTab(self.tab1, '')
         
         self.tab2 = self.ui2()
@@ -120,9 +121,14 @@ class SecondWindow(QtWidgets.QDialog):
         self.setLayout(main_layout) 
 
     # ------- pages -------
-    def ui1(self):
+    def go_to_screen1(self):
+        mainwindow = MainWindow()
+        widget.addWidget(mainwindow)
+        widget.setCurrentIndex(widget.currentIndex()+1)
+
+    def ui1(self, param_text):
         layout_ui1 = QtWidgets.QVBoxLayout()
-        layout_ui1.addWidget(self.param_text.editor)
+        layout_ui1.addWidget(param_text)
         layout_ui1.addStretch(20)
         
         main = QtWidgets.QWidget()
@@ -135,127 +141,9 @@ class SecondWindow(QtWidgets.QDialog):
         main.setLayout(self.init_ui2_layout)
         return main
 
-    def upd_ui2_layout(self, new_layout): #TODO:LEMBRAR DE MUDAR PARA O FEM2D
-        if self.tab2.layout() is not None:
-            QtWidgets.QWidget().setLayout(self.tab2.layout())
-        self.tab2.setLayout(new_layout)
-
-    def upd_left_layout(self, new_layout):
-        if self.left_widget.layout() is not None:
-            QtWidgets.QWidget().setLayout(self.left_widget.layout())
-        self.left_widget.setLayout(new_layout)
-
-    def ui_add_load(self):
-        ui_layout = QtWidgets.QFormLayout()
-        self.btn_back_param = QtWidgets.QPushButton('Back')
-        self.btn_back_param.clicked.connect(self.back_to_param)
-        ui_layout.addRow(self.btn_back_param)
-
-        self.btn_to_constrain_node = QtWidgets.QPushButton('Next')
-        self.btn_to_constrain_node.clicked.connect(self.go_to_constrain_node)
-        ui_layout.addRow(self.btn_to_constrain_node)
-
-        self.btn_add_new_load = QtWidgets.QPushButton('Add new load')
-        self.btn_add_new_load.clicked.connect(self.add_new_load)
-        ui_layout.addRow(self.btn_add_new_load)
-
-        self.param.create_param_load()
-        self.param.set_default_load()
-        self.param.add_param_load(ui_layout)
-        #self.param.set_default_load() #TODO: Setar o valor inicial das coisitas
-        self.upd_left_layout(ui_layout)
-
-    def ui_add_constrain_node(self):
-        ui_layout = QtWidgets.QFormLayout()
-        self.btn_back_load = QtWidgets.QPushButton('Back')
-        self.btn_back_load.clicked.connect(self.back_to_load)
-        ui_layout.addRow(self.btn_back_load)
-
-        self.btn_to_constraint = QtWidgets.QPushButton('Next')
-        self.btn_to_constraint.clicked.connect(self.go_to_constraint)
-        ui_layout.addRow(self.btn_to_constraint)
-
-        self.btn_add_new_const = QtWidgets.QPushButton('Add new constraint')
-        self.btn_add_new_const.clicked.connect(self.add_new_const)
-        ui_layout.addRow(self.btn_add_new_const)
-
-        self.param.add_constrain_node(ui_layout)
-        self.upd_left_layout(ui_layout)
-
-    def ui_add_constraint(self):
-        ui_layout = QtWidgets.QFormLayout()
-        self.btn_back_constrain = QtWidgets.QPushButton('Back')
-        self.btn_back_constrain.clicked.connect(self.back_to_constrain)
-        ui_layout.addRow(self.btn_back_constrain)
-
-        self.param.add_constraint(ui_layout)
-
-        self.button_run = QtWidgets.QPushButton('Run')
-        self.button_run.clicked.connect(lambda: self.run())
-        ui_layout.addRow(self.button_run)
-
-        self.button_stop = QtWidgets.QPushButton('Stop')
-        self.button_stop.setEnabled(False)
-        ui_layout.addRow(self.button_stop)
-        self.upd_left_layout(ui_layout)
-
     # ------- buttons ------- 
-    def go_to_screen1(self):
-        mainwindow = MainWindow()
-        widget.addWidget(mainwindow)
-        widget.setCurrentIndex(widget.currentIndex()+1)
-
-    def go_to_load(self):
-        self.param.check_params()
-        if len(self.param.warnings) != 0:
-            dlg = PopUp(self.param.warnings)      
-            dlg.exec_()
-        else:
-            self.param.update_params()
-            # TODO:save parameters
-            self.ui_add_load()
-
-    def back_to_param(self):
-        left_layout = QtWidgets.QVBoxLayout()
-        self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
-        self.btn_back_menu.clicked.connect(self.go_to_screen1)
-        left_layout.addWidget(self.btn_back_menu)
-        
-        self.param.create_param_btns()
-        self.param.set_default()
-        self.param.add_btns(left_layout) # TODO: COLOCAR OS VALORES SALVOS AQUI
-
-        self.btn_to_load = QtWidgets.QPushButton('Next')
-        self.btn_to_load.clicked.connect(self.go_to_load)
-        left_layout.addWidget(self.btn_to_load)
-        self.upd_left_layout(left_layout)
-    
-    def go_to_constrain_node(self):
-        #TODO: Verificar se os valroes passados estão corretos
-        #TODO: Salvar os valores passados
-        self.ui_add_constrain_node()
-
-    def add_new_load(self):
-        self.param.create_param_load()
-        self.param.set_default_load()
-        self.param.add_param_load(self.left_widget.layout()) #TODO: Adiciona um novo esquema
-
-    def back_to_load(self):
-        self.ui_add_load() # TODO: Precisa mostrar os valores salvos
-    
-    def go_to_constraint(self):
-        #TODO: Verificar se os valores passados estão corretos 
-        #TODO: Salvar os valores passados
-        self.ui_add_constraint()
-
-    def add_new_const(self):
-        self.param.add_param_load(self.left_widget.layout()) #TODO: Colocar o correto aqui
-
-    def back_to_constrain(self):
-        self.ui_add_constrain_node() #TODO:Colocar o esquema salvo
-
     def run(self):
-        #TODO: verificar se os parametros de constraint estao corretos
+        self.param.check_params()
 
         if len(self.param.warnings) != 0:
             dlg = PopUp(self.param.warnings)      
@@ -268,19 +156,24 @@ class SecondWindow(QtWidgets.QDialog):
             if self._counter_button_run == 1:
                 self.right_widget.setCurrentIndex(1)
                 print("entrou")
-            #TODO:Salvar os paramentros de constraint
-            #TODO:Salvar os parametros de Bound. Cond. para ficar no formato já utilizado
+            self.param.update_params()
 
     # ------- functions -------     
+    def update_ui2_layout(self, new_layout):
+        if self.tab2.layout() is not None:
+            QtWidgets.QWidget().setLayout(self.tab2.layout())
+        self.tab2.setLayout(new_layout)
+
     def delete_temp(self):
         folder_name = 'temp'
         directory = os.path.join(os.path.dirname(__file__), folder_name)
         if os.path.exists(directory):
             shutil.rmtree(directory)
 
-# Regular expressions to extract values from QProcess
+# A regular expression, to extract the % complete.
 progress_re = re.compile("Total complete: (\d+)%")
 
+# A regular expression, to extract when update data in opt.
 update_data_re = re.compile("Update data")
 
 plot_freqresp = re.compile("Plot frequency response")
@@ -290,6 +183,7 @@ create_plot_re = re.compile("Create plot")
 mesh_deform = re.compile("Plot deformed mesh")
 
 save_figs = re.compile("Save figs")
+
 
 def simple_percent_parser(output):
     """
@@ -346,22 +240,210 @@ def simple_deform_parser(output):
     if m:
         return True
 
+class WindowsFem2d(SecondWindow):
+    def __init__(self, param):
+        super().__init__(param)
+
+        self.stop_thread = False
+        
+        self.button_run.clicked.connect(lambda: self.run())
+        self.param.freqrsp_check.toggled.connect(self.param.freq_range_spin.setEnabled)
+        self.param.freqrsp_check.toggled.connect(self.param.node_plot_spin.setEnabled)
+
+    # ------- pages -------
+    def add_canvas_ui2(self): 
+        ui2_layout = QtWidgets.QVBoxLayout()
+        ui2_layout.addWidget(self.pbar)
+
+        self.canvas_mesh = FigureCanvas(plt.Figure())
+        self.canvas_mesh.figure.tight_layout()
+        ui2_layout.addWidget(self.canvas_mesh)
+
+        if self.param.freqrsp:
+            self.canvas_freq = FigureCanvas(plt.Figure())
+            self.canvas_freq.figure.tight_layout()
+            ui2_layout.addWidget(self.canvas_freq)
+
+        self.update_ui2_layout(ui2_layout)
+
+    # ------- buttons -------
+    def run(self):
+        super().run()
+
+        if len(self.param.warnings) == 0:
+            self.add_canvas_ui2()
+
+            self.param.export_param() 
+
+            self.process_fem = QtCore.QProcess()
+            self.process_fem.readyReadStandardError.connect(self.handle_stderr)
+            self.process_fem.stateChanged.connect(self.handle_state)
+            self.process_fem.finished.connect(self.plot_graphs)
+            self.process_fem.start("python", ['process_fem2d.py'])
+
+            self.button_stop.clicked.connect(lambda: self.stop_execution())
+
+    def handle_stderr(self):
+        data = self.process_fem.readAllStandardError()
+        stderr = bytes(data).decode("utf8")
+        # Extract progress if it is in the data.
+        progress = simple_percent_parser(stderr)
+        if progress:
+            self.evt_update_progress(progress)
+
+    def handle_state(self, state):
+        states = {
+            QtCore.QProcess.NotRunning: 'Not running',
+            QtCore.QProcess.Starting: 'Starting',
+            QtCore.QProcess.Running: 'Running',
+        }
+        state_name = states[state]
+        print(state_name)
+
+    # ------- functions -------
+    def evt_update_mesh(self):
+        self.canvas_mesh.draw()
+
+    def evt_update_freq(self):
+        self.canvas_freq.draw()
+
+    def evt_update_progress(self, val):
+        self.pbar.setValue(val)
+
+    def stop_execution(self):
+        self.evt_update_progress(0)
+   
+        if self.process_fem is not None:
+            self.process_fem.kill()
+            self.process_fem = None
+            self.delete_temp()
+            self.button_stop.setEnabled(False)
+            self.button_run.setEnabled(True)
+        else:
+            self.stop_thread = True
+
+    def plot_graphs(self):
+        if self.process_fem is not None:
+            self.worker_plot = WorkerPlot(parent=self)
+            self.worker_plot.start()
+
+            self.worker_plot.complete_worker.connect(lambda: self.worker_plot.terminate())
+            self.worker_plot.complete_worker.connect(lambda: self.worker_plot.deleteLater())
+
+            self.worker_plot.complete_worker.connect(lambda: self.button_stop.setEnabled(False))
+            self.worker_plot.complete_worker.connect(lambda: self.button_run.setEnabled(True))
+
+            self.worker_plot.complete_worker.connect(self.delete_temp)
+        
+            self.worker_plot.update_mesh.connect(self.evt_update_mesh)
+            self.worker_plot.update_freq.connect(self.evt_update_freq)
+            self.worker_plot.update_progess.connect(self.evt_update_progress)
+            
+            self.process_fem = None
+
+class WorkerPlot(QtCore.QThread):
+    
+    update_mesh = QtCore.pyqtSignal(bool)
+
+    update_freq = QtCore.pyqtSignal(bool)
+
+    update_progess = QtCore.pyqtSignal(int)
+
+    complete_worker = QtCore.pyqtSignal(bool)
+
+    def __init__(self, parent):    
+        super().__init__()
+        self.parent = parent
+               
+    @QtCore.pyqtSlot()
+    def run(self):
+        while True:
+            # READ
+            folder_name = 'temp'
+            directory = os.path.join(os.path.dirname(__file__), folder_name) 
+
+            file = open(os.path.join(directory, 'mesh_data.txt'), "r")
+            contents = file.read()
+            mesh_data = ast.literal_eval(contents)
+            file.close()
+
+            coord = np.loadtxt(os.path.join(directory, 'coord.txt'))
+            connect = np.loadtxt(os.path.join(directory, 'connect.txt'), dtype=int)
+            disp_vector_org = np.loadtxt(os.path.join(directory, 'disp_vector.txt'), dtype=np.complex)
+
+            load_matrix = np.loadtxt(os.path.join(directory, 'load_matrix.txt')).reshape(-1, 4) #TODO: VER A QUESTAO DO VALOR DA FORÇA NEGATIVO
+            constr_matrix = np.loadtxt(os.path.join(directory, 'constr_matrix.txt'), dtype=int)
+
+            # Deformed mesh
+            plot_2d = PlotsFem2d(coord, connect)
+            disp_vector = plot_2d.change_disp_shape(disp_vector_org.real)
+
+            coord_U = plot_2d.apply_disp(disp_vector, self.parent.param.factor)
+            collection = plot_2d.build_collection(coord_U)
+
+            if self.parent.stop_thread:
+                self.parent.stop_thread = False
+                break
+
+            self.parent.ax_mesh = self.parent.canvas_mesh.figure.subplots()
+            plot_2d.plot_collection(self.parent.ax_mesh, mesh_data["lx"], mesh_data["ly"], coord_U, collection, load_matrix, constr_matrix)
+
+            if self.parent.stop_thread:
+                self.parent.stop_thread = False
+                break
+            
+            self.update_mesh.emit(True)
+            self.update_progess.emit(90)
+
+            # Frequency response
+            vector_U = None
+            if self.parent.param.freqrsp:
+                node_plot = np.loadtxt(os.path.join(directory, 'node_plot.txt'), dtype=int).reshape(1,3)
+                vector_U = np.loadtxt(os.path.join(directory, 'vector_U.txt'), dtype=np.complex)
+        
+                self.parent.ax_freq = self.parent.canvas_freq.figure.subplots()
+                plot_2d.plot_freq_rsp(self.parent.ax_freq, node_plot, self.parent.param.freq_range, vector_U)
+
+                if self.parent.stop_thread:
+                    self.parent.stop_thread = False
+                    break
+
+                self.update_freq.emit(True)
+                self.update_progess.emit(95)
+            
+            if self.parent.param.save:
+                data = os.path.join(os.path.join(os.path.dirname(__file__)), 'data_2d')
+                os.makedirs(data, exist_ok=True)
+
+                np.savetxt(os.path.join(data, 'disp_vector.txt'), disp_vector_org)
+                if vector_U is not None:
+                    np.savetxt(os.path.join(data, 'freqrsp_vector.txt'), vector_U)
+
+                self.parent.canvas_mesh.figure.savefig(os.path.join(data, 'mesh.png'))
+                
+                if self.parent.param.freqrsp:
+                    self.parent.canvas_freq.figure.savefig(os.path.join(data, 'frequency_response.png'))
+
+            self.update_progess.emit(100)
+            break
+
+        self.complete_worker.emit(True)
+
+#################
+
 class WindowsOptimization(SecondWindow):
     def __init__(self, param):
         super().__init__(param)
 
         self.stop_thread = False
         
-        #self.button_run.clicked.connect(lambda: self.run())
+        self.button_run.clicked.connect(lambda: self.run())
         self.param.mesh_deform_check.toggled.connect(self.param.factor_spin.setEnabled)   
         self.param.func_name2_box.activated.connect(self.param.freq2_spin.setEnabled) 
         self.param.freqrsp_check.toggled.connect(self.param.freq_range_spin.setEnabled)
         self.param.freqrsp_check.toggled.connect(self.param.alpha_plot_spin.setEnabled)
         self.param.freqrsp_check.toggled.connect(self.param.beta_plot_spin.setEnabled)
         self.param.freqrsp_check.toggled.connect(self.param.eta_plot_spin.setEnabled)
-
-        # Boundary Conditions
-        #TODO: Aqui preciso pegar de cada uma da lista
         
         self.directory = os.path.join(os.path.dirname(__file__))
         self.dir_temp = os.path.join(self.directory, 'temp')
@@ -392,7 +474,7 @@ class WindowsOptimization(SecondWindow):
 
         ui2_layout.addWidget(self.text)
 
-        self.upd_ui2_layout(ui2_layout)
+        self.update_ui2_layout(ui2_layout)
 
     def add_freq_to_canvas_ui2(self): 
         ui2_layout = QtWidgets.QVBoxLayout()
@@ -402,7 +484,7 @@ class WindowsOptimization(SecondWindow):
         ui2_layout.addWidget(self.graph_freq)     
         ui2_layout.addWidget(self.text)
 
-        self.upd_ui2_layout(ui2_layout)
+        self.update_ui2_layout(ui2_layout)
 
     def add_deformed_mesh_to_canvas_ui2(self): 
         ui2_layout = QtWidgets.QVBoxLayout()
@@ -417,7 +499,7 @@ class WindowsOptimization(SecondWindow):
         ui2_layout.addWidget(self.canvas_mesh)   
         ui2_layout.addWidget(self.text)
 
-        self.upd_ui2_layout(ui2_layout)
+        self.update_ui2_layout(ui2_layout)
 
     # ------- buttons -------
     def run(self):
@@ -428,7 +510,7 @@ class WindowsOptimization(SecondWindow):
             pg.setConfigOption('foreground', 'k')
 
             self.add_canvas_ui2()
-            self.param.export_param()
+            self.param.export_param() 
 
             self.process_opt = QtCore.QProcess()
             self.process_opt.readyReadStandardOutput.connect(self.handle_stdout)

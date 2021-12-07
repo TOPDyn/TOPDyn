@@ -1,19 +1,10 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 import os
+import pickle 
 import ast
 import numpy as np
 
 class Parameters():
-    def __init__(self) -> None:
-        self.load_type = [] # by_coord ou by_col
-        self.load_coord = [] # uma tupla com (x,y) ou um unico
-        self.load_col = [] # valores None
-        self.load_error = [] # valores None
-        self.load_x_dir = [] # tuplas ou valores sozinhos
-        self.load_y_dir = [] # tuplas ou valores sozinhos
-        self.load_value = []
-        self.warnings = []
-
     def update_params(self): 
         self.nelx = ast.literal_eval(self.nelx_spin.text())
         self.nely = ast.literal_eval(self.nely_spin.text())
@@ -33,7 +24,10 @@ class Parameters():
 
         self.freqrsp = self.freqrsp_check.checkState()
         self.freq_range = ast.literal_eval(self.freq_range_spin.text())
-                
+        
+        self.load_matrix = ast.literal_eval(self.load_matrix_spin.text())
+        self.constr_matrix = ast.literal_eval(self.constrain_spin.text())
+        
         self.save = self.save_check.checkState()
 
     def check_param(self, input_val, types, war):
@@ -73,9 +67,271 @@ class Parameters():
 
         self.check_param(self.freq_range_spin.text(), [list], 'Frequency range must be a list')
 
+class ParametersFEM2D(Parameters):
+    def __init__(self):
+        # QLineEdit
+        self.nelx_spin = QtWidgets.QLineEdit()
+        self.nely_spin = QtWidgets.QLineEdit()
+        self.lx_spin = QtWidgets.QLineEdit()
+        self.ly_spin = QtWidgets.QLineEdit()
+        
+        self.E_spin = QtWidgets.QLineEdit()
+        self.v_spin = QtWidgets.QLineEdit()
+        self.rho_spin = QtWidgets.QLineEdit()
+        
+        self.alpha_spin = QtWidgets.QLineEdit()
+        self.beta_spin = QtWidgets.QLineEdit()
+        self.eta_spin = QtWidgets.QLineEdit()
+        
+        self.freq_spin = QtWidgets.QLineEdit()
+        self.load_matrix_spin = QtWidgets.QLineEdit()
+        self.constrain_spin = QtWidgets.QLineEdit()
+
+        self.factor_spin = QtWidgets.QLineEdit()
+
+        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
+        self.freq_range_spin = QtWidgets.QLineEdit()
+        self.node_plot_spin = QtWidgets.QLineEdit()
+
+        self.freq_range_spin.setDisabled(True)
+        self.node_plot_spin.setDisabled(True)
+
+        self.save_check = QtWidgets.QCheckBox("Save data")
+
+        self.warnings = []
+
+        self._set_default()
+        self.update_params()
+
+        self.text = """ 
+                    <p> <b> <font size="+7"> Parameters: </font> </b>
+                    <hr>
+                    <p> <b> <font size="+1"> nelx </font> </b> <font size="+1"> (<i>int</i>): Number of elements on the x-axis.  </font> </p>
+                    <p> <b> <font size="+1"> nely </font> </b> <font size="+1"> (<i>int</i>): Number of elements on the y-axis.</font> </p>
+                    <p> <b> <font size="+1"> lx </font> </b> <font size="+1"> (<i>float</i>): x-axis length.</font> </p>
+                    <p> <b> <font size="+1"> ly </font> </b> <font size="+1"> (<i>float</i>): y-axis length.</font> </p>
+                    <p> <b> <font size="+1"> load_matrix </font> </b> <font size="+1"> (<i>numpy.array</i>): It's a list of lists. </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> The list can be:
+                        <UL>
+                        <LI>[x_coordinate, y_coordinate, force_applied_x, force_applied_y, force_value]</LI>
+                        <LI>[value_coordinate, column_to_compare, force_applied_x, force_applied_y, force_value, error_margin]</LI>
+                        </UL> </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> It is possible to merge the two options. Examples:
+                        <UL>
+                        <LI>force_matrix = [[1, 1, 0, -1, 100]] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1)</LI>
+                        <LI>force_matrix = [[0, 1, 1, 0, 200, 0.001]] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0</LI>
+                        <LI>force_matrix = [[1, 1, 0, -1, 100], [0, 1, -1, 0, 200, 0.001]] -> Apply the two options above.</LI>
+                        </UL> </font> </p>
+                    <p> <b> <font size="+1"> constr_matrix </font> </b> <font size="+1"> (<i>numpy.array</i>): It's a list of lists. </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> The list can be:
+                        <UL>
+                        <LI>[x_coordinate, y_coordinate, constrain_disp_x, constrain_disp_y]</LI>
+                        <LI>[value_coordinate, column_to_compare, constrain_disp_x, constrain_disp_y, error_margin]</LI>
+                        </UL> </font> </p>                    
+                    <p> <b> <font size="+1"> E </font> </b> <font size="+1"> (<i>float</i>): Elastic modulus. </font> </p>
+                    <p> <b> <font size="+1"> v </font> </b> <font size="+1"> (<i>float</i>): Poisson's ratio. </font> </p>
+                    <p> <b> <font size="+1"> rho </font> </b> <font size="+1"> (<i>float</i>): Density. </font> </p>
+                    <p> <b> <font size="+1"> alpha </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass. </font> </p>
+                    <p> <b> <font size="+1"> beta </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness. </font> </p> 
+                    <p> <b> <font size="+1"> eta </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient. </font> </p>
+                    <p> <b> <font size="+1"> factor </font> </b> <font size="+1"> (<i>float</i>): Factor to deform the mesh. </font> </p>
+                    <p> <b> <font size="+1"> freq </font> </b> <font size="+1"> (<i>int</i>): Optimized frequency. </font> </p>
+                    <p> <b> <font size="+1"> node_plot </font> </b> <font size="+1"> (<i>numpy.array</i>): The node to plot the frequency response graph.  </font> </p>
+                        <p style="margin-left:2em"> <font size="+1"> The columns are respectively node, x direction, y direction. </p>
+                        <p style="margin-left:2em"> <font size="+1"> It is a 1x3 matrix. </font> </p>
+                    <p> <b> <font size="+1"> freq_rsp </font> </b> <font size="+1"> (<i>list</i>): If len is 3, a frequency response graph of the original and optimized structure is generated.  </font> </p>
+                        <p style="margin-left:2em"> <font size="+1"> First value is the minimum frequency of the graph. </font> </p>
+                        <p style="margin-left:2em"> <font size="+1"> Second value is the maximum frequency of the graph. </font> </p>
+                        <p style="margin-left:2em"> <font size="+1"> Third value is the step between each calculation of the objective function. </font> <</p>
+                    <p> <b> <font size="+1"> save </font> </b> <font size="+1"> (<i>bool</i>): if True save the optimization and frequency response graphs as PNG. </font> </p>
+                    """
+
+    def add_widgtes(self, layout):
+        layout.addWidget(QtWidgets.QLabel('Nelx'))
+        layout.addWidget(self.nelx_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Nely'))
+        layout.addWidget(self.nely_spin)
+
+        layout.addWidget(QtWidgets.QLabel('lx'))
+        layout.addWidget(self.lx_spin)
+
+        layout.addWidget(QtWidgets.QLabel('ly'))
+        layout.addWidget(self.ly_spin)
+
+        layout.addWidget(QtWidgets.QLabel('E'))
+        layout.addWidget(self.E_spin)
+
+        layout.addWidget(QtWidgets.QLabel('v'))
+        layout.addWidget(self.v_spin)
+
+        layout.addWidget(QtWidgets.QLabel('rho'))
+        layout.addWidget(self.rho_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Alpha'))
+        layout.addWidget(self.alpha_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Beta'))
+        layout.addWidget(self.beta_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Eta'))
+        layout.addWidget(self.eta_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Factor'))
+        layout.addWidget(self.factor_spin)
+        
+        layout.addWidget(QtWidgets.QLabel('Frequency'))
+        layout.addWidget(self.freq_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Force matrix'))
+        layout.addWidget(self.load_matrix_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Contrain nodes disp.'))
+        layout.addWidget(self.constrain_spin)
+
+        layout.addWidget(self.freqrsp_check)
+
+        layout.addWidget(QtWidgets.QLabel('Frequency range'))
+        layout.addWidget(self.freq_range_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Node plot'))
+        layout.addWidget(self.node_plot_spin)
+        layout.addWidget(self.save_check)
+    
+    def _set_default(self):       
+        self.nelx_spin.setText('40')
+        self.nely_spin.setText('20')
+        self.lx_spin.setText('1')
+        self.ly_spin.setText('0.5')
+
+        self.E_spin.setText('210e9')
+        self.v_spin.setText('0.3')
+        self.rho_spin.setText('7860')
+
+        self.alpha_spin.setText('0')
+        self.beta_spin.setText('0')
+        self.eta_spin.setText('0')
+
+        self.factor_spin.setText('10000')
+
+        self.freq_spin.setText('200')
+
+        self.freq_range_spin.setText("[0,25,5]")
+        self.node_plot_spin.setText("[1, 0.25, 0, 1]")
+
+        self.load_matrix_spin.setText('[{"x_coord":1, "y_coord":0.25, "x_direc":0, "y_direc":-1, "force":1}]')
+        self.constrain_spin.setText('[{"coord":0, "axis":1, "eps":0.001, "constrain_disp_x":1, "constrain_disp_y":1}]')
+
+    def update_params(self): 
+        super().update_params()
+        self.node_plot = ast.literal_eval(self.node_plot_spin.text())
+
+    def export_param(self):
+        param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
+                "alpha":self.alpha, "beta":self.beta, "eta":self.eta, "factor":self.factor, "freq":self.freq, 
+                "freqrsp":self.freqrsp, "freq_range":self.freq_range, "load_matrix":self.load_matrix, 
+                "constr_matrix":self.constr_matrix, "node_plot":self.node_plot, "save":self.save, "mesh_file":None}
+        
+        folder_name = 'temp'
+        directory = os.path.join(os.path.dirname(__file__), folder_name)
+        os.makedirs(directory, exist_ok=True)
+
+        try: 
+            # WRITE
+            dir_file = os.path.join(directory, 'param_file.txt')
+            # open file for writing
+            f = open(dir_file,"w")
+            # write file
+            f.write(str(param))
+            # close file
+            f.close()
+
+        except: 
+            print("Something went wrong")
+
+    def check_params(self):
+        super().check_params()
+        self.check_param(self.node_plot_spin.text(), [list], 'Node must be a list')
+
 class ParametersOpt(Parameters):
     def __init__(self):
-        super().__init__()
+        self.mma_radio = QtWidgets.QRadioButton("MMA")
+        self.gcmma_radio = QtWidgets.QRadioButton("GMMA")
+
+        # QLineEdit
+        self.nelx_spin = QtWidgets.QLineEdit()
+        self.nely_spin = QtWidgets.QLineEdit()
+        self.lx_spin = QtWidgets.QLineEdit()
+        self.ly_spin = QtWidgets.QLineEdit()
+        
+        self.E_spin = QtWidgets.QLineEdit()
+        self.v_spin = QtWidgets.QLineEdit()
+        self.rho_spin = QtWidgets.QLineEdit()
+        self.fac_ratio_spin = QtWidgets.QLineEdit()
+
+        self.x_min_m_spin = QtWidgets.QLineEdit()
+        self.x_min_k_spin = QtWidgets.QLineEdit()
+        self.penal_k_spin   = QtWidgets.QLineEdit() #p_par
+        self.penal_m_spin   = QtWidgets.QLineEdit() #q_par
+        
+        self.alpha_spin = QtWidgets.QLineEdit()
+        self.beta_spin = QtWidgets.QLineEdit()
+        self.eta_spin = QtWidgets.QLineEdit()
+
+        self.load_matrix_spin = QtWidgets.QLineEdit()
+        self.constrain_spin = QtWidgets.QLineEdit()
+
+        self.constr_func_spin = QtWidgets.QLineEdit()
+        self.constr_values_spin = QtWidgets.QLineEdit()
+        self.passive_coord_spin = QtWidgets.QLineEdit()    
+
+        self.modes_spin = QtWidgets.QLineEdit()
+        self.const_func_spin = QtWidgets.QLineEdit()
+        self.n1_spin = QtWidgets.QLineEdit()
+        self.freq_spin = QtWidgets.QLineEdit()
+        self.func_name_box = QtWidgets.QComboBox()
+        self.func_name_box.addItem("compliance")
+        self.func_name_box.addItem("input_power")
+        self.func_name_box.addItem("elastic_potential_energy")
+        self.func_name_box.addItem("kinetic_energy")
+        self.func_name_box.addItem("r_ratio")
+        self.func_name_box.addItem("local_ep")
+        self.func_name_box.addItem("local_ki")
+        self.func_name_box.addItem("local_r")
+
+
+        self.func_name2_box = QtWidgets.QComboBox()
+        self.func_name2_box.addItem("None")
+        self.func_name2_box.addItem("compliance")
+        self.func_name2_box.addItem("input_power")
+        self.func_name2_box.addItem("elastic_potential_energy")
+        self.func_name2_box.addItem("kinetic_energy")
+        self.func_name2_box.addItem("r_ratio")
+        self.func_name2_box.addItem("local_ep")
+        self.func_name2_box.addItem("local_ki")
+        self.func_name2_box.addItem("local_r")
+        self.freq2_spin = QtWidgets.QLineEdit()
+        self.freq2_spin.setDisabled(True)
+
+        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
+        self.freq_range_spin = QtWidgets.QLineEdit()
+        self.alpha_plot_spin = QtWidgets.QLineEdit()
+        self.beta_plot_spin  = QtWidgets.QLineEdit()
+        self.eta_plot_spin   = QtWidgets.QLineEdit()
+
+        self.freq_range_spin.setDisabled(True)
+        self.alpha_plot_spin.setDisabled(True)
+        self.beta_plot_spin.setDisabled(True)
+        self.eta_plot_spin.setDisabled(True)
+
+        self.max_iter_spin = QtWidgets.QLineEdit() 
+        self.save_check = QtWidgets.QCheckBox("Save data")
+        self.dens_filter_check = QtWidgets.QCheckBox("Density Filter")      
+        self.mesh_deform_check = QtWidgets.QCheckBox("Plot deformed mesh")
+        self.factor_spin = QtWidgets.QLineEdit()
+        self.factor_spin.setDisabled(True)
+
+        self.warnings = []
 
         self.text = """ <p> <b> <font size="+7"> Parameters: </font> </b>
                     <hr>
@@ -157,9 +413,8 @@ class ParametersOpt(Parameters):
                     <p> <b> <font size="+1"> save </b> <font size="+1"> (<i>bool</i>): if True save the optimization and frequency response graphs as PNG.  </font> </p>
                     """
 
-        self.create_param_btns()
-        self.set_default()
-        #self.update_params()
+        self._set_default()
+        self.update_params()
 
     def export_param(self):
         param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
@@ -190,73 +445,7 @@ class ParametersOpt(Parameters):
         except: 
             print("Something went wrong")
 
-    def create_param_btns(self):
-        self.mma_radio = QtWidgets.QRadioButton("MMA")
-        self.gcmma_radio = QtWidgets.QRadioButton("GMMA")
-
-        # QLineEdit
-        self.nelx_spin = QtWidgets.QLineEdit()
-        self.nely_spin = QtWidgets.QLineEdit()
-        self.lx_spin = QtWidgets.QLineEdit()
-        self.ly_spin = QtWidgets.QLineEdit()
-        
-        self.E_spin = QtWidgets.QLineEdit()
-        self.v_spin = QtWidgets.QLineEdit()
-        self.rho_spin = QtWidgets.QLineEdit()
-        self.fac_ratio_spin = QtWidgets.QLineEdit()
-
-        self.x_min_m_spin = QtWidgets.QLineEdit()
-        self.x_min_k_spin = QtWidgets.QLineEdit()
-        self.penal_k_spin   = QtWidgets.QLineEdit() #p_par
-        self.penal_m_spin   = QtWidgets.QLineEdit() #q_par
-        
-        self.alpha_spin = QtWidgets.QLineEdit()
-        self.beta_spin = QtWidgets.QLineEdit()
-        self.eta_spin = QtWidgets.QLineEdit()
-
-        self.passive_coord_spin = QtWidgets.QLineEdit()    
-        self.modes_spin = QtWidgets.QLineEdit()
-        self.const_func_spin = QtWidgets.QLineEdit()
-        self.n1_spin = QtWidgets.QLineEdit()
-        self.freq_spin = QtWidgets.QLineEdit()
-
-        self.func_name_box = QtWidgets.QComboBox()
-        self.func_name_box.addItem("compliance")
-        self.func_name_box.addItem("input_power")
-        self.func_name_box.addItem("elastic_potential_energy")
-        self.func_name_box.addItem("kinetic_energy")
-        self.func_name_box.addItem("r_ratio")
-        self.func_name_box.addItem("local_ep")
-        self.func_name_box.addItem("local_ki")
-        self.func_name_box.addItem("local_r")
-
-        self.func_name2_box = QtWidgets.QComboBox()
-        self.func_name2_box.addItem("None")
-        self.func_name2_box.addItem("compliance")
-        self.func_name2_box.addItem("input_power")
-        self.func_name2_box.addItem("elastic_potential_energy")
-        self.func_name2_box.addItem("kinetic_energy")
-        self.func_name2_box.addItem("r_ratio")
-        self.func_name2_box.addItem("local_ep")
-        self.func_name2_box.addItem("local_ki")
-        self.func_name2_box.addItem("local_r")
-
-        self.freq2_spin = QtWidgets.QLineEdit()
-        #self.freq2_spin.setDisabled(True)
-
-        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
-        self.freq_range_spin = QtWidgets.QLineEdit()
-        self.alpha_plot_spin = QtWidgets.QLineEdit()
-        self.beta_plot_spin  = QtWidgets.QLineEdit()
-        self.eta_plot_spin   = QtWidgets.QLineEdit()
-
-        self.max_iter_spin = QtWidgets.QLineEdit() 
-        self.save_check = QtWidgets.QCheckBox("Save data")
-        self.dens_filter_check = QtWidgets.QCheckBox("Density Filter")      
-        self.mesh_deform_check = QtWidgets.QCheckBox("Plot deformed mesh")
-        self.factor_spin = QtWidgets.QLineEdit()
-    
-    def add_btns(self, layout):
+    def add_widgtes(self, layout):
         layout.addWidget(QtWidgets.QLabel('Optimization Method'))
         layout.addWidget(self.mma_radio)
         layout.addWidget(self.gcmma_radio)
@@ -305,6 +494,18 @@ class ParametersOpt(Parameters):
 
         layout.addWidget(QtWidgets.QLabel('Eta'))
         layout.addWidget(self.eta_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Load matrix'))
+        layout.addWidget(self.load_matrix_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Constraint nodes'))
+        layout.addWidget(self.constrain_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Constrain funcs.'))
+        layout.addWidget(self.constr_func_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Constrain values'))
+        layout.addWidget(self.constr_values_spin)
 
         layout.addWidget(QtWidgets.QLabel('Passive coords'))
         layout.addWidget(self.passive_coord_spin)
@@ -355,7 +556,7 @@ class ParametersOpt(Parameters):
     def update_params(self): 
         super().update_params()
 
-        self.mma = True if self.mma_radio.isChecked() else False
+        self.mma = self.check_method()
         self.fac_ratio = ast.literal_eval(self.fac_ratio_spin.text())
 
         self.x_min_m = ast.literal_eval(self.x_min_m_spin.text())
@@ -363,7 +564,10 @@ class ParametersOpt(Parameters):
         self.penal_k = ast.literal_eval(self.penal_k_spin.text()) #p_par
         self.penal_m = ast.literal_eval(self.penal_m_spin.text()) #q_par
 
+        self.constr_func = ast.literal_eval(self.constr_func_spin.text())
+        self.constr_values = ast.literal_eval(self.constr_values_spin.text())
         self.passive_coord = ast.literal_eval(self.passive_coord_spin.text())
+
         self.modes = ast.literal_eval(self.modes_spin.text())
         self.const_func = ast.literal_eval(self.const_func_spin.text())
         self.n1 = ast.literal_eval(self.n1_spin.text())
@@ -381,8 +585,14 @@ class ParametersOpt(Parameters):
 
         self.dens_filter  = self.dens_filter_check.checkState()
         self.mesh_deform  = self.mesh_deform_check.checkState()
+       
+    def check_method(self):
+        if self.mma_radio.isChecked():
+            return True
+        else:
+            return False
 
-    def set_default(self):
+    def _set_default(self):
         self.mma_radio.setChecked(True)
 
         self.nelx_spin.setText('50')
@@ -404,11 +614,18 @@ class ParametersOpt(Parameters):
         self.beta_spin.setText('1e-5')
         self.eta_spin.setText('0')
 
+        self.load_matrix_spin.setText('[{"coord":1, "axis":2, "x_direc":0, "y_direc":-1, "force":10000, "eps":0.001}]')
+        self.constrain_spin.setText('[{"coord":0, "axis":2, "eps":0.001, "constrain_disp_x":1, "constrain_disp_y":1}]')
+
+        self.constr_func_spin.setText("['area']")
+        self.constr_values_spin.setText('[30]')
         self.passive_coord_spin.setText('((0, 0.5), (0.95, 1))')
+
         self.modes_spin.setText('None')
         self.const_func_spin.setText('100')
         self.n1_spin.setText('1')
         self.freq_spin.setText('10')
+        
         self.freq2_spin.setText('0')
         
         self.freq_range_spin.setText("[5, 500, 5]")
@@ -417,21 +634,7 @@ class ParametersOpt(Parameters):
         self.eta_plot_spin.setText('0')
 
         self.max_iter_spin.setText('100')
-        self.factor_spin.setText('10000')
-        
-        self.freq2_spin.setDisabled(True)
-        self.freq_range_spin.setDisabled(True)
-        self.alpha_plot_spin.setDisabled(True)
-        self.beta_plot_spin.setDisabled(True)
-        self.eta_plot_spin.setDisabled(True)
-        self.factor_spin.setDisabled(True)
-
-        self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
-        self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
-        self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.alpha_plot_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.beta_plot_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.eta_plot_spin.setEnabled)     
+        self.factor_spin.setText('10000')       
 
     def check_params(self):
         super().check_params()
@@ -465,263 +668,11 @@ class ParametersOpt(Parameters):
 
         self.check_param(self.eta_plot_spin.text(), [int, float], 'eta_plot must be an intereger or float')
 
-    def create_param_load(self):
-        by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
-        by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
-        self.load_type.append([by_coord_load_btn, by_column_load_btn])
+        # TODO: FALTA COLOCAR ELES
+        # self.constr_func_par = ast.literal_eval(self.constr_func_spin.text())
+        # self.constr_values_par = ast.literal_eval(self.constr_values_spin.text())
+        # self.passive_coord_par = ast.literal_eval(self.passive_coord_spin.text())
 
-        coord_load_x_line  = QtWidgets.QLineEdit()
-        coord_load_y_line  = QtWidgets.QLineEdit()
-        coord_load_line = QtWidgets.QLineEdit()
-        self.load_coord.append([coord_load_x_line, coord_load_y_line, coord_load_line])
-        
-        x_by_col_load_btn = QtWidgets.QRadioButton("X")
-        y_by_col_load_btn = QtWidgets.QRadioButton("Y")
-        self.load_col.append([x_by_col_load_btn, y_by_col_load_btn])
-
-        erro_margin_load_line  = QtWidgets.QLineEdit()
-        self.load_error.append(erro_margin_load_line)
-
-        load_x_dir_line_pos = QtWidgets.QCheckBox("Positive") 
-        load_x_dir_line_neg = QtWidgets.QCheckBox("Negative")
-        self.load_x_dir.append([load_x_dir_line_pos, load_x_dir_line_neg])
-   
-        load_y_dir_line_pos  = QtWidgets.QCheckBox("Positive") 
-        load_y_dir_line_neg  = QtWidgets.QCheckBox("Negative")         
-        self.load_y_dir.append([load_y_dir_line_pos, load_y_dir_line_neg])
-
-        load_value_line = QtWidgets.QLineEdit()
-        self.load_value.append(load_value_line)
-
-    def add_param_load(self, layout):
-
-        # FILTROS
-        # self.load_type = [] # by_coord ou by_col
-        # self.load_coord = [] # uma tupla com (x,y) ou um unico
-        # self.load_col = [] # valores None
-        # self.load_error = [] # valores None
-        # self.load_x_dir = [] # tuplas ou valores sozinhos
-        # self.load_y_dir = [] # tuplas ou valores sozinhos
-        # self.load_value = []
-
-        load_type = QtWidgets.QButtonGroup(layout)
-        load_label = QtWidgets.QLabel('---- Load ----')
-        load_label.setAlignment(QtCore.Qt.AlignCenter)
-        layout.addRow(load_label)
-        
-        load_type.addButton(self.load_type[-1][0])
-        layout.addRow(self.load_type[-1][0])
-       
-        layout.addRow(QtWidgets.QLabel('X-coor'), self.load_coord[-1][0])
-        layout.addRow(QtWidgets.QLabel('Y-coord'), self.load_coord[-1][1])
-       
-        load_type.addButton(self.load_type[-1][1])
-        layout.addRow(self.load_type[-1][1])
-       
-        layout.addRow(QtWidgets.QLabel('Coord'), self.load_coord[-1][2])
-     
-        layout.addRow(QtWidgets.QLabel('Column'))
-        column_load = QtWidgets.QButtonGroup(layout)
-        column_load.addButton(self.load_col[-1][0])
-        column_load.addButton(self.load_col[-1][1])
-        layout.addRow(self.load_col[-1][0], self.load_col[-1][1])
-      
-        layout.addRow(QtWidgets.QLabel('Error margin'), self.load_error[-1])
-       
-        layout.addRow(QtWidgets.QLabel('Add load in X direction')) 
-        layout.addRow(self.load_x_dir[-1][0], self.load_x_dir[-1][1])       
-
-        layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
-        layout.addRow(self.load_y_dir[-1][0], self.load_y_dir[-1][1])
-
-        layout.addRow(QtWidgets.QLabel('Force value'), self.load_value[-1])
-   
-        # load_type = QtWidgets.QButtonGroup(layout)
-        # load_label = QtWidgets.QLabel('---- Load ----')
-        # load_label.setAlignment(QtCore.Qt.AlignCenter)
-        # layout.addRow(load_label)
-        # by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
-        # load_type.addButton(by_coord_load_btn)
-        # layout.addRow(by_coord_load_btn)
-        # self.load_type.append(by_coord_load_btn)
-
-        # coord_load_x_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('X-coor'), coord_load_x_line)
-        # coord_load_y_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Y-coord'), coord_load_y_line)
-        # self.load_coord.append((coord_load_x_line, coord_load_y_line))
-
-        # by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
-        # load_type.addButton(by_column_load_btn)
-        # layout.addRow(by_column_load_btn)
-        # self.load_type.append(by_column_load_btn)
-
-        # coord_load_line = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Coord'), coord_load_line)
-        # self.load_coord.append(coord_load_line)
-        
-        # layout.addRow(QtWidgets.QLabel('Column'))
-        # column_load = QtWidgets.QButtonGroup(layout)
-        # x_by_col_load_btn = QtWidgets.QRadioButton("X")
-        # y_by_col_load_btn = QtWidgets.QRadioButton("Y")
-        # column_load.addButton(x_by_col_load_btn)
-        # column_load.addButton(y_by_col_load_btn)
-        # layout.addRow(x_by_col_load_btn, y_by_col_load_btn)
-        # self.load_col.append((x_by_col_load_btn, y_by_col_load_btn))
-
-        # erro_margin_load_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Error margin'), erro_margin_load_line)
-        # self.load_error.append(erro_margin_load_line)
-
-        # layout.addRow(QtWidgets.QLabel('Add load in X direction'))
-        # load_x_dir_line_pos = QtWidgets.QCheckBox("Positive") 
-        # load_x_dir_line_neg = QtWidgets.QCheckBox("Negative")  
-        # layout.addRow(load_x_dir_line_pos, load_x_dir_line_neg)       
-
-        # layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
-        # load_y_dir_line_pos  = QtWidgets.QCheckBox("Positive") 
-        # load_y_dir_line_neg  = QtWidgets.QCheckBox("Negative") 
-        # layout.addRow(load_y_dir_line_pos, load_y_dir_line_neg)
-
-        # self.load_x_dir.append((load_x_dir_line_pos, load_x_dir_line_neg))
-        # self.load_y_dir.append((load_y_dir_line_pos, load_y_dir_line_neg))
-
-        # load_value_line = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Force value'), load_value_line)
-        # self.load_value.append(load_value_line)
-
-        # #################
-        # load_type = QtWidgets.QButtonGroup(layout)
-        # layout.addRow(QtWidgets.QLabel('Load matrix'))
-        # self.by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
-        # load_type.addButton(self.by_coord_load_btn)
-        # layout.addRow(self.by_coord_load_btn)
-
-        # self.coord_load_x_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('X-coor'), self.coord_load_x_line)
-        # self.coord_load_y_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Y-coord'), self.coord_load_y_line)
-
-        # self.by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
-        # load_type.addButton(self.by_column_load_btn)
-        # layout.addRow(self.by_column_load_btn)
-
-        # self.coord_load_line = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Coord'), self.coord_load_line)
-        
-        # layout.addRow(QtWidgets.QLabel('Column'))
-        # column_load = QtWidgets.QButtonGroup(layout)
-        # self.x_by_col_load_btn = QtWidgets.QRadioButton("X")
-        # self.y_by_col_load_btn = QtWidgets.QRadioButton("Y")
-        # column_load.addButton(self.x_by_col_load_btn)
-        # column_load.addButton(self.y_by_col_load_btn)
-        # layout.addRow(self.x_by_col_load_btn, self.y_by_col_load_btn)
-
-        # self.erro_margin_load_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Error margin'), self.erro_margin_load_line)
-
-        # layout.addRow(QtWidgets.QLabel('Add load in X direction'))
-        # self.load_x_dir_line_pos = QtWidgets.QCheckBox("Positive") 
-        # self.load_x_dir_line_neg = QtWidgets.QCheckBox("Negative")  
-        # layout.addRow(self.load_x_dir_line_pos, self.load_x_dir_line_neg)
-
-        # layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
-        # self.load_y_dir_line_pos  = QtWidgets.QCheckBox("Positive") 
-        # self.load_y_dir_line_neg  = QtWidgets.QCheckBox("Negative") 
-        # layout.addRow(self.load_y_dir_line_pos, self.load_y_dir_line_neg)
-        # self.load_value_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Force value'), self.load_value_line)
-
-    def set_default_load(self):
-        # FILTROS
-        # self.load_type = [] # by_coord ou by_col
-        # self.load_coord = [] # uma tupla com (x,y) ou um unico
-        # self.load_col = [] # valores None
-        # self.load_error = [] # valores None
-        # self.load_x_dir = [] # tuplas ou valores sozinhos
-        # self.load_y_dir = [] # tuplas ou valores sozinhos
-        # self.load_value = []
-
-        self.load_type[-1][0].setChecked(True)
-        self.load_type[-1][1].setChecked(False)
-
-        self.load_coord[-1][0].setText(str(self.lx))
-        self.load_coord[-1][1].setText(str(self.ly/2))
-        
-        self.load_coord[-1][2].setDisabled(True)
-        self.load_col[-1][0].setDisabled(True)
-        self.load_col[-1][1].setDisabled(True)
-        self.load_error[-1].setDisabled(True)
-
-        self.load_x_dir[-1][0].setChecked(True)
-        self.load_value[-1].setText('100')
-
-        self.load_type[-1][0].toggled.connect(self.load_coord[-1][0].setEnabled)  
-        self.load_type[-1][0].toggled.connect(self.load_coord[-1][1].setEnabled)
-        self.load_type[-1][0].toggled.connect(self.load_col[-1][0].setDisabled)
-        self.load_type[-1][0].toggled.connect(self.load_col[-1][1].setDisabled)
-        self.load_type[-1][0].toggled.connect(self.load_error[-1].setDisabled)
-        self.load_type[-1][0].toggled.connect(self.load_coord[-1][2].setDisabled)
-
-        self.load_type[-1][1].toggled.connect(self.load_coord[-1][0].setDisabled)  
-        self.load_type[-1][1].toggled.connect(self.load_coord[-1][1].setDisabled)
-        self.load_type[-1][1].toggled.connect(self.load_col[-1][0].setEnabled)
-        self.load_type[-1][1].toggled.connect(self.load_col[-1][1].setEnabled)
-        self.load_type[-1][1].toggled.connect(self.load_error[-1].setEnabled)
-        self.load_type[-1][1].toggled.connect(self.load_coord[-1][2].setEnabled)
-
-    def add_param_constraint(self, layout):
-        layout.addRow(QtWidgets.QLabel('Constraints'))
-        self.area_check = QtWidgets.QCheckBox("area")
-        layout.addRow(self.area_check)
-        self.min_area_line  = QtWidgets.QLineEdit()
-        self.max_area_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_area_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_area_line)
-
-        self.r_ratio_check = QtWidgets.QCheckBox("R ratio")
-        layout.addRow(self.r_ratio_check)
-        self.min_r_ratio_line  = QtWidgets.QLineEdit()
-        self.max_r_ratio_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_r_ratio_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_r_ratio_line)
-
-        self.compliance_check = QtWidgets.QCheckBox("compliance")
-        layout.addRow(self.compliance_check)
-        self.min_compliance_line  = QtWidgets.QLineEdit()
-        self.max_compliance_line  = QtWidgets.QLineEdit()
-        self.freq_compliance_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_compliance_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_compliance_line)
-        layout.addRow(QtWidgets.QLabel('freq'), self.freq_compliance_line)
-
-        self.local_ep_check = QtWidgets.QCheckBox("local_ep")
-        layout.addRow(self.local_ep_check)
-        self.min_local_ep_line  = QtWidgets.QLineEdit()
-        self.max_local_ep_line  = QtWidgets.QLineEdit()
-        self.freq_local_ep_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_local_ep_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_local_ep_line)
-        layout.addRow(QtWidgets.QLabel('freq'), self.freq_local_ep_line)
-
-        self.local_ki_check = QtWidgets.QCheckBox("local_ki")
-        layout.addRow(self.local_ki_check)
-        self.min_local_ki_line  = QtWidgets.QLineEdit()
-        self.max_local_ki_line  = QtWidgets.QLineEdit()
-        self.freq_local_ki_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_local_ki_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_local_ki_line)
-        layout.addRow(QtWidgets.QLabel('freq'), self.freq_local_ki_line)
-
-        self.local_r_check = QtWidgets.QCheckBox("local_r")
-        layout.addRow(self.local_r_check)
-        self.min_local_r_line  = QtWidgets.QLineEdit()
-        self.max_local_r_line  = QtWidgets.QLineEdit()
-        self.freq_local_r_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_local_r_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_local_r_line)
-        layout.addRow(QtWidgets.QLabel('freq'), self.freq_local_r_line)
-       
 class ParametersText():
     def __init__(self):
         self.editor = QtWidgets.QLabel()
