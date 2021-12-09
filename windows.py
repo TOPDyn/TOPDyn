@@ -151,21 +151,20 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_back_param.clicked.connect(self.back_to_param)
         ui_layout.addRow(self.btn_back_param)
 
-        self.btn_to_constrain_node = QtWidgets.QPushButton('Next')
-        self.btn_to_constrain_node.clicked.connect(self.go_to_constrain_node)
-        ui_layout.addRow(self.btn_to_constrain_node)
+        self.btn_to_node_constrain = QtWidgets.QPushButton('Next')
+        self.btn_to_node_constrain.clicked.connect(self.go_to_node_constrain)
+        ui_layout.addRow(self.btn_to_node_constrain)
 
         self.btn_add_new_load = QtWidgets.QPushButton('Add new load')
         self.btn_add_new_load.clicked.connect(self.add_new_load)
         ui_layout.addRow(self.btn_add_new_load)
-
+        self.param.reset_load_list()
         self.param.create_param_load()
         self.param.set_default_load()
         self.param.add_param_load(ui_layout)
-        #self.param.set_default_load() #TODO: Setar o valor inicial das coisitas
         self.upd_left_layout(ui_layout)
 
-    def ui_add_constrain_node(self):
+    def ui_add_node_constrain(self):
         ui_layout = QtWidgets.QFormLayout()
         self.btn_back_load = QtWidgets.QPushButton('Back')
         self.btn_back_load.clicked.connect(self.back_to_load)
@@ -175,20 +174,18 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_to_constraint.clicked.connect(self.go_to_constraint)
         ui_layout.addRow(self.btn_to_constraint)
 
-        self.btn_add_new_const = QtWidgets.QPushButton('Add new constraint')
-        self.btn_add_new_const.clicked.connect(self.add_new_const)
-        ui_layout.addRow(self.btn_add_new_const)
-
-        self.param.add_constrain_node(ui_layout)
+        #self.param.add_constraint_param(ui_layout) #TODO ainda não está feito
         self.upd_left_layout(ui_layout)
 
     def ui_add_constraint(self):
         ui_layout = QtWidgets.QFormLayout()
         self.btn_back_constrain = QtWidgets.QPushButton('Back')
-        self.btn_back_constrain.clicked.connect(self.back_to_constrain)
+        self.btn_back_constrain.clicked.connect(self.back_to_node_constrain)
         ui_layout.addRow(self.btn_back_constrain)
 
-        self.param.add_constraint(ui_layout)
+        self.param.create_constraint()
+        self.param.add_constraint_param(ui_layout)
+        self.param.set_default_constraint()
 
         self.button_run = QtWidgets.QPushButton('Run')
         self.button_run.clicked.connect(lambda: self.run())
@@ -215,6 +212,27 @@ class SecondWindow(QtWidgets.QDialog):
             # TODO:save parameters
             self.ui_add_load()
 
+    def go_to_node_constrain(self):
+        self.param.check_load_param()
+        if len(self.param.warnings_load) != 0:
+            dlg = PopUp(self.param.warnings_load)      
+            dlg.exec_()
+        else:
+            self.param.check_load_values()
+            if len(self.param.warnings_load) != 0:
+                dlg = PopUp(self.param.warnings_load)      
+                dlg.exec_()
+            else:
+                self.param.update_param_load()
+                self.ui_add_node_constrain()
+        #TODO: Verificar se os valroes passados estão corretos
+        #TODO: Salvar os valores passados
+
+    def go_to_constraint(self):
+        #TODO: Verificar se os valores passados estão corretos 
+        #TODO: Salvar os valores passados
+        self.ui_add_constraint()
+
     def back_to_param(self):
         left_layout = QtWidgets.QVBoxLayout()
         self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
@@ -222,37 +240,27 @@ class SecondWindow(QtWidgets.QDialog):
         left_layout.addWidget(self.btn_back_menu)
         
         self.param.create_param_btns()
-        self.param.set_default()
-        self.param.add_btns(left_layout) # TODO: COLOCAR OS VALORES SALVOS AQUI
+        self.param.update_default()
+        self.param.add_btns(left_layout)
 
         self.btn_to_load = QtWidgets.QPushButton('Next')
         self.btn_to_load.clicked.connect(self.go_to_load)
         left_layout.addWidget(self.btn_to_load)
         self.upd_left_layout(left_layout)
+
+    def back_to_load(self):
+        self.ui_add_load() # TODO: Precisa mostrar os valores salvos
     
-    def go_to_constrain_node(self):
-        #TODO: Verificar se os valroes passados estão corretos
-        #TODO: Salvar os valores passados
-        self.ui_add_constrain_node()
+    def back_to_node_constrain(self):
+        self.ui_add_node_constrain()
 
     def add_new_load(self):
         self.param.create_param_load()
         self.param.set_default_load()
         self.param.add_param_load(self.left_widget.layout()) #TODO: Adiciona um novo esquema
 
-    def back_to_load(self):
-        self.ui_add_load() # TODO: Precisa mostrar os valores salvos
-    
-    def go_to_constraint(self):
-        #TODO: Verificar se os valores passados estão corretos 
-        #TODO: Salvar os valores passados
-        self.ui_add_constraint()
-
-    def add_new_const(self):
+    def add_new_node_constrain(self):
         self.param.add_param_load(self.left_widget.layout()) #TODO: Colocar o correto aqui
-
-    def back_to_constrain(self):
-        self.ui_add_constrain_node() #TODO:Colocar o esquema salvo
 
     def run(self):
         #TODO: verificar se os parametros de constraint estao corretos

@@ -5,14 +5,26 @@ import numpy as np
 
 class Parameters():
     def __init__(self) -> None:
-        self.load_type = [] # by_coord ou by_col
+        # btn load
+        self.load_type_btn = [] # by_coord ou by_col
+        self.load_coord_btn = [] # uma tupla com (x,y) ou um unico
+        self.load_col_btn = [] # valores None
+        self.load_error_btn = [] # valores None
+        self.load_x_dir_btn = [] # tuplas ou valores sozinhos
+        self.load_y_dir_btn = [] # tuplas ou valores sozinhos
+        self.load_value_btn = []
+
+        # values load
+        self.by_coord = [] # by_coord ou by_col
         self.load_coord = [] # uma tupla com (x,y) ou um unico
-        self.load_col = [] # valores None
+        self.x_load_col = [] # valores None
         self.load_error = [] # valores None
         self.load_x_dir = [] # tuplas ou valores sozinhos
         self.load_y_dir = [] # tuplas ou valores sozinhos
         self.load_value = []
+
         self.warnings = []
+        self.warnings_load = []
 
     def update_params(self): 
         self.nelx = ast.literal_eval(self.nelx_spin.text())
@@ -36,42 +48,47 @@ class Parameters():
                 
         self.save = self.save_check.checkState()
 
-    def check_param(self, input_val, types, war):
+    def check_param(self, warnings, input_val, types, war):
         try:
-            for type in types:
-                isinstance(ast.literal_eval(input_val), type)
+            if input_val:
+                for type in types:
+                    isinstance(ast.literal_eval(input_val), type)
+            else:
+                warning = QtWidgets.QLabel(war)
+                warnings.append(warning)
+
         except ValueError:
             warning = QtWidgets.QLabel(war)
-            self.warnings.append(warning)
+            warnings.append(warning)
         
     def check_params(self):
         self.warnings = []
 
-        self.check_param(self.nelx_spin.text(), [int], 'nelx must be an intereger')
+        self.check_param(self.warnings, self.nelx_spin.text(), [int], 'nelx must be an integer')
 
-        self.check_param(self.nely_spin.text(), [int], 'nely must be an intereger')
+        self.check_param(self.warnings, self.nely_spin.text(), [int], 'nely must be an integer')
 
-        self.check_param(self.lx_spin.text(), [int, float], 'lx must be an intereger or float')
+        self.check_param(self.warnings, self.lx_spin.text(), [int, float], 'lx must be an integer or float')
 
-        self.check_param(self.ly_spin.text(), [int, float], 'ly must be an intereger or float')
+        self.check_param(self.warnings, self.ly_spin.text(), [int, float], 'ly must be an integer or float')
 
-        self.check_param(self.E_spin.text(), [int, float], "E must be an intereger or float")
+        self.check_param(self.warnings, self.E_spin.text(), [int, float], "E must be an integer or float")
 
-        self.check_param(self.v_spin.text(), [int, float], 'v must be an intereger or float')
+        self.check_param(self.warnings, self.v_spin.text(), [int, float], 'v must be an integer or float')
 
-        self.check_param(self.rho_spin.text(), [int, float], 'rho must be an intereger or float')
+        self.check_param(self.warnings, self.rho_spin.text(), [int, float], 'rho must be an integer or float')
 
-        self.check_param(self.alpha_spin.text(), [int, float], 'alpha must be an intereger or float')
+        self.check_param(self.warnings, self.alpha_spin.text(), [int, float], 'alpha must be an integer or float')
 
-        self.check_param(self.beta_spin.text(), [int, float], 'beta must be an intereger or float')
+        self.check_param(self.warnings, self.beta_spin.text(), [int, float], 'beta must be an integer or float')
 
-        self.check_param(self.eta_spin.text(), [int, float], 'eta must be an intereger or float')
+        self.check_param(self.warnings, self.eta_spin.text(), [int, float], 'eta must be an integer or float')
 
-        self.check_param(self.factor_spin.text(), [int, float], 'Factor must be an intereger or float')
+        self.check_param(self.warnings, self.factor_spin.text(), [int, float], 'Factor must be an integer or float')
 
-        self.check_param(self.freq_spin.text(), [int], 'Frequency must be an intereger')
+        self.check_param(self.warnings, self.freq_spin.text(), [int], 'Frequency must be an integer')
 
-        self.check_param(self.freq_range_spin.text(), [list], 'Frequency range must be a list')
+        self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
 
 class ParametersOpt(Parameters):
     def __init__(self):
@@ -190,6 +207,7 @@ class ParametersOpt(Parameters):
         except: 
             print("Something went wrong")
 
+# Optimization param
     def create_param_btns(self):
         self.mma_radio = QtWidgets.QRadioButton("MMA")
         self.gcmma_radio = QtWidgets.QRadioButton("GMMA")
@@ -433,295 +451,429 @@ class ParametersOpt(Parameters):
         self.freqrsp_check.toggled.connect(self.beta_plot_spin.setEnabled)
         self.freqrsp_check.toggled.connect(self.eta_plot_spin.setEnabled)     
 
+    def update_default(self):
+        self.mma_radio.setChecked(self.mma)
+        self.gcmma_radio.setChecked(not self.mma)
+
+        self.nelx_spin.setText(str(self.nelx))
+        self.nely_spin.setText(str(self.nely))
+        self.lx_spin.setText(str(self.lx))
+        self.ly_spin.setText(str(self.ly))
+
+        self.E_spin.setText(str(self.E))
+        self.v_spin.setText(str(self.v))
+        self.rho_spin.setText(str(self.rho))
+        self.fac_ratio_spin.setText(str(self.fac_ratio))
+
+        self.x_min_m_spin.setText(str(self.x_min_m))
+        self.x_min_k_spin.setText(str(self.x_min_k))
+        self.penal_k_spin.setText(str(self.penal_k))
+        self.penal_m_spin.setText(str(self.penal_m))
+
+        self.alpha_spin.setText(str(self.alpha))
+        self.beta_spin.setText(str(self.beta))
+        self.eta_spin.setText(str(self.eta))
+
+        self.passive_coord_spin.setText(str(self.passive_coord))
+        self.modes_spin.setText(str(self.modes))
+        self.const_func_spin.setText(str(self.const_func))
+        self.n1_spin.setText(str(self.n1))
+        self.freq_spin.setText(str(self.freq))
+        self.freq2_spin.setText(str(self.freq2))
+        
+        self.freq_range_spin.setText(str(self.freq_range))
+        self.alpha_plot_spin.setText(str(self.alpha_plot))
+        self.beta_plot_spin.setText(str(self.beta_plot))
+        self.eta_plot_spin.setText(str(self.eta_plot))
+
+        self.max_iter_spin.setText(str(self.max_iter))
+        self.factor_spin.setText(str(self.factor))
+
+        self.func_name_box.setCurrentText(self.func_name)  
+
+        if self.freqrsp:
+            self.freqrsp_check.setChecked(True) 
+            self.freq_range_spin.setEnabled(True)
+            self.alpha_plot_spin.setEnabled(True)
+            self.beta_plot_spin.setEnabled(True)
+            self.eta_plot_spin.setEnabled(True)
+        else:
+            self.freq_range_spin.setDisabled(True)
+            self.alpha_plot_spin.setDisabled(True)
+            self.beta_plot_spin.setDisabled(True)
+            self.eta_plot_spin.setDisabled(True)
+
+        if self.mesh_deform:
+            self.mesh_deform_check.setChecked(True)
+            self.factor_spin.setEnabled(True)
+
+        if self.save:
+            self.save_check.setChecked(True)
+
+        if self.dens_filter:
+            self.dens_filter_check.setChecked(True)
+
+        if self.func_name2 != 'None':
+            self.freq2_spin.setEnabled(True)
+            self.func_name2_box.setCurrentText(self.func_name2)        
+
+        self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
+        self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
+        self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.alpha_plot_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.beta_plot_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.eta_plot_spin.setEnabled)  
+
     def check_params(self):
         super().check_params()
 
         if str(self.func_name2_box.currentText()) is not None:
-            self.check_param(self.freq2_spin.text(), [int], 'Frequency must be an intereger')
+            self.check_param(self.warnings, self.freq2_spin.text(), [int], 'Frequency must be an integer')
 
-        self.check_param(self.x_min_m_spin.text(), [int, float], 'x_min_m must be an intereger or float')
+        self.check_param(self.warnings, self.x_min_m_spin.text(), [int, float], 'x_min_m must be an integer or float')
 
-        self.check_param(self.x_min_k_spin.text(), [int, float], 'x_min_k must be an intereger or float')
+        self.check_param(self.warnings, self.x_min_k_spin.text(), [int, float], 'x_min_k must be an integer or float')
 
-        self.check_param(self.penal_k_spin.text(), [int], 'penal_k must be an intereger')
+        self.check_param(self.warnings, self.penal_k_spin.text(), [int], 'penal_k must be an integer')
 
-        self.check_param(self.penal_m_spin.text(), [int], 'penal_m must be an intereger')
+        self.check_param(self.warnings, self.penal_m_spin.text(), [int], 'penal_m must be an integer')
 
-        self.check_param(self.const_func_spin.text(), [int, float], 'const_func must be an intereger or float')
+        self.check_param(self.warnings, self.const_func_spin.text(), [int, float], 'const_func must be an integer or float')
 
-        self.check_param(self.n1_spin.text(), [int, float], 'n1 must be an intereger or float')
+        self.check_param(self.warnings, self.n1_spin.text(), [int, float], 'n1 must be an integer or float')
 
-        self.check_param(self.fac_ratio_spin.text(), [int, float], 'fac_ratio must be an intereger or float')
+        self.check_param(self.warnings, self.fac_ratio_spin.text(), [int, float], 'fac_ratio must be an integer or float')
 
         if not isinstance(ast.literal_eval(self.modes_spin.text()), int) and not (ast.literal_eval(self.modes_spin.text()) is None): 
-            warning = QtWidgets.QLabel('modes must be an intereger or None')
+            warning = QtWidgets.QLabel('modes must be an integer or None')
             self.warnings.append(warning)
 
-        self.check_param(self.max_iter_spin.text(), [int, float], 'max_iter must be an intereger or float')
+        self.check_param(self.warnings, self.max_iter_spin.text(), [int, float], 'max_iter must be an integer or float')
 
-        self.check_param(self.alpha_plot_spin.text(), [int, float], 'alpha_plot must be an intereger or float')
+        self.check_param(self.warnings, self.alpha_plot_spin.text(), [int, float], 'alpha_plot must be an integer or float')
 
-        self.check_param(self.beta_plot_spin.text(), [int, float], 'beta_plot must be an intereger or float')
+        self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'beta_plot must be an integer or float')
 
-        self.check_param(self.eta_plot_spin.text(), [int, float], 'eta_plot must be an intereger or float')
+        self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'eta_plot must be an integer or float')
 
+# Load param
     def create_param_load(self):
         by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
         by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
-        self.load_type.append([by_coord_load_btn, by_column_load_btn])
+        self.load_type_btn.append([by_coord_load_btn, by_column_load_btn])
 
         coord_load_x_line  = QtWidgets.QLineEdit()
         coord_load_y_line  = QtWidgets.QLineEdit()
         coord_load_line = QtWidgets.QLineEdit()
-        self.load_coord.append([coord_load_x_line, coord_load_y_line, coord_load_line])
+        self.load_coord_btn.append([coord_load_x_line, coord_load_y_line, coord_load_line])
         
         x_by_col_load_btn = QtWidgets.QRadioButton("X")
         y_by_col_load_btn = QtWidgets.QRadioButton("Y")
-        self.load_col.append([x_by_col_load_btn, y_by_col_load_btn])
+        self.load_col_btn.append([x_by_col_load_btn, y_by_col_load_btn])
 
         erro_margin_load_line  = QtWidgets.QLineEdit()
-        self.load_error.append(erro_margin_load_line)
+        self.load_error_btn.append(erro_margin_load_line)
 
-        load_x_dir_line_pos = QtWidgets.QCheckBox("Positive") 
-        load_x_dir_line_neg = QtWidgets.QCheckBox("Negative")
-        self.load_x_dir.append([load_x_dir_line_pos, load_x_dir_line_neg])
+        load_x_dir_line_pos = QtWidgets.QRadioButton("Positive") 
+        load_x_dir_line_neg = QtWidgets.QRadioButton("Negative")
+        load_x_dir_line_nan = QtWidgets.QRadioButton("None")
+        self.load_x_dir_btn.append([load_x_dir_line_pos, load_x_dir_line_neg, load_x_dir_line_nan])
    
-        load_y_dir_line_pos  = QtWidgets.QCheckBox("Positive") 
-        load_y_dir_line_neg  = QtWidgets.QCheckBox("Negative")         
-        self.load_y_dir.append([load_y_dir_line_pos, load_y_dir_line_neg])
+        load_y_dir_line_pos  = QtWidgets.QRadioButton("Positive") 
+        load_y_dir_line_neg  = QtWidgets.QRadioButton("Negative")         
+        load_y_dir_line_nan = QtWidgets.QRadioButton("None")
+        self.load_y_dir_btn.append([load_y_dir_line_pos, load_y_dir_line_neg, load_y_dir_line_nan])
 
         load_value_line = QtWidgets.QLineEdit()
-        self.load_value.append(load_value_line)
+        self.load_value_btn.append(load_value_line)
 
     def add_param_load(self, layout):
-
-        # FILTROS
-        # self.load_type = [] # by_coord ou by_col
-        # self.load_coord = [] # uma tupla com (x,y) ou um unico
-        # self.load_col = [] # valores None
-        # self.load_error = [] # valores None
-        # self.load_x_dir = [] # tuplas ou valores sozinhos
-        # self.load_y_dir = [] # tuplas ou valores sozinhos
-        # self.load_value = []
-
         load_type = QtWidgets.QButtonGroup(layout)
         load_label = QtWidgets.QLabel('---- Load ----')
         load_label.setAlignment(QtCore.Qt.AlignCenter)
         layout.addRow(load_label)
         
-        load_type.addButton(self.load_type[-1][0])
-        layout.addRow(self.load_type[-1][0])
+        load_type.addButton(self.load_type_btn[-1][0])
+        layout.addRow(self.load_type_btn[-1][0])
        
-        layout.addRow(QtWidgets.QLabel('X-coor'), self.load_coord[-1][0])
-        layout.addRow(QtWidgets.QLabel('Y-coord'), self.load_coord[-1][1])
+        layout.addRow(QtWidgets.QLabel('X-coor'), self.load_coord_btn[-1][0])
+        layout.addRow(QtWidgets.QLabel('Y-coord'), self.load_coord_btn[-1][1])
        
-        load_type.addButton(self.load_type[-1][1])
-        layout.addRow(self.load_type[-1][1])
+        load_type.addButton(self.load_type_btn[-1][1])
+        layout.addRow(self.load_type_btn[-1][1])
        
-        layout.addRow(QtWidgets.QLabel('Coord'), self.load_coord[-1][2])
+        layout.addRow(QtWidgets.QLabel('Coord'), self.load_coord_btn[-1][2])
      
         layout.addRow(QtWidgets.QLabel('Column'))
         column_load = QtWidgets.QButtonGroup(layout)
-        column_load.addButton(self.load_col[-1][0])
-        column_load.addButton(self.load_col[-1][1])
-        layout.addRow(self.load_col[-1][0], self.load_col[-1][1])
+        column_load.addButton(self.load_col_btn[-1][0])
+        column_load.addButton(self.load_col_btn[-1][1])
+        layout.addRow(self.load_col_btn[-1][0], self.load_col_btn[-1][1])
       
-        layout.addRow(QtWidgets.QLabel('Error margin'), self.load_error[-1])
+        layout.addRow(QtWidgets.QLabel('Error margin'), self.load_error_btn[-1])
        
-        layout.addRow(QtWidgets.QLabel('Add load in X direction')) 
-        layout.addRow(self.load_x_dir[-1][0], self.load_x_dir[-1][1])       
+        x_dir = QtWidgets.QButtonGroup(layout)
+        x_dir.addButton(self.load_x_dir_btn[-1][0])
+        x_dir.addButton(self.load_x_dir_btn[-1][1])
+        x_dir.addButton(self.load_x_dir_btn[-1][2])
+        layout.addRow(QtWidgets.QLabel('Add load in X direction'))
+        lay = QtWidgets.QHBoxLayout()
+        lay.addWidget(self.load_x_dir_btn[-1][0])
+        lay.addWidget(self.load_x_dir_btn[-1][1])
+        lay.addWidget(self.load_x_dir_btn[-1][2])
+        layout.addRow(lay)
 
+        y_dir = QtWidgets.QButtonGroup(layout)
+        y_dir.addButton(self.load_y_dir_btn[-1][0])
+        y_dir.addButton(self.load_y_dir_btn[-1][1])
+        y_dir.addButton(self.load_y_dir_btn[-1][2])
         layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
-        layout.addRow(self.load_y_dir[-1][0], self.load_y_dir[-1][1])
+        lay = QtWidgets.QHBoxLayout()
+        lay.addWidget(self.load_y_dir_btn[-1][0])
+        lay.addWidget(self.load_y_dir_btn[-1][1])
+        lay.addWidget(self.load_y_dir_btn[-1][2])
+        layout.addRow(lay)
 
-        layout.addRow(QtWidgets.QLabel('Force value'), self.load_value[-1])
-   
-        # load_type = QtWidgets.QButtonGroup(layout)
-        # load_label = QtWidgets.QLabel('---- Load ----')
-        # load_label.setAlignment(QtCore.Qt.AlignCenter)
-        # layout.addRow(load_label)
-        # by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
-        # load_type.addButton(by_coord_load_btn)
-        # layout.addRow(by_coord_load_btn)
-        # self.load_type.append(by_coord_load_btn)
-
-        # coord_load_x_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('X-coor'), coord_load_x_line)
-        # coord_load_y_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Y-coord'), coord_load_y_line)
-        # self.load_coord.append((coord_load_x_line, coord_load_y_line))
-
-        # by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
-        # load_type.addButton(by_column_load_btn)
-        # layout.addRow(by_column_load_btn)
-        # self.load_type.append(by_column_load_btn)
-
-        # coord_load_line = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Coord'), coord_load_line)
-        # self.load_coord.append(coord_load_line)
-        
-        # layout.addRow(QtWidgets.QLabel('Column'))
-        # column_load = QtWidgets.QButtonGroup(layout)
-        # x_by_col_load_btn = QtWidgets.QRadioButton("X")
-        # y_by_col_load_btn = QtWidgets.QRadioButton("Y")
-        # column_load.addButton(x_by_col_load_btn)
-        # column_load.addButton(y_by_col_load_btn)
-        # layout.addRow(x_by_col_load_btn, y_by_col_load_btn)
-        # self.load_col.append((x_by_col_load_btn, y_by_col_load_btn))
-
-        # erro_margin_load_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Error margin'), erro_margin_load_line)
-        # self.load_error.append(erro_margin_load_line)
-
-        # layout.addRow(QtWidgets.QLabel('Add load in X direction'))
-        # load_x_dir_line_pos = QtWidgets.QCheckBox("Positive") 
-        # load_x_dir_line_neg = QtWidgets.QCheckBox("Negative")  
-        # layout.addRow(load_x_dir_line_pos, load_x_dir_line_neg)       
-
-        # layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
-        # load_y_dir_line_pos  = QtWidgets.QCheckBox("Positive") 
-        # load_y_dir_line_neg  = QtWidgets.QCheckBox("Negative") 
-        # layout.addRow(load_y_dir_line_pos, load_y_dir_line_neg)
-
-        # self.load_x_dir.append((load_x_dir_line_pos, load_x_dir_line_neg))
-        # self.load_y_dir.append((load_y_dir_line_pos, load_y_dir_line_neg))
-
-        # load_value_line = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Force value'), load_value_line)
-        # self.load_value.append(load_value_line)
-
-        # #################
-        # load_type = QtWidgets.QButtonGroup(layout)
-        # layout.addRow(QtWidgets.QLabel('Load matrix'))
-        # self.by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
-        # load_type.addButton(self.by_coord_load_btn)
-        # layout.addRow(self.by_coord_load_btn)
-
-        # self.coord_load_x_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('X-coor'), self.coord_load_x_line)
-        # self.coord_load_y_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Y-coord'), self.coord_load_y_line)
-
-        # self.by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
-        # load_type.addButton(self.by_column_load_btn)
-        # layout.addRow(self.by_column_load_btn)
-
-        # self.coord_load_line = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Coord'), self.coord_load_line)
-        
-        # layout.addRow(QtWidgets.QLabel('Column'))
-        # column_load = QtWidgets.QButtonGroup(layout)
-        # self.x_by_col_load_btn = QtWidgets.QRadioButton("X")
-        # self.y_by_col_load_btn = QtWidgets.QRadioButton("Y")
-        # column_load.addButton(self.x_by_col_load_btn)
-        # column_load.addButton(self.y_by_col_load_btn)
-        # layout.addRow(self.x_by_col_load_btn, self.y_by_col_load_btn)
-
-        # self.erro_margin_load_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Error margin'), self.erro_margin_load_line)
-
-        # layout.addRow(QtWidgets.QLabel('Add load in X direction'))
-        # self.load_x_dir_line_pos = QtWidgets.QCheckBox("Positive") 
-        # self.load_x_dir_line_neg = QtWidgets.QCheckBox("Negative")  
-        # layout.addRow(self.load_x_dir_line_pos, self.load_x_dir_line_neg)
-
-        # layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
-        # self.load_y_dir_line_pos  = QtWidgets.QCheckBox("Positive") 
-        # self.load_y_dir_line_neg  = QtWidgets.QCheckBox("Negative") 
-        # layout.addRow(self.load_y_dir_line_pos, self.load_y_dir_line_neg)
-        # self.load_value_line  = QtWidgets.QLineEdit()
-        # layout.addRow(QtWidgets.QLabel('Force value'), self.load_value_line)
+        layout.addRow(QtWidgets.QLabel('Force value'), self.load_value_btn[-1])
 
     def set_default_load(self):
-        # FILTROS
-        # self.load_type = [] # by_coord ou by_col
-        # self.load_coord = [] # uma tupla com (x,y) ou um unico
-        # self.load_col = [] # valores None
-        # self.load_error = [] # valores None
-        # self.load_x_dir = [] # tuplas ou valores sozinhos
-        # self.load_y_dir = [] # tuplas ou valores sozinhos
-        # self.load_value = []
+        self.load_type_btn[-1][0].setChecked(True)
+        self.load_type_btn[-1][1].setChecked(False)
 
-        self.load_type[-1][0].setChecked(True)
-        self.load_type[-1][1].setChecked(False)
-
-        self.load_coord[-1][0].setText(str(self.lx))
-        self.load_coord[-1][1].setText(str(self.ly/2))
+        self.load_coord_btn[-1][0].setText(str(self.lx))
+        self.load_coord_btn[-1][1].setText(str(self.ly/2))
         
-        self.load_coord[-1][2].setDisabled(True)
-        self.load_col[-1][0].setDisabled(True)
-        self.load_col[-1][1].setDisabled(True)
-        self.load_error[-1].setDisabled(True)
+        self.load_coord_btn[-1][2].setDisabled(True)
+        self.load_col_btn[-1][0].setDisabled(True)
+        self.load_col_btn[-1][1].setDisabled(True)
+        self.load_error_btn[-1].setDisabled(True)
 
-        self.load_x_dir[-1][0].setChecked(True)
-        self.load_value[-1].setText('100')
+        self.load_x_dir_btn[-1][0].setChecked(True)
+        self.load_y_dir_btn[-1][0].setChecked(True)
+        self.load_value_btn[-1].setText('100')
 
-        self.load_type[-1][0].toggled.connect(self.load_coord[-1][0].setEnabled)  
-        self.load_type[-1][0].toggled.connect(self.load_coord[-1][1].setEnabled)
-        self.load_type[-1][0].toggled.connect(self.load_col[-1][0].setDisabled)
-        self.load_type[-1][0].toggled.connect(self.load_col[-1][1].setDisabled)
-        self.load_type[-1][0].toggled.connect(self.load_error[-1].setDisabled)
-        self.load_type[-1][0].toggled.connect(self.load_coord[-1][2].setDisabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][0].setEnabled)  
+        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][1].setEnabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_col_btn[-1][0].setDisabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_col_btn[-1][1].setDisabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_error_btn[-1].setDisabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][2].setDisabled)
 
-        self.load_type[-1][1].toggled.connect(self.load_coord[-1][0].setDisabled)  
-        self.load_type[-1][1].toggled.connect(self.load_coord[-1][1].setDisabled)
-        self.load_type[-1][1].toggled.connect(self.load_col[-1][0].setEnabled)
-        self.load_type[-1][1].toggled.connect(self.load_col[-1][1].setEnabled)
-        self.load_type[-1][1].toggled.connect(self.load_error[-1].setEnabled)
-        self.load_type[-1][1].toggled.connect(self.load_coord[-1][2].setEnabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][0].setDisabled)  
+        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][1].setDisabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_col_btn[-1][0].setEnabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_col_btn[-1][1].setEnabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_error_btn[-1].setEnabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][2].setEnabled)
 
-    def add_param_constraint(self, layout):
-        layout.addRow(QtWidgets.QLabel('Constraints'))
+    def reset_load_list(self):
+        self.load_type_btn = [] # by_coord ou by_col
+        self.load_coord_btn = [] # uma tupla com (x,y) ou um unico
+        self.load_col_btn = [] # valores None
+        self.load_error_btn = [] # valores None
+        self.load_x_dir_btn = [] # tuplas ou valores sozinhos
+        self.load_y_dir_btn = [] # tuplas ou valores sozinhos
+        self.load_value_btn = []
+
+        # values load
+        self.by_coord = [] # by_coord ou by_col
+        self.load_coord = [] # uma tupla com (x,y) ou um unico
+        self.x_load_col = [] # valores None
+        self.load_error = [] # valores None
+        self.load_x_dir = [] # tuplas ou valores sozinhos
+        self.load_y_dir = [] # tuplas ou valores sozinhos
+        self.load_value = []
+
+    def check_load_param(self):
+        self.warnings_load = []
+        for i in range(len(self.load_type_btn)):
+            if self.load_type_btn[i][0].isChecked():
+                self.check_param(self.warnings_load, self.load_coord_btn[i][0].text(), [int, float], 'x coordinate must be an integer or float')
+                self.check_param(self.warnings_load, self.load_coord_btn[i][1].text(), [int, float], 'y coordinate must be an integer or float')
+            else:
+                if not (self.load_col_btn[-1][0].isChecked()) and not (self.load_col_btn[-1][1].isChecked()):
+                    warning = QtWidgets.QLabel("select column")
+                    self.warnings_load.append(warning)
+                self.check_param(self.warnings_load, self.load_coord_btn[i][2].text(), [int, float], 'coordinate must be an integer or float')
+                self.check_param(self.warnings_load, self.load_error_btn[i].text(), [int, float], 'error margin must be an integer or float')
+            
+            self.check_param(self.warnings_load, self.load_value_btn[i].text(), [int, float], 'load value must be an integer or float')
+
+    def check_load_values(self):
+        self.warnings_load = []
+        for i in range(len(self.load_type_btn)):
+            if self.load_type_btn[i][0].isChecked():
+                if ast.literal_eval(self.load_coord_btn[i][0].text()) > self.lx:
+                    warning = QtWidgets.QLabel("x coordinate exceeds mesh boundaries")
+                    self.warnings_load.append(warning)
+                if ast.literal_eval(self.load_coord_btn[i][1].text()) > self.ly:
+                    warning = QtWidgets.QLabel("y coordinate exceeds mesh boundaries")
+                    self.warnings_load.append(warning)
+            else:
+                if self.load_col_btn[-1][0].isChecked():
+                    if ast.literal_eval(self.load_coord_btn[i][2].text()) > self.lx:
+                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
+                        self.warnings_load.append(warning)
+                else:
+                    if ast.literal_eval(self.load_coord_btn[i][2].text()) > self.ly:
+                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
+                        self.warnings_load.append(warning)
+
+    def update_param_load(self):
+        for i in range(len(self.load_type_btn)):
+            by_coord = True if self.load_type_btn[i][0].isChecked() else False
+            self.by_coord.append(by_coord)
+            if by_coord:
+                x = ast.literal_eval(self.load_coord_btn[i][0].text())
+                y = ast.literal_eval(self.load_coord_btn[i][1].text())
+                self.load_coord.append([x,y])
+                self.x_load_col.append(None)
+                self.load_error.append(None)
+            else:
+                coord = ast.literal_eval(self.load_coord_btn[i][2].text())
+                self.load_coord.append(coord)
+                col = 1 if self.load_col_btn[i][0].isChecked() else 2
+                self.x_load_col.append(col)
+                error = ast.literal_eval(self.load_error_btn[i].text())
+                self.load_error.append(error)
+            
+            x = 1 if self.load_x_dir_btn[i][0].isChecked() else -1 if self.load_x_dir_btn[i][1].isChecked() else 0
+            self.load_x_dir.append(x)
+
+            y = 1 if self.load_y_dir_btn[i][0].isChecked() else -1 if self.load_x_dir_btn[i][1].isChecked() else 0
+            self.load_y_dir.append(y)
+
+            self.load_value = ast.literal_eval(self.load_value_btn[i].text())
+
+    def convert_load_to_dict(self):
+        # list of dicts
+        self.load = []
+        for i in range(len(self.load_type_btn)):
+            if self.by_coord[i]:
+                aux_key = ["x_coord", "y_coord", "x_direc", "y_direc", "force"]
+                aux_val = [self.load_coord[i][0], self.load_coord[i][1], self.load_x_dir[i], self.load_y_dir[i], self.load_value[i]]
+                #dicti = {"x_coord":self.load_coord[i][0], "y_coord":self.load_coord[i][1], "x_direc":self.load_x_dir[i], "y_direc":self.load_y_dir[i], "force":self.load_value[i]}
+            else:
+                aux_key = ["coord", "axis", "eps", "x_direc", "y_direc", "force"]
+                aux_val = [self.load_coord[i], self.load_coord[i], self.load_error[i], self.load_x_dir[i], self.load_y_dir[i], self.load_value[i]]
+                #dicti = {"coord":self.load_coord[i], "axis":self.load_coord[i], "eps":self.load_error[i], "x_direc":self.load_x_dir[i], "y_direc":self.load_y_dir[i], "force":self.load_value[i]}
+
+            dicti = dict(zip(aux_key, aux_val))
+            self.load.append(dicti)
+
+# Node contrain param
+    def add_node_constrain(self):
+        pass
+
+# Node constraint param
+    def create_constraint(self):
         self.area_check = QtWidgets.QCheckBox("area")
-        layout.addRow(self.area_check)
         self.min_area_line  = QtWidgets.QLineEdit()
         self.max_area_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_area_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_area_line)
-
+ 
         self.r_ratio_check = QtWidgets.QCheckBox("R ratio")
-        layout.addRow(self.r_ratio_check)
         self.min_r_ratio_line  = QtWidgets.QLineEdit()
         self.max_r_ratio_line  = QtWidgets.QLineEdit()
-        layout.addRow(QtWidgets.QLabel('min'), self.min_r_ratio_line)
-        layout.addRow(QtWidgets.QLabel('max'), self.max_r_ratio_line)
 
         self.compliance_check = QtWidgets.QCheckBox("compliance")
-        layout.addRow(self.compliance_check)
         self.min_compliance_line  = QtWidgets.QLineEdit()
         self.max_compliance_line  = QtWidgets.QLineEdit()
         self.freq_compliance_line  = QtWidgets.QLineEdit()
+
+        self.local_ep_check = QtWidgets.QCheckBox("local_ep")
+        self.min_local_ep_line  = QtWidgets.QLineEdit()
+        self.max_local_ep_line  = QtWidgets.QLineEdit()
+        self.freq_local_ep_line  = QtWidgets.QLineEdit()
+
+        self.local_ki_check = QtWidgets.QCheckBox("local_ki")
+        self.min_local_ki_line  = QtWidgets.QLineEdit()
+        self.max_local_ki_line  = QtWidgets.QLineEdit()
+        self.freq_local_ki_line  = QtWidgets.QLineEdit()
+
+        self.local_r_check = QtWidgets.QCheckBox("local_r")
+        self.min_local_r_line  = QtWidgets.QLineEdit()
+        self.max_local_r_line  = QtWidgets.QLineEdit()
+        self.freq_local_r_line  = QtWidgets.QLineEdit()
+
+    def add_constraint_param(self, layout):
+        label = QtWidgets.QLabel('---- Constraint ----')
+        layout.addRow(label)
+        layout.addRow(self.area_check)
+        layout.addRow(QtWidgets.QLabel('min'), self.min_area_line)
+        layout.addRow(QtWidgets.QLabel('max'), self.max_area_line)
+
+        layout.addRow(self.r_ratio_check)
+        layout.addRow(QtWidgets.QLabel('min'), self.min_r_ratio_line)
+        layout.addRow(QtWidgets.QLabel('max'), self.max_r_ratio_line)
+
+        layout.addRow(self.compliance_check)
         layout.addRow(QtWidgets.QLabel('min'), self.min_compliance_line)
         layout.addRow(QtWidgets.QLabel('max'), self.max_compliance_line)
         layout.addRow(QtWidgets.QLabel('freq'), self.freq_compliance_line)
 
-        self.local_ep_check = QtWidgets.QCheckBox("local_ep")
         layout.addRow(self.local_ep_check)
-        self.min_local_ep_line  = QtWidgets.QLineEdit()
-        self.max_local_ep_line  = QtWidgets.QLineEdit()
-        self.freq_local_ep_line  = QtWidgets.QLineEdit()
         layout.addRow(QtWidgets.QLabel('min'), self.min_local_ep_line)
         layout.addRow(QtWidgets.QLabel('max'), self.max_local_ep_line)
         layout.addRow(QtWidgets.QLabel('freq'), self.freq_local_ep_line)
 
-        self.local_ki_check = QtWidgets.QCheckBox("local_ki")
         layout.addRow(self.local_ki_check)
-        self.min_local_ki_line  = QtWidgets.QLineEdit()
-        self.max_local_ki_line  = QtWidgets.QLineEdit()
-        self.freq_local_ki_line  = QtWidgets.QLineEdit()
         layout.addRow(QtWidgets.QLabel('min'), self.min_local_ki_line)
         layout.addRow(QtWidgets.QLabel('max'), self.max_local_ki_line)
         layout.addRow(QtWidgets.QLabel('freq'), self.freq_local_ki_line)
 
-        self.local_r_check = QtWidgets.QCheckBox("local_r")
         layout.addRow(self.local_r_check)
-        self.min_local_r_line  = QtWidgets.QLineEdit()
-        self.max_local_r_line  = QtWidgets.QLineEdit()
-        self.freq_local_r_line  = QtWidgets.QLineEdit()
         layout.addRow(QtWidgets.QLabel('min'), self.min_local_r_line)
         layout.addRow(QtWidgets.QLabel('max'), self.max_local_r_line)
         layout.addRow(QtWidgets.QLabel('freq'), self.freq_local_r_line)
        
+    def set_default_constraint(self):
+        self.area_check.setChecked(True)
+        self.min_area_line.setText('30')
+ 
+        self.min_r_ratio_line.setDisabled(True)
+        self.max_r_ratio_line.setDisabled(True)
+
+        self.min_compliance_line.setDisabled(True)
+        self.max_compliance_line.setDisabled(True)
+        self.freq_compliance_line.setDisabled(True)
+
+        self.min_local_ep_line.setDisabled(True)
+        self.max_local_ep_line.setDisabled(True)
+        self.freq_local_ep_line.setDisabled(True)
+
+        self.min_local_ki_line.setDisabled(True)
+        self.max_local_ki_line.setDisabled(True)
+        self.freq_local_ki_line.setDisabled(True)
+
+        self.min_local_r_line.setDisabled(True)
+        self.max_local_r_line.setDisabled(True)
+        self.freq_local_r_line.setDisabled(True)
+
+        self.area_check.toggled.connect(self.min_area_line.setEnabled)
+        self.area_check.toggled.connect(self.max_area_line.setEnabled)
+
+        self.r_ratio_check.toggled.connect(self.min_r_ratio_line.setEnabled)
+        self.r_ratio_check.toggled.connect(self.max_r_ratio_line.setEnabled)
+
+        self.local_r_check.toggled.connect(self.min_local_r_line.setEnabled)
+        self.local_r_check.toggled.connect(self.max_local_r_line.setEnabled)
+        self.local_r_check.toggled.connect(self.freq_local_r_line.setEnabled)
+
+        self.compliance_check.toggled.connect(self.min_compliance_line.setEnabled)
+        self.compliance_check.toggled.connect(self.max_compliance_line.setEnabled)
+        self.compliance_check.toggled.connect(self.freq_compliance_line.setEnabled)
+
+        self.local_ep_check.toggled.connect(self.min_local_ep_line.setEnabled)
+        self.local_ep_check.toggled.connect(self.max_local_ep_line.setEnabled)
+        self.local_ep_check.toggled.connect(self.freq_local_ep_line.setEnabled)
+
+        self.local_ki_check.toggled.connect(self.min_local_ki_line.setEnabled)
+        self.local_ki_check.toggled.connect(self.max_local_ki_line.setEnabled)
+        self.local_ki_check.toggled.connect(self.freq_local_ki_line.setEnabled)
+
+         
+
+
 class ParametersText():
     def __init__(self):
         self.editor = QtWidgets.QLabel()
