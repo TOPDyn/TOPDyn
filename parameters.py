@@ -44,11 +44,12 @@ class Parameters():
         self.freq = ast.literal_eval(self.freq_spin.text())
 
         self.freqrsp = self.freqrsp_check.checkState()
-        self.freq_range = ast.literal_eval(self.freq_range_spin.text())
+        if self.freqrsp:
+            self.freq_range = ast.literal_eval(self.freq_range_spin.text())
                 
         self.save = self.save_check.checkState()
 
-    def check_param(self, warnings, input_val, types, war):
+    def check_param(self, warnings, input_val, types, war, constraint=False):
         try:
             if input_val:
                 for type in types:
@@ -56,10 +57,14 @@ class Parameters():
             else:
                 warning = QtWidgets.QLabel(war)
                 warnings.append(warning)
+            if constraint:
+                return True
 
         except ValueError:
             warning = QtWidgets.QLabel(war)
             warnings.append(warning)
+            if constraint:
+                return False
         
     def check_params(self):
         self.warnings = []
@@ -87,8 +92,9 @@ class Parameters():
         self.check_param(self.warnings, self.factor_spin.text(), [int, float], 'Factor must be an integer or float')
 
         self.check_param(self.warnings, self.freq_spin.text(), [int], 'Frequency must be an integer')
-
-        self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
+        
+        if self.freqrsp_check.isChecked():
+            self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
 
 class ParametersOpt(Parameters):
     def __init__(self):
@@ -239,28 +245,27 @@ class ParametersOpt(Parameters):
         self.freq_spin = QtWidgets.QLineEdit()
 
         self.func_name_box = QtWidgets.QComboBox()
-        self.func_name_box.addItem("compliance")
-        self.func_name_box.addItem("input_power")
-        self.func_name_box.addItem("elastic_potential_energy")
-        self.func_name_box.addItem("kinetic_energy")
-        self.func_name_box.addItem("r_ratio")
-        self.func_name_box.addItem("local_ep")
-        self.func_name_box.addItem("local_ki")
-        self.func_name_box.addItem("local_r")
+        self.func_name_box.addItem("Compliance")
+        self.func_name_box.addItem("Input power")
+        self.func_name_box.addItem("Elastic Potential Energy")
+        self.func_name_box.addItem("Kinetic Energy")
+        self.func_name_box.addItem("Strain-to-kinetic energy ratio")
+        self.func_name_box.addItem("Local elastic potential energy")
+        self.func_name_box.addItem("Local kinetic energy")
+        self.func_name_box.addItem("Local strain-to-kinetic energy ratio")
 
         self.func_name2_box = QtWidgets.QComboBox()
         self.func_name2_box.addItem("None")
-        self.func_name2_box.addItem("compliance")
-        self.func_name2_box.addItem("input_power")
-        self.func_name2_box.addItem("elastic_potential_energy")
-        self.func_name2_box.addItem("kinetic_energy")
-        self.func_name2_box.addItem("r_ratio")
-        self.func_name2_box.addItem("local_ep")
-        self.func_name2_box.addItem("local_ki")
-        self.func_name2_box.addItem("local_r")
+        self.func_name2_box.addItem("Compliance")
+        self.func_name2_box.addItem("Input power")
+        self.func_name2_box.addItem("Elastic Potential Energy")
+        self.func_name2_box.addItem("Kinetic Energy")
+        self.func_name2_box.addItem("Strain-to-kinetic energy ratio")
+        self.func_name2_box.addItem("Local elastic potential energy")
+        self.func_name2_box.addItem("Local kinetic energy")
+        self.func_name2_box.addItem("Local strain-to-kinetic energy ratio")
 
         self.freq2_spin = QtWidgets.QLineEdit()
-        #self.freq2_spin.setDisabled(True)
 
         self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
         self.freq_range_spin = QtWidgets.QLineEdit()
@@ -388,11 +393,13 @@ class ParametersOpt(Parameters):
         self.func_name = str(self.func_name_box.currentText())
 
         self.func_name2 = str(self.func_name2_box.currentText())
-        self.freq2 = ast.literal_eval(self.freq2_spin.text())
-
-        self.alpha_plot = ast.literal_eval(self.alpha_plot_spin.text())
-        self.beta_plot  = ast.literal_eval(self.beta_plot_spin.text())
-        self.eta_plot   = ast.literal_eval(self.eta_plot_spin.text())
+        if self.func_name2 is not None:
+            self.freq2 = ast.literal_eval(self.freq2_spin.text())
+        
+        if self.freqrsp:
+            self.alpha_plot = ast.literal_eval(self.alpha_plot_spin.text())
+            self.beta_plot  = ast.literal_eval(self.beta_plot_spin.text())
+            self.eta_plot   = ast.literal_eval(self.eta_plot_spin.text())
 
         self.max_iter = ast.literal_eval(self.max_iter_spin.text())
         self.save = self.save_check.checkState()
@@ -478,26 +485,28 @@ class ParametersOpt(Parameters):
         self.modes_spin.setText(str(self.modes))
         self.const_func_spin.setText(str(self.const_func))
         self.n1_spin.setText(str(self.n1))
-        self.freq_spin.setText(str(self.freq))
-        self.freq2_spin.setText(str(self.freq2))
+        self.freq_spin.setText(str(self.freq))       
         
-        self.freq_range_spin.setText(str(self.freq_range))
-        self.alpha_plot_spin.setText(str(self.alpha_plot))
-        self.beta_plot_spin.setText(str(self.beta_plot))
-        self.eta_plot_spin.setText(str(self.eta_plot))
-
         self.max_iter_spin.setText(str(self.max_iter))
         self.factor_spin.setText(str(self.factor))
 
         self.func_name_box.setCurrentText(self.func_name)  
 
         if self.freqrsp:
+            self.freq_range_spin.setText(str(self.freq_range))
+            self.alpha_plot_spin.setText(str(self.alpha_plot))
+            self.beta_plot_spin.setText(str(self.beta_plot))
+            self.eta_plot_spin.setText(str(self.eta_plot))
             self.freqrsp_check.setChecked(True) 
             self.freq_range_spin.setEnabled(True)
             self.alpha_plot_spin.setEnabled(True)
             self.beta_plot_spin.setEnabled(True)
             self.eta_plot_spin.setEnabled(True)
         else:
+            self.freq_range_spin.setText('[5,500,5]')
+            self.alpha_plot_spin.setText('0')
+            self.beta_plot_spin.setText('1e-6')
+            self.eta_plot_spin.setText('0')
             self.freq_range_spin.setDisabled(True)
             self.alpha_plot_spin.setDisabled(True)
             self.beta_plot_spin.setDisabled(True)
@@ -506,6 +515,8 @@ class ParametersOpt(Parameters):
         if self.mesh_deform:
             self.mesh_deform_check.setChecked(True)
             self.factor_spin.setEnabled(True)
+        else:
+            self.factor_spin.setDisabled(True)
 
         if self.save:
             self.save_check.setChecked(True)
@@ -514,8 +525,12 @@ class ParametersOpt(Parameters):
             self.dens_filter_check.setChecked(True)
 
         if self.func_name2 != 'None':
+            self.freq2_spin.setText(str(self.freq2))
             self.freq2_spin.setEnabled(True)
-            self.func_name2_box.setCurrentText(self.func_name2)        
+            self.func_name2_box.setCurrentText(self.func_name2)
+        else:
+            self.freq2_spin.setDisabled(True)
+            self.freq2_spin.setText('0')  
 
         self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
         self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
@@ -550,11 +565,10 @@ class ParametersOpt(Parameters):
 
         self.check_param(self.warnings, self.max_iter_spin.text(), [int, float], 'max_iter must be an integer or float')
 
-        self.check_param(self.warnings, self.alpha_plot_spin.text(), [int, float], 'alpha_plot must be an integer or float')
-
-        self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'beta_plot must be an integer or float')
-
-        self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'eta_plot must be an integer or float')
+        if self.freqrsp_check.isChecked():
+            self.check_param(self.warnings, self.alpha_plot_spin.text(), [int, float], 'alpha_plot must be an integer or float')
+            self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'beta_plot must be an integer or float')
+            self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'eta_plot must be an integer or float')
 
 # Load param
     def create_param_load(self):
@@ -743,7 +757,7 @@ class ParametersOpt(Parameters):
             y = 1 if self.load_y_dir_btn[i][0].isChecked() else -1 if self.load_x_dir_btn[i][1].isChecked() else 0
             self.load_y_dir.append(y)
 
-            self.load_value = ast.literal_eval(self.load_value_btn[i].text())
+            self.load_value.append(ast.literal_eval(self.load_value_btn[i].text()))
 
     def convert_load_to_dict(self):
         # list of dicts
@@ -767,30 +781,30 @@ class ParametersOpt(Parameters):
 
 # Node constraint param
     def create_constraint(self):
-        self.area_check = QtWidgets.QCheckBox("area")
+        self.area_check = QtWidgets.QCheckBox("Area")
         self.min_area_line  = QtWidgets.QLineEdit()
         self.max_area_line  = QtWidgets.QLineEdit()
  
-        self.r_ratio_check = QtWidgets.QCheckBox("R ratio")
+        self.r_ratio_check = QtWidgets.QCheckBox("Strain-to-kinetic energy ratio")
         self.min_r_ratio_line  = QtWidgets.QLineEdit()
         self.max_r_ratio_line  = QtWidgets.QLineEdit()
 
-        self.compliance_check = QtWidgets.QCheckBox("compliance")
+        self.compliance_check = QtWidgets.QCheckBox("Compliance")
         self.min_compliance_line  = QtWidgets.QLineEdit()
         self.max_compliance_line  = QtWidgets.QLineEdit()
         self.freq_compliance_line  = QtWidgets.QLineEdit()
 
-        self.local_ep_check = QtWidgets.QCheckBox("local_ep")
+        self.local_ep_check = QtWidgets.QCheckBox("Local elastic potential energy")
         self.min_local_ep_line  = QtWidgets.QLineEdit()
         self.max_local_ep_line  = QtWidgets.QLineEdit()
         self.freq_local_ep_line  = QtWidgets.QLineEdit()
 
-        self.local_ki_check = QtWidgets.QCheckBox("local_ki")
+        self.local_ki_check = QtWidgets.QCheckBox("Local kinetic energy")
         self.min_local_ki_line  = QtWidgets.QLineEdit()
         self.max_local_ki_line  = QtWidgets.QLineEdit()
         self.freq_local_ki_line  = QtWidgets.QLineEdit()
 
-        self.local_r_check = QtWidgets.QCheckBox("local_r")
+        self.local_r_check = QtWidgets.QCheckBox("Local strain-to-kinetic energy ratio")
         self.min_local_r_line  = QtWidgets.QLineEdit()
         self.max_local_r_line  = QtWidgets.QLineEdit()
         self.freq_local_r_line  = QtWidgets.QLineEdit()
@@ -871,8 +885,120 @@ class ParametersOpt(Parameters):
         self.local_ki_check.toggled.connect(self.max_local_ki_line.setEnabled)
         self.local_ki_check.toggled.connect(self.freq_local_ki_line.setEnabled)
 
-         
+    def check_min_max_constraint(self, maxi, mini, func):
+        if maxi.text() == mini.text():
+            self.warnings_constraint.append(QtWidgets.QLabel(func + " - Minimum and maximum can't have same value"))
 
+    def check_constraint(self):
+        self.warnings_constraint = []
+
+        if self.area_check.isChecked():
+            self.check_param(self.warnings_constraint, self.min_area_line.text(), [int, float], 'Area - min value must be an integer or float')
+            if self.max_area_line.text():
+                aux = self.check_param(self.warnings_constraint, self.max_area_line.text(), [int, float], 'Area - max value must be an integer or float', constraint=True)
+                if aux:
+                    self.check_min_max_constraint(self.max_area_line, self.min_area_line, 'Area')
+                   
+        if self.r_ratio_check.isChecked():
+            self.check_param(self.warnings_constraint, self.min_r_ratio_line.text(), [int, float], 'Strain-to-kinetic energy ratio - min value must be an integer or float')
+            if self.max_r_ratio_line.text():
+                self.check_param(self.warnings_constraint, self.max_r_ratio_line.text(), [int, float], 'Strain-to-kinetic energy ratio - max value must be an integer or float')
+
+        if self.compliance_check.isChecked():
+            self.check_param(self.warnings_constraint, self.min_compliance_line.text(), [int, float], 'Compliance - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_compliance_line.text(), [int, float], 'Compliance - frequency must be an integer or float')
+            if self.max_compliance_line.text():
+                self.check_param(self.warnings_constraint, self.max_compliance_line.text(), [int, float], 'Compliance - maximum value must be an integer or float')
+
+        if self.local_ep_check.isChecked():
+            self.check_param(self.warnings_constraint, self.min_local_ep_line.text(), [int, float], 'Local elastic potential energy - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_local_ep_line.text(), [int, float], 'Local elastic potential energy - frequency must be an integer or float')
+            if self.max_local_ep_line.text():
+                self.check_param(self.warnings_constraint, self.max_local_ep_line.text(), [int, float], 'Local elastic potential energy - maximum value must be an integer or float')
+
+        if self.local_ki_check.isChecked():
+            self.check_param(self.warnings_constraint, self.min_local_ki_line.text(), [int, float], 'Local kinetic energy - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_local_ki_line.text(), [int, float], 'Local kinetic energy - frequency must be an integer or float')
+            if self.max_local_ki_line.text():
+                self.check_param(self.warnings_constraint, self.max_local_ki_line.text(), [int, float], 'Local kinetic energy - maximum value must be an integer or float')
+
+        if self.local_r_check.isChecked():
+            self.check_param(self.warnings_constraint, self.min_local_r_line.text(), [int, float], 'Local strain-to-kinetic energy ratio - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_local_r_line.text(), [int, float], 'Local strain-to-kinetic energy ratio - frequency must be an integer or float')
+            if self.max_local_r_line.text():
+                self.check_param(self.warnings_constraint, self.max_local_r_line.text(), [int, float], 'Local strain-to-kinetic energy ratio - maximum value must be an integer or float')
+
+    def update_constraint(self):
+        self.area = self.area_check.isChecked()
+        if self.area:
+            self.min_area = ast.literal_eval(self.min_area_line.text())
+            self.max_area = ast.literal_eval(self.max_area_line.text()) if self.max_area_line.text() else None
+        
+        self.r_ratio = self.r_ratio_check.isChecked()
+        if self.r_ratio:
+            self.min_r_ratio = ast.literal_eval(self.min_r_ratio_line.text())
+            self.max_r_ratio = ast.literal_eval(self.max_r_ratio_line.text()) if self.max_r_ratio_line.text() else None
+
+        self.compliance = self.compliance_check.isChecked()
+        if self.compliance:
+            self.min_compliance = ast.literal_eval(self.min_compliance_line.text())
+            self.max_compliance = ast.literal_eval(self.max_compliance_line.text()) if self.max_compliance_line.text() else None
+            self.freq_compliance = ast.literal_eval(self.freq_compliance_line.text())
+
+        self.local_ep = self.local_ep_check.isChecked()
+        if self.local_ep:
+            self.min_local_ep = ast.literal_eval(self.min_local_ep_line.text())
+            self.max_local_ep = ast.literal_eval(self.max_local_ep_line.text()) if self.max_local_ep_line.text() else None
+            self.freq_local_ep = ast.literal_eval(self.freq_local_ep_line.text()) if self.freq_local_ep_line.text() else None
+
+        self.local_ki = self.local_ki_check.isChecked()
+        if self.local_ki:
+            self.min_local_ki = ast.literal_eval(self.min_local_ki_line.text())
+            self.max_local_ki = ast.literal_eval(self.max_local_ki_line.text()) if self.max_local_ki_line.text() else None
+            self.freq_local_ki = ast.literal_eval(self.freq_local_ki_line.text())
+
+        self.local_r = self.local_r_check.isChecked()
+        if self.local_r:
+            self.min_local_r = ast.literal_eval(self.min_local_r_line.text())
+            self.max_local_r = ast.literal_eval(self.max_local_r_line.text()) if self.max_local_r_line.text() else None
+            self.freq_local_r = ast.literal_eval(self.freq_local_r_line.text())
+
+    def upd_constr_func(self, func, mini, maxi, freq=None):
+        self.constr_func.append(func)
+        if freq is not None:
+            self.constr_values.append([mini, freq])
+        else:
+            self.constr_values.append(mini)
+        if maxi is not None:
+            self.constr_func.append(func)
+            if freq is not None:
+                self.constr_values[-1][0] *= -1
+                self.constr_values.append([maxi, freq])
+            else:
+                self.constr_values[-1] *= -1
+                self.constr_values.append(maxi)
+
+    def constraint_to_list(self):
+        self.constr_func = []
+        self.constr_values = []
+
+        if self.area:
+            self.upd_constr_func("area", self.min_area, self.max_area)
+         
+        if self.r_ratio:
+            self.upd_constr_func("r_ratio", self.min_r_ratio, self.max_r_ratio)
+
+        if self.compliance:
+            self.upd_constr_func("compliance", self.min_compliance, self.max_compliance, self.freq_compliance)
+
+        if self.local_ep:
+            self.upd_constr_func("local_ep", self.min_local_ep, self.max_local_ep, self.freq_local_ep)
+
+        if self.local_ki:
+            self.upd_constr_func("local_ki", self.min_local_ki, self.max_local_ki, self.freq_local_ki)
+
+        if self.local_r:
+            self.upd_constr_func("local_r", self.min_local_r, self.max_local_r, self.freq_local_r)
 
 class ParametersText():
     def __init__(self):

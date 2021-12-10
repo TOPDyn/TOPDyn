@@ -225,8 +225,6 @@ class SecondWindow(QtWidgets.QDialog):
             else:
                 self.param.update_param_load()
                 self.ui_add_node_constrain()
-        #TODO: Verificar se os valroes passados estão corretos
-        #TODO: Salvar os valores passados
 
     def go_to_constraint(self):
         #TODO: Verificar se os valores passados estão corretos 
@@ -263,20 +261,22 @@ class SecondWindow(QtWidgets.QDialog):
         self.param.add_param_load(self.left_widget.layout()) #TODO: Colocar o correto aqui
 
     def run(self):
-        #TODO: verificar se os parametros de constraint estao corretos
-
-        if len(self.param.warnings) != 0:
-            dlg = PopUp(self.param.warnings)      
+        self.param.check_constraint()
+        if len(self.param.warnings_constraint) != 0:
+            dlg = PopUp(self.param.warnings_constraint)      
             dlg.exec_()
         else:
             self.button_stop.setEnabled(True)
             self.button_run.setEnabled(False)
+    
+            self.param.update_constraint()
+            self.param.constraint_to_list()
+            self.param.convert_load_to_dict()
             
             self._counter_button_run += 1
             if self._counter_button_run == 1:
                 self.right_widget.setCurrentIndex(1)
                 print("entrou")
-            #TODO:Salvar os paramentros de constraint
             #TODO:Salvar os parametros de Bound. Cond. para ficar no formato já utilizado
 
     # ------- functions -------     
