@@ -145,7 +145,7 @@ class SecondWindow(QtWidgets.QDialog):
             QtWidgets.QWidget().setLayout(self.left_widget.layout())
         self.left_widget.setLayout(new_layout)
 
-    def ui_add_load(self):
+    def ui_add_load(self, update=False):
         ui_layout = QtWidgets.QFormLayout()
         self.btn_back_param = QtWidgets.QPushButton('Back')
         self.btn_back_param.clicked.connect(self.back_to_param)
@@ -158,10 +158,17 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_add_new_load = QtWidgets.QPushButton('Add new load')
         self.btn_add_new_load.clicked.connect(self.add_new_load)
         ui_layout.addRow(self.btn_add_new_load)
-        self.param.reset_load_list()
-        self.param.create_load_btn()
-        self.param.set_default_load()
-        self.param.add_load_btn(ui_layout)
+
+        self.btn_reset_load = QtWidgets.QPushButton('Reset Load')
+        self.btn_reset_load.clicked.connect(self.reset_load)
+        ui_layout.addRow(self.btn_reset_load)
+        if update:
+            self.param.rewrite_load(ui_layout)
+        else:
+            self.param.reset_load_list()
+            self.param.create_load_btn()
+            self.param.set_default_load()
+            self.param.add_load_btn(ui_layout)
         self.upd_left_layout(ui_layout)
 
     def ui_add_node_constrain(self):
@@ -177,6 +184,11 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_add_new_node_constrain = QtWidgets.QPushButton('Constrain new node displacement')
         self.btn_add_new_node_constrain.clicked.connect(self.add_new_node_constrain)
         ui_layout.addRow(self.btn_add_new_node_constrain)
+
+        self.btn_reset_node_constrain = QtWidgets.QPushButton('Reset constraint node displacement')
+        self.btn_reset_node_constrain.clicked.connect(self.reset_node_constrain)
+        ui_layout.addRow(self.btn_reset_node_constrain)
+
         self.param.reset_node_constrain_list()
         self.param.create_node_constrain_btn()
         self.param.set_default_node_constrain()
@@ -262,7 +274,7 @@ class SecondWindow(QtWidgets.QDialog):
         self.upd_left_layout(left_layout)
 
     def back_to_load(self):
-        self.ui_add_load() # TODO: Precisa mostrar os valores salvos
+        self.ui_add_load(update=True) # TODO: Precisa mostrar os valores salvos
     
     def back_to_node_constrain(self):
         self.ui_add_node_constrain()
@@ -276,6 +288,12 @@ class SecondWindow(QtWidgets.QDialog):
         self.param.create_node_constrain_btn()
         self.param.set_default_node_constrain()
         self.param.add_node_constrain_btn(self.left_widget.layout()) #TODO: Adiciona um novo esquema
+
+    def reset_load(self):
+        self.ui_add_load()
+
+    def reset_node_constrain(self):
+        self.ui_add_node_constrain()
 
     def run(self):
         self.param.check_constraint()

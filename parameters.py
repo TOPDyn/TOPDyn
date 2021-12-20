@@ -658,7 +658,7 @@ class ParametersOpt(Parameters):
         load_type.addButton(self.load_type_btn[-1][0])
         layout.addRow(self.load_type_btn[-1][0])
        
-        layout.addRow(QtWidgets.QLabel('X-coor'), self.load_coord_btn[-1][0])
+        layout.addRow(QtWidgets.QLabel('X-coord'), self.load_coord_btn[-1][0])
         layout.addRow(QtWidgets.QLabel('Y-coord'), self.load_coord_btn[-1][1])
        
         load_type.addButton(self.load_type_btn[-1][1])
@@ -728,23 +728,76 @@ class ParametersOpt(Parameters):
         self.load_type_btn[-1][1].toggled.connect(self.load_error_btn[-1].setEnabled)
         self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][2].setEnabled)
 
-    def reset_load_list(self):
-        self.load_type_btn = []
-        self.load_coord_btn = []
-        self.load_col_btn = []
-        self.load_error_btn = []
-        self.load_x_dir_btn = []
-        self.load_y_dir_btn = []
-        self.load_value_btn = []
+    def update_default_load(self, ind):
+        self.load_type_btn[ind][0].setChecked(self.load_by_coord[ind])
+        self.load_type_btn[ind][1].setChecked(not self.load_by_coord[ind])
 
-        # values load
-        self.load_by_coord = []
-        self.load_coord = []
-        self.x_load_col = []
-        self.load_error = []
-        self.load_x_dir = []
-        self.load_y_dir = []
-        self.load_value = []
+        if self.load_by_coord[ind]:
+            self.load_coord_btn[ind][0].setText(str(self.load_coord[ind][0]))
+            self.load_coord_btn[ind][1].setText(str(self.load_coord[ind][1]))
+        
+            self.load_coord_btn[ind][2].setDisabled(True)
+            self.load_col_btn[ind][0].setDisabled(True)
+            self.load_col_btn[ind][1].setDisabled(True)
+            self.load_error_btn[ind].setDisabled(True)
+        else:
+            self.load_coord_btn[ind][0].setDisabled(True)
+            self.load_coord_btn[ind][1].setDisabled(True)
+
+            self.load_coord_btn[ind][2].setText(str(self.load_coord[ind]))
+            col = True if self.x_load_col[ind] else False
+            self.load_col_btn[ind][0].setChecked(col)
+            self.load_col_btn[ind][1].setChecked(not col)
+            self.load_error_btn[ind].setText(str(self.load_error[ind]))
+
+        ind_x = 0 if self.load_x_dir[ind] == 1 else 1 if self.load_x_dir[ind] == -1 else 2
+        self.load_x_dir_btn[ind][ind_x].setChecked(True)
+
+        ind_y = 0 if self.load_y_dir[ind] == 1 else 1 if self.load_y_dir[ind] == -1 else 2
+        self.load_y_dir_btn[ind][ind_y].setChecked(True)
+    
+        self.load_value_btn[ind].setText(str(self.load_value[ind]))
+
+        self.load_type_btn[ind][0].toggled.connect(self.load_coord_btn[ind][0].setEnabled)  
+        self.load_type_btn[ind][0].toggled.connect(self.load_coord_btn[ind][1].setEnabled)
+        self.load_type_btn[ind][0].toggled.connect(self.load_col_btn[ind][0].setDisabled)
+        self.load_type_btn[ind][0].toggled.connect(self.load_col_btn[ind][1].setDisabled)
+        self.load_type_btn[ind][0].toggled.connect(self.load_error_btn[ind].setDisabled)
+        self.load_type_btn[ind][0].toggled.connect(self.load_coord_btn[ind][2].setDisabled)
+
+        self.load_type_btn[ind][1].toggled.connect(self.load_coord_btn[ind][0].setDisabled)  
+        self.load_type_btn[ind][1].toggled.connect(self.load_coord_btn[ind][1].setDisabled)
+        self.load_type_btn[ind][1].toggled.connect(self.load_col_btn[ind][0].setEnabled)
+        self.load_type_btn[ind][1].toggled.connect(self.load_col_btn[ind][1].setEnabled)
+        self.load_type_btn[ind][1].toggled.connect(self.load_error_btn[ind].setEnabled)
+        self.load_type_btn[ind][1].toggled.connect(self.load_coord_btn[ind][2].setEnabled)
+
+    def rewrite_load(self, layout):
+        self.reset_load_list(vals=False)
+        for ind in range(len(self.load_by_coord)):
+            self.create_load_btn()
+            self.update_default_load(ind)
+            self.add_load_btn(layout)
+        
+    def reset_load_list(self, btn=True, vals=True):
+        if btn:
+            self.load_type_btn = []
+            self.load_coord_btn = []
+            self.load_col_btn = []
+            self.load_error_btn = []
+            self.load_x_dir_btn = []
+            self.load_y_dir_btn = []
+            self.load_value_btn = []
+
+        if vals:
+            # values load
+            self.load_by_coord = []
+            self.load_coord = []
+            self.x_load_col = []
+            self.load_error = []
+            self.load_x_dir = []
+            self.load_y_dir = []
+            self.load_value = []
 
     def check_load_btn(self):
         self.warnings_load = []
