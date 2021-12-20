@@ -159,9 +159,9 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_add_new_load.clicked.connect(self.add_new_load)
         ui_layout.addRow(self.btn_add_new_load)
         self.param.reset_load_list()
-        self.param.create_param_load()
+        self.param.create_load_btn()
         self.param.set_default_load()
-        self.param.add_param_load(ui_layout)
+        self.param.add_load_btn(ui_layout)
         self.upd_left_layout(ui_layout)
 
     def ui_add_node_constrain(self):
@@ -174,7 +174,13 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_to_constraint.clicked.connect(self.go_to_constraint)
         ui_layout.addRow(self.btn_to_constraint)
 
-        #self.param.add_constraint_param(ui_layout) #TODO ainda não está feito
+        self.btn_add_new_node_constrain = QtWidgets.QPushButton('Constrain new node displacement')
+        self.btn_add_new_node_constrain.clicked.connect(self.add_new_node_constrain)
+        ui_layout.addRow(self.btn_add_new_node_constrain)
+        self.param.reset_node_constrain_list()
+        self.param.create_node_constrain_btn()
+        self.param.set_default_node_constrain()
+        self.param.add_node_constrain_btn(ui_layout)
         self.upd_left_layout(ui_layout)
 
     def ui_add_constraint(self):
@@ -213,7 +219,7 @@ class SecondWindow(QtWidgets.QDialog):
             self.ui_add_load()
 
     def go_to_node_constrain(self):
-        self.param.check_load_param()
+        self.param.check_load_btn()
         if len(self.param.warnings_load) != 0:
             dlg = PopUp(self.param.warnings_load)      
             dlg.exec_()
@@ -223,13 +229,22 @@ class SecondWindow(QtWidgets.QDialog):
                 dlg = PopUp(self.param.warnings_load)      
                 dlg.exec_()
             else:
-                self.param.update_param_load()
+                self.param.update_load()
                 self.ui_add_node_constrain()
 
     def go_to_constraint(self):
-        #TODO: Verificar se os valores passados estão corretos 
-        #TODO: Salvar os valores passados
-        self.ui_add_constraint()
+        self.param.check_node_constrain_btn()
+        if len(self.param.warnings_node_constrain) != 0:
+            dlg = PopUp(self.param.warnings_node_constrain)      
+            dlg.exec_()
+        else:
+            self.param.check_node_constrain_values()
+            if len(self.param.warnings_node_constrain) != 0:
+                dlg = PopUp(self.param.warnings_node_constrain)      
+                dlg.exec_()
+            else:
+                self.param.update_node_constrain()
+                self.ui_add_constraint()
 
     def back_to_param(self):
         left_layout = QtWidgets.QVBoxLayout()
@@ -253,12 +268,14 @@ class SecondWindow(QtWidgets.QDialog):
         self.ui_add_node_constrain()
 
     def add_new_load(self):
-        self.param.create_param_load()
+        self.param.create_load_btn()
         self.param.set_default_load()
-        self.param.add_param_load(self.left_widget.layout()) #TODO: Adiciona um novo esquema
+        self.param.add_load_btn(self.left_widget.layout()) #TODO: Adiciona um novo esquema
 
     def add_new_node_constrain(self):
-        self.param.add_param_load(self.left_widget.layout()) #TODO: Colocar o correto aqui
+        self.param.create_node_constrain_btn()
+        self.param.set_default_node_constrain()
+        self.param.add_node_constrain_btn(self.left_widget.layout()) #TODO: Adiciona um novo esquema
 
     def run(self):
         self.param.check_constraint()
@@ -272,12 +289,12 @@ class SecondWindow(QtWidgets.QDialog):
             self.param.update_constraint()
             self.param.constraint_to_list()
             self.param.convert_load_to_dict()
+            self.param.convert_node_constrain_to_dict()
             
             self._counter_button_run += 1
             if self._counter_button_run == 1:
                 self.right_widget.setCurrentIndex(1)
                 print("entrou")
-            #TODO:Salvar os parametros de Bound. Cond. para ficar no formato já utilizado
 
     # ------- functions -------     
     def delete_temp(self):
@@ -591,7 +608,7 @@ class WindowsOptimization(SecondWindow):
 
     def finish_process(self):
         self.process_opt = None
-        self.delete_temp()            
+        #self.delete_temp()            
         self.evt_update_progress(100)
         self.button_stop.setEnabled(False)
         self.button_run.setEnabled(True)

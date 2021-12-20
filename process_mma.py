@@ -28,10 +28,11 @@ file.close()
 
 # Vars
 func_name2 = param["func_name2"]
-freq2 = param["freq2"]
 multiobj_bool = (func_name2 is not None) and (param["n1"] != 1)
+if multiobj_bool:
+    freq2 = param["freq2"]
+    omega2_par = 2 * np.pi * freq2 
 omega1_par = 2 * np.pi * param["freq"]
-omega2_par = 2 * np.pi * freq2 
 
 ########## 2D #############
 mesh_2d = Mesh(False, None, param["mesh_file"], param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
