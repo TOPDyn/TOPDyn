@@ -1,7 +1,6 @@
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtWidgets
 import os
 import ast
-import numpy as np
 
 class Parameters():
     def __init__(self) -> None:
@@ -23,7 +22,7 @@ class Parameters():
         self.load_y_dir = []
         self.load_value = []
 
-        # node costraint load
+        # nodes displacements constrained
         self.node_constrain_type_btn = []
         self.node_constrain_coord_btn = []
         self.node_constrain_col_btn = []
@@ -31,7 +30,7 @@ class Parameters():
         self.node_constrain_x_dir_btn = []
         self.node_constrain_y_dir_btn = []
 
-        # values node costraint
+        # values nodes displacements constrained
         self.node_constrain_by_coord = []
         self.node_constrain_coord = []
         self.x_node_constrain_col = []
@@ -115,7 +114,7 @@ class Parameters():
         if self.freqrsp_check.isChecked():
             self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
 
-# Load param
+# Load
     def create_load_btn(self):
         by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
         by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
@@ -359,7 +358,7 @@ class Parameters():
             dicti = dict(zip(aux_key, aux_val))
             self.load.append(dicti)
 
-# Constrain node displacement
+# Nodes displacements constrained
     def create_node_constrain_btn(self):
         by_coord_node_constrain_btn = QtWidgets.QRadioButton("Constrain node displacement by coordinate")
         by_column_node_constrain_btn = QtWidgets.QRadioButton("Constrain node displacement by column")
@@ -728,12 +727,16 @@ class ParametersFEM2D(Parameters):
         self.freqrsp_check.setChecked(self.freqrsp) 
         if self.freqrsp:
             self.freq_range_spin.setText(str(self.freq_range))
-            self.x_coord_plot_btn.setText(str(self.x_coord_plot_btn))
-            self.y_coord_plot_btn.setText(str(self.y_coord_plot_btn))
+            self.x_coord_plot_btn.setText(str(self.x_coord_plot))
+            self.y_coord_plot_btn.setText(str(self.y_coord_plot))
             x = True if self.x_dir_plot == 1 else False
             self.x_dir_plot_btn.setChecked(x)
             self.y_dir_plot_btn.setChecked(not x)
         else:
+            self.freq_range_spin.setText('[5,500,5]')
+            self.x_coord_plot_btn.setText('0')
+            self.y_coord_plot_btn.setText('0')
+            self.x_dir_plot_btn.setChecked(True)
             self.freq_range_spin.setDisabled(True)
             self.x_coord_plot_btn.setDisabled(True)
             self.y_coord_plot_btn.setDisabled(True)
@@ -772,7 +775,6 @@ class ParametersFEM2D(Parameters):
             f.write(str(param))
             # close file
             f.close()
-
         except: 
             print("Something went wrong")
 
@@ -781,7 +783,6 @@ class ParametersFEM2D(Parameters):
         if self.freqrsp_check.isChecked():
             self.check_param(self.warnings, self.x_coord_plot_btn.text(), [int, float], 'Node plot: node coordinate must be an integer or float')
             self.check_param(self.warnings, self.y_coord_plot_btn.text(), [int, float], 'Node plot: node coordinate must be an integer or float')
-
         if len(self.warnings) == 0:
             self.check_node_plot()
 
@@ -1215,7 +1216,7 @@ class ParametersOpt(Parameters):
             self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'beta_plot must be an integer or float')
             self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'eta_plot must be an integer or float')
 
-# Constraint param
+# Constraint
     def create_constraint(self):
         self.area_check = QtWidgets.QCheckBox("Area")
         self.min_area_line  = QtWidgets.QLineEdit()

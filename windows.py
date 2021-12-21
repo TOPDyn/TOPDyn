@@ -1,16 +1,15 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
+plt.switch_backend('Agg')
+import pyqtgraph as pg
 
 import os
 import sys
 import re
 import ast
 import shutil
-
-import matplotlib.pyplot as plt
-plt.switch_backend('Agg')
 import numpy as np
-import pyqtgraph as pg
 
 import plot_grid as mf
 from plots_2d import PlotsFem2d
@@ -61,6 +60,7 @@ class MainWindow(QtWidgets.QDialog):
 class SecondWindow(QtWidgets.QDialog):
     def __init__(self, param, text_main):
         super(SecondWindow, self).__init__()
+        self._counter_button_run = 0
 
         self.pbar = QtWidgets.QProgressBar()
         # lateral menu
@@ -68,17 +68,12 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
         self.btn_back_menu.clicked.connect(self.go_to_screen1)
         left_layout.addRow(self.btn_back_menu)
-
         self.param = param
         self.param.add_btns(left_layout)
-
         self.btn_to_load = QtWidgets.QPushButton('Next')
         self.btn_to_load.clicked.connect(self.go_to_load)
         left_layout.addRow(self.btn_to_load)
-
-        self._counter_button_run = 0
     
-        #left_layout.addStretch(5)
         left_layout.setSpacing(20)
         self.left_widget = QtWidgets.QWidget()
         self.left_widget.setLayout(left_layout)
@@ -97,7 +92,6 @@ class SecondWindow(QtWidgets.QDialog):
         self.right_widget.setCurrentIndex(0)
         self.right_widget.setStyleSheet('''QTabBar::tab{width: 0; \
             height: 0; margin: 0; padding: 0; border: none;}''')
-
         scroll_right = QtWidgets.QScrollArea()
         scroll_right.setWidget(self.right_widget)
         scroll_right.setWidgetResizable(True)
@@ -247,25 +241,6 @@ class SecondWindow(QtWidgets.QDialog):
     def reset_node_constrain(self):
         self.ui_add_node_constrain()
 
-    # def run(self):
-    #     self.param.check_constraint()
-    #     if len(self.param.warnings_constraint) != 0:
-    #         dlg = PopUp(self.param.warnings_constraint)      
-    #         dlg.exec_()
-    #     else:
-    #         self.button_stop.setEnabled(True)
-    #         self.button_run.setEnabled(False)
-    
-    #         self.param.update_constraint()
-    #         self.param.constraint_to_list()
-    #         self.param.convert_load_to_dict()
-    #         self.param.convert_node_constrain_to_dict()
-            
-    #         self._counter_button_run += 1
-    #         if self._counter_button_run == 1:
-    #             self.right_widget.setCurrentIndex(1)
-    #             print("entrou")
-
     # ------- functions -------     
     def delete_temp(self):
         folder_name = 'temp'
@@ -346,7 +321,6 @@ class WindowsFem2d(SecondWindow):
         super().__init__(param, text_main)
 
         self.stop_thread = False
-        #self.button_run.clicked.connect(lambda: self.run())
 
     # ------- pages -------
     def add_canvas_ui2(self): 
@@ -362,6 +336,12 @@ class WindowsFem2d(SecondWindow):
             self.canvas_freq.figure.tight_layout()
             ui2_layout.addWidget(self.canvas_freq)
         self.upd_ui2_layout(ui2_layout)
+
+    def add_fem_text(self):
+        ui_layout = QtWidgets.QFormLayout()
+        self.fem_text = TextFem2d()
+        ui_layout.addRow(self.fem_text.editor)
+        self.upd_ui1_layout(ui_layout)
 
     def ui_add_node_constrain(self, update=False):
         super().ui_add_node_constrain()
@@ -396,18 +376,11 @@ class WindowsFem2d(SecondWindow):
         self.upd_left_layout(ui_layout)
 
     # ------- buttons -------
-    def add_fem_text(self):
-        ui_layout = QtWidgets.QFormLayout()
-        self.fem_text = TextFem2d()
-        ui_layout.addRow(self.fem_text.editor)
-        self.upd_ui1_layout(ui_layout)
-
     def back_to_param(self):
         super().back_to_param()
         self.add_fem_text()
      
     def run(self):
-        #super().run()
         self.param.check_node_constrain_btn()
         if len(self.param.warnings_node_constrain) != 0:
             dlg = PopUp(self.param.warnings_node_constrain)      
@@ -429,7 +402,6 @@ class WindowsFem2d(SecondWindow):
                 self._counter_button_run += 1
                 if self._counter_button_run == 1:
                     self.right_widget.setCurrentIndex(1)
-                    print("entrou")
 
                 self.add_canvas_ui2()
                 self.param.export_param() 
@@ -469,7 +441,6 @@ class WindowsFem2d(SecondWindow):
 
     def stop_execution(self):
         self.evt_update_progress(0)
-   
         if self.process_fem is not None:
             self.process_fem.kill()
             self.process_fem = None
@@ -484,29 +455,21 @@ class WindowsFem2d(SecondWindow):
         if self.process_fem is not None:
             self.worker_plot = WorkerPlot(parent=self)
             self.worker_plot.start()
-
             self.worker_plot.complete_worker.connect(lambda: self.worker_plot.terminate())
             self.worker_plot.complete_worker.connect(lambda: self.worker_plot.deleteLater())
-
             self.worker_plot.complete_worker.connect(lambda: self.button_stop.setEnabled(False))
             self.worker_plot.complete_worker.connect(lambda: self.button_run.setEnabled(True))
             self.worker_plot.complete_worker.connect(lambda: self.btn_back_load.setEnabled(True))
-
             self.worker_plot.complete_worker.connect(self.delete_temp)
-        
             self.worker_plot.update_mesh.connect(self.evt_update_mesh)
             self.worker_plot.update_freq.connect(self.evt_update_freq)
             self.worker_plot.update_progess.connect(self.evt_update_progress)
-            
             self.process_fem = None
 
 class WorkerPlot(QtCore.QThread):
     update_mesh = QtCore.pyqtSignal(bool)
-
     update_freq = QtCore.pyqtSignal(bool)
-
     update_progess = QtCore.pyqtSignal(int)
-
     complete_worker = QtCore.pyqtSignal(bool)
 
     def __init__(self, parent):    
@@ -587,33 +550,26 @@ class WorkerPlot(QtCore.QThread):
 
         self.complete_worker.emit(True)
 
-
-
-
-
-
-
-
-
-
-
 class WindowsOptimization(SecondWindow):
     def __init__(self, param, text_main):
         super().__init__(param, text_main)
-
         self.stop_thread = False
-
-        self.constraint = TextConstraint()
-        
-        #self.button_run.clicked.connect(lambda: self.run())
-        self.param.toggled_opt()
-        # Boundary Conditions
-        #TODO: Aqui preciso pegar de cada uma da lista
-        
         self.directory = os.path.join(os.path.dirname(__file__))
         self.dir_temp = os.path.join(self.directory, 'temp')
 
     # ------- param windows -------
+    def add_opt_text(self):
+        ui_layout = QtWidgets.QFormLayout()
+        self.text_main = TextOpt()
+        ui_layout.addRow(self.text_main.editor)
+        self.upd_ui1_layout(ui_layout)
+
+    def add_contraint_text(self):
+        ui_layout = QtWidgets.QFormLayout()
+        constraint_text = TextConstraint()
+        ui_layout.addRow(constraint_text.editor)
+        self.upd_ui1_layout(ui_layout)
+
     def ui_add_node_constrain(self, update=False):
         super().ui_add_node_constrain()
 
@@ -685,20 +641,7 @@ class WindowsOptimization(SecondWindow):
     def back_to_node_constrain(self):
         self.ui_add_node_constrain(update=True)
 
-    def add_opt_text(self):
-        ui_layout = QtWidgets.QFormLayout()
-        self.text_main = TextOpt()
-        ui_layout.addRow(self.text_main.editor)
-        self.upd_ui1_layout(ui_layout)
-
-    def add_contraint_text(self):
-        ui_layout = QtWidgets.QFormLayout()
-        constraint_text = TextConstraint()
-        ui_layout.addRow(constraint_text.editor)
-        self.upd_ui1_layout(ui_layout)
-
     def run(self):
-        #super().run()
         self.param.check_constraint()
         if len(self.param.warnings_constraint) != 0:
             dlg = PopUp(self.param.warnings_constraint)      
