@@ -605,62 +605,73 @@ class ParametersFEM2D(Parameters):
         self.freq_spin = QtWidgets.QLineEdit()
         self.factor_spin = QtWidgets.QLineEdit()
 
-        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
-        self.freq_range_spin = QtWidgets.QLineEdit()
-        self.node_plot_spin = QtWidgets.QLineEdit()
-
-        self.freq_range_spin.setDisabled(True)
-        self.node_plot_spin.setDisabled(True)
-
         self.save_check = QtWidgets.QCheckBox("Save data")
 
+        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
+        self.freq_range_spin = QtWidgets.QLineEdit()
+        self.x_coord_plot_btn = QtWidgets.QLineEdit()
+        self.y_coord_plot_btn = QtWidgets.QLineEdit()
+        self.x_dir_plot_btn = QtWidgets.QRadioButton("X")
+        self.y_dir_plot_btn = QtWidgets.QRadioButton("Y")       
+
     def add_btns(self, layout):
-        layout.addWidget(QtWidgets.QLabel('Nelx'))
-        layout.addWidget(self.nelx_spin)
+        layout.addRow(QtWidgets.QLabel('Nelx'))
+        layout.addRow(self.nelx_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Nely'))
-        layout.addWidget(self.nely_spin)
+        layout.addRow(QtWidgets.QLabel('Nely'))
+        layout.addRow(self.nely_spin)
 
-        layout.addWidget(QtWidgets.QLabel('lx'))
-        layout.addWidget(self.lx_spin)
+        layout.addRow(QtWidgets.QLabel('lx'))
+        layout.addRow(self.lx_spin)
 
-        layout.addWidget(QtWidgets.QLabel('ly'))
-        layout.addWidget(self.ly_spin)
+        layout.addRow(QtWidgets.QLabel('ly'))
+        layout.addRow(self.ly_spin)
 
-        layout.addWidget(QtWidgets.QLabel('E'))
-        layout.addWidget(self.E_spin)
+        layout.addRow(QtWidgets.QLabel('E'))
+        layout.addRow(self.E_spin)
 
-        layout.addWidget(QtWidgets.QLabel('v'))
-        layout.addWidget(self.v_spin)
+        layout.addRow(QtWidgets.QLabel('v'))
+        layout.addRow(self.v_spin)
 
-        layout.addWidget(QtWidgets.QLabel('rho'))
-        layout.addWidget(self.rho_spin)
+        layout.addRow(QtWidgets.QLabel('rho'))
+        layout.addRow(self.rho_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Alpha'))
-        layout.addWidget(self.alpha_spin)
+        layout.addRow(QtWidgets.QLabel('Alpha'))
+        layout.addRow(self.alpha_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Beta'))
-        layout.addWidget(self.beta_spin)
+        layout.addRow(QtWidgets.QLabel('Beta'))
+        layout.addRow(self.beta_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Eta'))
-        layout.addWidget(self.eta_spin)
+        layout.addRow(QtWidgets.QLabel('Eta'))
+        layout.addRow(self.eta_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Factor'))
-        layout.addWidget(self.factor_spin)
+        layout.addRow(QtWidgets.QLabel('Factor'))
+        layout.addRow(self.factor_spin)
         
-        layout.addWidget(QtWidgets.QLabel('Frequency'))
-        layout.addWidget(self.freq_spin)
+        layout.addRow(QtWidgets.QLabel('Frequency'))
+        layout.addRow(self.freq_spin)
 
-        layout.addWidget(self.freqrsp_check)
-        layout.addWidget(QtWidgets.QLabel('Frequency range'))
-        layout.addWidget(self.freq_range_spin)
-        layout.addWidget(QtWidgets.QLabel('Node plot'))
-        layout.addWidget(self.node_plot_spin)
-        layout.addWidget(self.save_check)
+        layout.addRow(self.save_check)
+        layout.addRow(self.freqrsp_check)
+        layout.addRow(QtWidgets.QLabel('Frequency range'))
+        layout.addRow(self.freq_range_spin)
+
+        layout.addRow(QtWidgets.QLabel('Node plot:'))
+        layout.addRow(QtWidgets.QLabel('X-coord'), self.x_coord_plot_btn)
+        layout.addRow(QtWidgets.QLabel('Y-coord'), self.y_coord_plot_btn)
+
+        directions = QtWidgets.QButtonGroup(layout)
+        directions.addButton(self.x_dir_plot_btn)
+        directions.addButton(self.y_dir_plot_btn)
+        layout.addRow(self.x_dir_plot_btn)
+        layout.addRow(self.y_dir_plot_btn)     
 
     def toggled_fem2d(self):
         self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.node_plot_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.x_coord_plot_btn.setEnabled)
+        self.freqrsp_check.toggled.connect(self.y_coord_plot_btn.setEnabled)
+        self.freqrsp_check.toggled.connect(self.x_dir_plot_btn.setEnabled)
+        self.freqrsp_check.toggled.connect(self.y_dir_plot_btn.setEnabled)
     
     def set_default(self):       
         self.nelx_spin.setText('40')
@@ -680,17 +691,22 @@ class ParametersFEM2D(Parameters):
 
         self.freq_spin.setText('200')
 
-        self.freq_range_spin.setText("[0, 25, 5]")
-        self.node_plot_spin.setText("[1, 0.25, 0, 1]")
+        self.freq_range_spin.setText("[0, 25, 5]")    
+        self.freq_range_spin.setDisabled(True)
+        self.x_coord_plot_btn.setDisabled(True)
+        self.y_coord_plot_btn.setDisabled(True)
+        self.x_dir_plot_btn.setDisabled(True)
+        self.y_dir_plot_btn.setDisabled(True)
 
         self.toggled_fem2d()
 
     def update_params(self): 
         super().update_params()
         if self.freqrsp:
-            self.node_plot = ast.literal_eval(self.node_plot_spin.text())
-        else:
-            self.node_plot = None
+            self.x_coord_plot = ast.literal_eval(self.x_coord_plot_btn.text())
+            self.y_coord_plot = ast.literal_eval(self.y_coord_plot_btn.text())
+            self.x_dir_plot = 1 if self.x_dir_plot_btn.isChecked() else 0
+            self.y_dir_plot = 1 if self.y_dir_plot_btn.isChecked() else 0
 
     def update_default(self):
         self.nelx_spin.setText(str(self.nelx))
@@ -712,16 +728,32 @@ class ParametersFEM2D(Parameters):
         self.freqrsp_check.setChecked(self.freqrsp) 
         if self.freqrsp:
             self.freq_range_spin.setText(str(self.freq_range))
-            self.node_plot_spin.setText(str(self.node_plot))
+            self.x_coord_plot_btn.setText(str(self.x_coord_plot_btn))
+            self.y_coord_plot_btn.setText(str(self.y_coord_plot_btn))
+            x = True if self.x_dir_plot == 1 else False
+            self.x_dir_plot_btn.setChecked(x)
+            self.y_dir_plot_btn.setChecked(not x)
         else:
             self.freq_range_spin.setDisabled(True)
-            self.node_plot_spin.setDisabled(True)
+            self.x_coord_plot_btn.setDisabled(True)
+            self.y_coord_plot_btn.setDisabled(True)
+            self.x_dir_plot_btn.setDisabled(True)
+            self.y_dir_plot_btn.setDisabled(True)
 
         self.save_check.setChecked(self.save)
 
         self.toggled_fem2d()
 
+    def set_node_plot(self):
+        if self.freqrsp:
+            self.node_plot = [self.x_coord_plot, self.y_coord_plot, self.x_dir_plot, self.y_dir_plot]
+        else:
+            self.node_plot = None
+
     def export_param(self):
+
+        self.set_node_plot()
+
         param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
                 "alpha":self.alpha, "beta":self.beta, "eta":self.eta, "factor":self.factor, "freq":self.freq, 
                 "freqrsp":self.freqrsp, "freq_range":self.freq_range, "load_matrix":self.load, 
@@ -747,7 +779,20 @@ class ParametersFEM2D(Parameters):
     def check_params(self):
         super().check_params()
         if self.freqrsp_check.isChecked():
-            self.check_param(self.warnings, self.node_plot_spin.text(), [list], 'Node must be a list')
+            self.check_param(self.warnings, self.x_coord_plot_btn.text(), [int, float], 'Node plot: node coordinate must be an integer or float')
+            self.check_param(self.warnings, self.y_coord_plot_btn.text(), [int, float], 'Node plot: node coordinate must be an integer or float')
+
+        if len(self.warnings) == 0:
+            self.check_node_plot()
+
+    def check_node_plot(self):
+        if self.freqrsp_check.isChecked():
+            if ast.literal_eval(self.x_coord_plot_btn.text()) > self.lx:
+                warning = QtWidgets.QLabel("Node plot: x coordinate exceeds mesh boundaries")
+                self.warnings.append(warning)
+            if ast.literal_eval(self.y_coord_plot_btn.text()) > self.ly:
+                warning = QtWidgets.QLabel("Node plot: y coordinate exceeds mesh boundaries")
+                self.warnings.append(warning)
 
 class ParametersOpt(Parameters):
     def __init__(self):
@@ -853,100 +898,100 @@ class ParametersOpt(Parameters):
         self.factor_spin = QtWidgets.QLineEdit()
     
     def add_btns(self, layout):
-        layout.addWidget(QtWidgets.QLabel('Optimization Method'))
-        layout.addWidget(self.mma_radio)
-        layout.addWidget(self.gcmma_radio)
+        layout.addRow(QtWidgets.QLabel('Optimization Method'))
+        layout.addRow(self.mma_radio)
+        layout.addRow(self.gcmma_radio)
 
-        layout.addWidget(QtWidgets.QLabel('Nelx'))
-        layout.addWidget(self.nelx_spin)
+        layout.addRow(QtWidgets.QLabel('Nelx'))
+        layout.addRow(self.nelx_spin)
         
-        layout.addWidget(QtWidgets.QLabel('Nely'))
-        layout.addWidget(self.nely_spin)
+        layout.addRow(QtWidgets.QLabel('Nely'))
+        layout.addRow(self.nely_spin)
 
-        layout.addWidget(QtWidgets.QLabel('lx'))
-        layout.addWidget(self.lx_spin)
+        layout.addRow(QtWidgets.QLabel('lx'))
+        layout.addRow(self.lx_spin)
 
-        layout.addWidget(QtWidgets.QLabel('ly'))
-        layout.addWidget(self.ly_spin)
+        layout.addRow(QtWidgets.QLabel('ly'))
+        layout.addRow(self.ly_spin)
 
-        layout.addWidget(QtWidgets.QLabel('E'))
-        layout.addWidget(self.E_spin)
+        layout.addRow(QtWidgets.QLabel('E'))
+        layout.addRow(self.E_spin)
 
-        layout.addWidget(QtWidgets.QLabel('v'))
-        layout.addWidget(self.v_spin)
+        layout.addRow(QtWidgets.QLabel('v'))
+        layout.addRow(self.v_spin)
 
-        layout.addWidget(QtWidgets.QLabel('rho'))
-        layout.addWidget(self.rho_spin)
+        layout.addRow(QtWidgets.QLabel('rho'))
+        layout.addRow(self.rho_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Factor ratio'))
-        layout.addWidget(self.fac_ratio_spin)
+        layout.addRow(QtWidgets.QLabel('Factor ratio'))
+        layout.addRow(self.fac_ratio_spin)
 
-        layout.addWidget(QtWidgets.QLabel('x_min_mass'))
-        layout.addWidget(self.x_min_m_spin)
+        layout.addRow(QtWidgets.QLabel('x_min_mass'))
+        layout.addRow(self.x_min_m_spin)
 
-        layout.addWidget(QtWidgets.QLabel('x_min_stif'))
-        layout.addWidget(self.x_min_k_spin)
+        layout.addRow(QtWidgets.QLabel('x_min_stif'))
+        layout.addRow(self.x_min_k_spin)
 
-        layout.addWidget(QtWidgets.QLabel('penal stif'))
-        layout.addWidget(self.penal_k_spin)
+        layout.addRow(QtWidgets.QLabel('penal stif'))
+        layout.addRow(self.penal_k_spin)
 
-        layout.addWidget(QtWidgets.QLabel('penal mass'))
-        layout.addWidget(self.penal_m_spin)        
+        layout.addRow(QtWidgets.QLabel('penal mass'))
+        layout.addRow(self.penal_m_spin)        
 
-        layout.addWidget(QtWidgets.QLabel('Alpha'))
-        layout.addWidget(self.alpha_spin)
+        layout.addRow(QtWidgets.QLabel('Alpha'))
+        layout.addRow(self.alpha_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Beta'))
-        layout.addWidget(self.beta_spin)
+        layout.addRow(QtWidgets.QLabel('Beta'))
+        layout.addRow(self.beta_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Eta'))
-        layout.addWidget(self.eta_spin)
+        layout.addRow(QtWidgets.QLabel('Eta'))
+        layout.addRow(self.eta_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Passive coords'))
-        layout.addWidget(self.passive_coord_spin)
+        layout.addRow(QtWidgets.QLabel('Passive coords'))
+        layout.addRow(self.passive_coord_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Modes'))
-        layout.addWidget(self.modes_spin)
+        layout.addRow(QtWidgets.QLabel('Modes'))
+        layout.addRow(self.modes_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Constant Function'))
-        layout.addWidget(self.const_func_spin)
+        layout.addRow(QtWidgets.QLabel('Constant Function'))
+        layout.addRow(self.const_func_spin)
 
-        layout.addWidget(QtWidgets.QLabel('n1'))
-        layout.addWidget(self.n1_spin)
+        layout.addRow(QtWidgets.QLabel('n1'))
+        layout.addRow(self.n1_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Frequency'))
-        layout.addWidget(self.freq_spin)
+        layout.addRow(QtWidgets.QLabel('Frequency'))
+        layout.addRow(self.freq_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Objective Function'))
-        layout.addWidget(self.func_name_box)
+        layout.addRow(QtWidgets.QLabel('Objective Function'))
+        layout.addRow(self.func_name_box)
 
-        layout.addWidget(QtWidgets.QLabel('Multiobjective Function'))
-        layout.addWidget(self.func_name2_box)
-        layout.addWidget(QtWidgets.QLabel('Multiobjective Freq'))
-        layout.addWidget(self.freq2_spin)
+        layout.addRow(QtWidgets.QLabel('Multiobjective Function'))
+        layout.addRow(self.func_name2_box)
+        layout.addRow(QtWidgets.QLabel('Multiobjective Freq'))
+        layout.addRow(self.freq2_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Max iterations'))
-        layout.addWidget(self.max_iter_spin)
+        layout.addRow(QtWidgets.QLabel('Max iterations'))
+        layout.addRow(self.max_iter_spin)
 
-        layout.addWidget(self.save_check)
-        layout.addWidget(self.dens_filter_check)
+        layout.addRow(self.save_check)
+        layout.addRow(self.dens_filter_check)
 
-        layout.addWidget(self.mesh_deform_check)
-        layout.addWidget(QtWidgets.QLabel('Factor'))
-        layout.addWidget(self.factor_spin)
+        layout.addRow(self.mesh_deform_check)
+        layout.addRow(QtWidgets.QLabel('Factor'))
+        layout.addRow(self.factor_spin)
       
-        layout.addWidget(self.freqrsp_check)
-        layout.addWidget(QtWidgets.QLabel('Freq range'))
-        layout.addWidget(self.freq_range_spin)
+        layout.addRow(self.freqrsp_check)
+        layout.addRow(QtWidgets.QLabel('Freq range'))
+        layout.addRow(self.freq_range_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Alpha plot'))
-        layout.addWidget(self.alpha_plot_spin)
+        layout.addRow(QtWidgets.QLabel('Alpha plot'))
+        layout.addRow(self.alpha_plot_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Beta plot'))
-        layout.addWidget(self.beta_plot_spin)
+        layout.addRow(QtWidgets.QLabel('Beta plot'))
+        layout.addRow(self.beta_plot_spin)
 
-        layout.addWidget(QtWidgets.QLabel('Eta plot'))
-        layout.addWidget(self.eta_plot_spin)
+        layout.addRow(QtWidgets.QLabel('Eta plot'))
+        layout.addRow(self.eta_plot_spin)
 
     def update_params(self): 
         super().update_params()
@@ -1202,6 +1247,7 @@ class ParametersOpt(Parameters):
 
     def add_constraint_param(self, layout):
         label = QtWidgets.QLabel('---- Constraint ----')
+        label.setAlignment(QtCore.Qt.AlignCenter)
         layout.addRow(label)
         layout.addRow(self.area_check)
         layout.addRow(QtWidgets.QLabel('min'), self.min_area_line)
@@ -1554,11 +1600,7 @@ class TextConstraint():
         self.editor.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
         self.editor.setOpenExternalLinks(True)
 
-        self.text_constraint = """
-            <p style="margin-left:2em"> <font size="+1"> If two values are passed is used a box constraint </font> </p>
-
-                <p style="margin-left:4em"> <font size="+1"> The maximum value must be greater than the minimum value </font> </p>       
-            """
+        self.text_constraint = """  """
         self.set_text()
         
     def set_text(self):

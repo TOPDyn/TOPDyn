@@ -64,21 +64,21 @@ class SecondWindow(QtWidgets.QDialog):
 
         self.pbar = QtWidgets.QProgressBar()
         # lateral menu
-        left_layout = QtWidgets.QVBoxLayout()
+        left_layout = QtWidgets.QFormLayout()
         self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
         self.btn_back_menu.clicked.connect(self.go_to_screen1)
-        left_layout.addWidget(self.btn_back_menu)
+        left_layout.addRow(self.btn_back_menu)
 
         self.param = param
         self.param.add_btns(left_layout)
 
         self.btn_to_load = QtWidgets.QPushButton('Next')
         self.btn_to_load.clicked.connect(self.go_to_load)
-        left_layout.addWidget(self.btn_to_load)
+        left_layout.addRow(self.btn_to_load)
 
         self._counter_button_run = 0
     
-        left_layout.addStretch(5)
+        #left_layout.addStretch(5)
         left_layout.setSpacing(20)
         self.left_widget = QtWidgets.QWidget()
         self.left_widget.setLayout(left_layout)
@@ -202,10 +202,10 @@ class SecondWindow(QtWidgets.QDialog):
                 self.ui_add_node_constrain()
 
     def back_to_param(self):
-        left_layout = QtWidgets.QVBoxLayout()
+        left_layout = QtWidgets.QFormLayout()
         self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
         self.btn_back_menu.clicked.connect(self.go_to_screen1)
-        left_layout.addWidget(self.btn_back_menu)
+        left_layout.addRow(self.btn_back_menu)
         
         self.param.create_btns()
         self.param.update_default()
@@ -213,7 +213,7 @@ class SecondWindow(QtWidgets.QDialog):
 
         self.btn_to_load = QtWidgets.QPushButton('Next')
         self.btn_to_load.clicked.connect(self.go_to_load)
-        left_layout.addWidget(self.btn_to_load)
+        left_layout.addRow(self.btn_to_load)
         self.upd_left_layout(left_layout)
 
     def back_to_load(self):
@@ -230,15 +230,15 @@ class SecondWindow(QtWidgets.QDialog):
         self.param.add_node_constrain_btn(self.left_widget.layout())
 
     def add_load_text(self):
-        ui_layout = QtWidgets.QVBoxLayout()
+        ui_layout = QtWidgets.QFormLayout()
         self.bc_text = TextBc()
-        ui_layout.addWidget(self.bc_text.editor_load)
+        ui_layout.addRow(self.bc_text.editor_load)
         self.upd_ui1_layout(ui_layout)
 
     def add_node_constrain_text(self):
-        ui_layout = QtWidgets.QVBoxLayout()
+        ui_layout = QtWidgets.QFormLayout()
         self.bc_text = TextBc()
-        ui_layout.addWidget(self.bc_text.editor_node_constrain)
+        ui_layout.addRow(self.bc_text.editor_node_constrain)
         self.upd_ui1_layout(ui_layout)
 
     def reset_load(self):
@@ -397,9 +397,9 @@ class WindowsFem2d(SecondWindow):
 
     # ------- buttons -------
     def add_fem_text(self):
-        ui_layout = QtWidgets.QVBoxLayout()
+        ui_layout = QtWidgets.QFormLayout()
         self.fem_text = TextFem2d()
-        ui_layout.addWidget(self.fem_text.editor)
+        ui_layout.addRow(self.fem_text.editor)
         self.upd_ui1_layout(ui_layout)
 
     def back_to_param(self):
@@ -490,6 +490,7 @@ class WindowsFem2d(SecondWindow):
 
             self.worker_plot.complete_worker.connect(lambda: self.button_stop.setEnabled(False))
             self.worker_plot.complete_worker.connect(lambda: self.button_run.setEnabled(True))
+            self.worker_plot.complete_worker.connect(lambda: self.btn_back_load.setEnabled(True))
 
             self.worker_plot.complete_worker.connect(self.delete_temp)
         
@@ -642,6 +643,8 @@ class WindowsOptimization(SecondWindow):
         self.upd_left_layout(ui_layout)
 
     def ui_add_constraint(self):
+        self.add_contraint_text()
+
         ui_layout = QtWidgets.QFormLayout()
         self.btn_back_constrain = QtWidgets.QPushButton('Back')
         self.btn_back_constrain.clicked.connect(self.back_to_node_constrain)
@@ -683,15 +686,15 @@ class WindowsOptimization(SecondWindow):
         self.ui_add_node_constrain(update=True)
 
     def add_opt_text(self):
-        ui_layout = QtWidgets.QVBoxLayout()
+        ui_layout = QtWidgets.QFormLayout()
         self.text_main = TextOpt()
-        ui_layout.addWidget(self.text_main.editor)
+        ui_layout.addRow(self.text_main.editor)
         self.upd_ui1_layout(ui_layout)
 
     def add_contraint_text(self):
-        ui_layout = QtWidgets.QVBoxLayout()
+        ui_layout = QtWidgets.QFormLayout()
         constraint_text = TextConstraint()
-        ui_layout.addWidget(constraint_text.editor)
+        ui_layout.addRow(constraint_text.editor)
         self.upd_ui1_layout(ui_layout)
 
     def run(self):
