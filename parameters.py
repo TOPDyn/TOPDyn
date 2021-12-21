@@ -115,91 +115,645 @@ class Parameters():
         if self.freqrsp_check.isChecked():
             self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
 
+# Load param
+    def create_load_btn(self):
+        by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
+        by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
+        self.load_type_btn.append([by_coord_load_btn, by_column_load_btn])
+
+        coord_load_x_line  = QtWidgets.QLineEdit()
+        coord_load_y_line  = QtWidgets.QLineEdit()
+        coord_load_line = QtWidgets.QLineEdit()
+        self.load_coord_btn.append([coord_load_x_line, coord_load_y_line, coord_load_line])
+        
+        x_by_col_load_btn = QtWidgets.QRadioButton("X")
+        y_by_col_load_btn = QtWidgets.QRadioButton("Y")
+        self.load_col_btn.append([x_by_col_load_btn, y_by_col_load_btn])
+
+        erro_margin_load_line  = QtWidgets.QLineEdit()
+        self.load_error_btn.append(erro_margin_load_line)
+
+        load_x_dir_line_pos = QtWidgets.QRadioButton("Positive") 
+        load_x_dir_line_neg = QtWidgets.QRadioButton("Negative")
+        load_x_dir_line_nan = QtWidgets.QRadioButton("None")
+        self.load_x_dir_btn.append([load_x_dir_line_pos, load_x_dir_line_neg, load_x_dir_line_nan])
+   
+        load_y_dir_line_pos  = QtWidgets.QRadioButton("Positive") 
+        load_y_dir_line_neg  = QtWidgets.QRadioButton("Negative")         
+        load_y_dir_line_nan = QtWidgets.QRadioButton("None")
+        self.load_y_dir_btn.append([load_y_dir_line_pos, load_y_dir_line_neg, load_y_dir_line_nan])
+
+        load_value_line = QtWidgets.QLineEdit()
+        self.load_value_btn.append(load_value_line)
+
+    def add_load_btn(self, layout):
+        load_type = QtWidgets.QButtonGroup(layout)
+        load_label = QtWidgets.QLabel('---- Load ----')
+        load_label.setAlignment(QtCore.Qt.AlignCenter)
+        layout.addRow(load_label)
+        
+        load_type.addButton(self.load_type_btn[-1][0])
+        layout.addRow(self.load_type_btn[-1][0])
+       
+        layout.addRow(QtWidgets.QLabel('X-coord'), self.load_coord_btn[-1][0])
+        layout.addRow(QtWidgets.QLabel('Y-coord'), self.load_coord_btn[-1][1])
+       
+        load_type.addButton(self.load_type_btn[-1][1])
+        layout.addRow(self.load_type_btn[-1][1])
+       
+        layout.addRow(QtWidgets.QLabel('Coord'), self.load_coord_btn[-1][2])
+     
+        layout.addRow(QtWidgets.QLabel('Column'))
+        column_load = QtWidgets.QButtonGroup(layout)
+        column_load.addButton(self.load_col_btn[-1][0])
+        column_load.addButton(self.load_col_btn[-1][1])
+        layout.addRow(self.load_col_btn[-1][0], self.load_col_btn[-1][1])
+      
+        layout.addRow(QtWidgets.QLabel('Error margin'), self.load_error_btn[-1])
+       
+        x_dir = QtWidgets.QButtonGroup(layout)
+        x_dir.addButton(self.load_x_dir_btn[-1][0])
+        x_dir.addButton(self.load_x_dir_btn[-1][1])
+        x_dir.addButton(self.load_x_dir_btn[-1][2])
+        layout.addRow(QtWidgets.QLabel('Add load in X direction'))
+        lay = QtWidgets.QHBoxLayout()
+        lay.addWidget(self.load_x_dir_btn[-1][0])
+        lay.addWidget(self.load_x_dir_btn[-1][1])
+        lay.addWidget(self.load_x_dir_btn[-1][2])
+        layout.addRow(lay)
+
+        y_dir = QtWidgets.QButtonGroup(layout)
+        y_dir.addButton(self.load_y_dir_btn[-1][0])
+        y_dir.addButton(self.load_y_dir_btn[-1][1])
+        y_dir.addButton(self.load_y_dir_btn[-1][2])
+        layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
+        lay = QtWidgets.QHBoxLayout()
+        lay.addWidget(self.load_y_dir_btn[-1][0])
+        lay.addWidget(self.load_y_dir_btn[-1][1])
+        lay.addWidget(self.load_y_dir_btn[-1][2])
+        layout.addRow(lay)
+
+        layout.addRow(QtWidgets.QLabel('Load value'), self.load_value_btn[-1])
+
+    def toggled_load(self):
+        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][0].setEnabled)  
+        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][1].setEnabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_col_btn[-1][0].setDisabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_col_btn[-1][1].setDisabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_error_btn[-1].setDisabled)
+        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][2].setDisabled)
+
+        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][0].setDisabled)  
+        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][1].setDisabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_col_btn[-1][0].setEnabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_col_btn[-1][1].setEnabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_error_btn[-1].setEnabled)
+        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][2].setEnabled)
+
+    def set_default_load(self):
+        self.load_type_btn[-1][0].setChecked(True)
+        self.load_type_btn[-1][1].setChecked(False)
+
+        self.load_coord_btn[-1][0].setText(str(self.lx))
+        self.load_coord_btn[-1][1].setText(str(self.ly/2))
+        
+        self.load_coord_btn[-1][2].setDisabled(True)
+        self.load_col_btn[-1][0].setDisabled(True)
+        self.load_col_btn[-1][1].setDisabled(True)
+        self.load_error_btn[-1].setDisabled(True)
+
+        self.load_x_dir_btn[-1][0].setChecked(True)
+        self.load_y_dir_btn[-1][0].setChecked(True)
+        self.load_value_btn[-1].setText('100')
+
+        self.toggled_load()
+
+    def update_default_load(self, ind):
+        self.load_type_btn[ind][0].setChecked(self.load_by_coord[ind])
+        self.load_type_btn[ind][1].setChecked(not self.load_by_coord[ind])
+
+        if self.load_by_coord[ind]:
+            self.load_coord_btn[ind][0].setText(str(self.load_coord[ind][0]))
+            self.load_coord_btn[ind][1].setText(str(self.load_coord[ind][1]))
+        
+            self.load_coord_btn[ind][2].setDisabled(True)
+            self.load_col_btn[ind][0].setDisabled(True)
+            self.load_col_btn[ind][1].setDisabled(True)
+            self.load_error_btn[ind].setDisabled(True)
+        else:
+            self.load_coord_btn[ind][0].setDisabled(True)
+            self.load_coord_btn[ind][1].setDisabled(True)
+
+            self.load_coord_btn[ind][2].setText(str(self.load_coord[ind]))
+            col = True if self.x_load_col[ind] else False
+            self.load_col_btn[ind][0].setChecked(col)
+            self.load_col_btn[ind][1].setChecked(not col)
+            self.load_error_btn[ind].setText(str(self.load_error[ind]))
+
+        ind_x = 0 if self.load_x_dir[ind] == 1 else 1 if self.load_x_dir[ind] == -1 else 2
+        self.load_x_dir_btn[ind][ind_x].setChecked(True)
+
+        ind_y = 0 if self.load_y_dir[ind] == 1 else 1 if self.load_y_dir[ind] == -1 else 2
+        self.load_y_dir_btn[ind][ind_y].setChecked(True)
+    
+        self.load_value_btn[ind].setText(str(self.load_value[ind]))
+
+        self.toggled_load()
+
+    def rewrite_load(self, layout):
+        self.reset_load_list(vals=False)
+        for ind in range(len(self.load_by_coord)):
+            self.create_load_btn()
+            self.update_default_load(ind)
+            self.add_load_btn(layout)
+        
+    def reset_load_list(self, btn=True, vals=True):
+        if btn:
+            self.load_type_btn = []
+            self.load_coord_btn = []
+            self.load_col_btn = []
+            self.load_error_btn = []
+            self.load_x_dir_btn = []
+            self.load_y_dir_btn = []
+            self.load_value_btn = []
+        if vals:
+            self.load_by_coord = []
+            self.load_coord = []
+            self.x_load_col = []
+            self.load_error = []
+            self.load_x_dir = []
+            self.load_y_dir = []
+            self.load_value = []
+
+    def check_load_btn(self):
+        self.warnings_load = []
+        for i in range(len(self.load_type_btn)):
+            if self.load_type_btn[i][0].isChecked():
+                self.check_param(self.warnings_load, self.load_coord_btn[i][0].text(), [int, float], 'x coordinate must be an integer or float')
+                self.check_param(self.warnings_load, self.load_coord_btn[i][1].text(), [int, float], 'y coordinate must be an integer or float')
+            else:
+                if not (self.load_col_btn[-1][0].isChecked()) and not (self.load_col_btn[-1][1].isChecked()):
+                    warning = QtWidgets.QLabel("select column")
+                    self.warnings_load.append(warning)
+                self.check_param(self.warnings_load, self.load_coord_btn[i][2].text(), [int, float], 'coordinate must be an integer or float')
+                self.check_param(self.warnings_load, self.load_error_btn[i].text(), [int, float], 'error margin must be an integer or float')
+            
+            self.check_param(self.warnings_load, self.load_value_btn[i].text(), [int, float], 'load value must be an integer or float')
+
+    def check_load_values(self):
+        self.warnings_load = []
+        for i in range(len(self.load_type_btn)):
+            if self.load_type_btn[i][0].isChecked():
+                if ast.literal_eval(self.load_coord_btn[i][0].text()) > self.lx:
+                    warning = QtWidgets.QLabel("x coordinate exceeds mesh boundaries")
+                    self.warnings_load.append(warning)
+                if ast.literal_eval(self.load_coord_btn[i][1].text()) > self.ly:
+                    warning = QtWidgets.QLabel("y coordinate exceeds mesh boundaries")
+                    self.warnings_load.append(warning)
+            else:
+                if self.load_col_btn[-1][0].isChecked():
+                    if ast.literal_eval(self.load_coord_btn[i][2].text()) > self.lx:
+                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
+                        self.warnings_load.append(warning)
+                else:
+                    if ast.literal_eval(self.load_coord_btn[i][2].text()) > self.ly:
+                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
+                        self.warnings_load.append(warning)
+
+    def update_load(self):
+        for i in range(len(self.load_type_btn)):
+            load_by_coord = True if self.load_type_btn[i][0].isChecked() else False
+            self.load_by_coord.append(load_by_coord)
+            if load_by_coord:
+                x = ast.literal_eval(self.load_coord_btn[i][0].text())
+                y = ast.literal_eval(self.load_coord_btn[i][1].text())
+                self.load_coord.append([x,y])
+                self.x_load_col.append(None)
+                self.load_error.append(None)
+            else:
+                coord = ast.literal_eval(self.load_coord_btn[i][2].text())
+                self.load_coord.append(coord)
+                col = 1 if self.load_col_btn[i][0].isChecked() else 2
+                self.x_load_col.append(col)
+                error = ast.literal_eval(self.load_error_btn[i].text())
+                self.load_error.append(error)
+            
+            x = 1 if self.load_x_dir_btn[i][0].isChecked() else -1 if self.load_x_dir_btn[i][1].isChecked() else 0
+            self.load_x_dir.append(x)
+
+            y = 1 if self.load_y_dir_btn[i][0].isChecked() else -1 if self.load_y_dir_btn[i][1].isChecked() else 0
+            self.load_y_dir.append(y)
+
+            self.load_value.append(ast.literal_eval(self.load_value_btn[i].text()))
+
+    def convert_load_to_dict(self):
+        # list of dicts
+        self.load = []
+        for i in range(len(self.load_type_btn)):
+            if self.load_by_coord[i]:
+                aux_key = ["x_coord", "y_coord", "x_direc", "y_direc", "force"]
+                aux_val = [self.load_coord[i][0], self.load_coord[i][1], self.load_x_dir[i], self.load_y_dir[i], self.load_value[i]]
+            else:
+                aux_key = ["coord", "axis", "eps", "x_direc", "y_direc", "force"]
+                aux_val = [self.load_coord[i], self.x_load_col[i], self.load_error[i], self.load_x_dir[i], self.load_y_dir[i], self.load_value[i]]
+            dicti = dict(zip(aux_key, aux_val))
+            self.load.append(dicti)
+
+# Constrain node displacement
+    def create_node_constrain_btn(self):
+        by_coord_node_constrain_btn = QtWidgets.QRadioButton("Constrain node displacement by coordinate")
+        by_column_node_constrain_btn = QtWidgets.QRadioButton("Constrain node displacement by column")
+        self.node_constrain_type_btn.append([by_coord_node_constrain_btn, by_column_node_constrain_btn])
+
+        coord_node_constrain_x_line  = QtWidgets.QLineEdit()
+        coord_node_constrain_y_line  = QtWidgets.QLineEdit()
+        coord_node_constrain_line = QtWidgets.QLineEdit()
+        self.node_constrain_coord_btn.append([coord_node_constrain_x_line, coord_node_constrain_y_line, coord_node_constrain_line])
+        
+        x_by_col_node_constrain_btn = QtWidgets.QRadioButton("X")
+        y_by_col_node_constrain_btn = QtWidgets.QRadioButton("Y")
+        self.node_constrain_col_btn.append([x_by_col_node_constrain_btn, y_by_col_node_constrain_btn])
+
+        erro_margin_node_constrain_line  = QtWidgets.QLineEdit()
+        self.node_constrain_error_btn.append(erro_margin_node_constrain_line)
+
+        node_constrain_x_dir_line_yes = QtWidgets.QRadioButton("Yes") 
+        node_constrain_x_dir_line_no = QtWidgets.QRadioButton("No")
+        self.node_constrain_x_dir_btn.append([node_constrain_x_dir_line_yes, node_constrain_x_dir_line_no])
+   
+        node_constrain_y_dir_line_yes  = QtWidgets.QRadioButton("Yes") 
+        node_constrain_y_dir_line_no  = QtWidgets.QRadioButton("No")         
+        self.node_constrain_y_dir_btn.append([node_constrain_y_dir_line_yes, node_constrain_y_dir_line_no])
+
+    def add_node_constrain_btn(self, layout):
+        node_constrain_type = QtWidgets.QButtonGroup(layout)
+        node_constrain_label = QtWidgets.QLabel('---- Constrain node displacement ----')
+        node_constrain_label.setAlignment(QtCore.Qt.AlignCenter)
+        layout.addRow(node_constrain_label)
+        
+        node_constrain_type.addButton(self.node_constrain_type_btn[-1][0])
+        layout.addRow(self.node_constrain_type_btn[-1][0])
+       
+        layout.addRow(QtWidgets.QLabel('X-coor'), self.node_constrain_coord_btn[-1][0])
+        layout.addRow(QtWidgets.QLabel('Y-coord'), self.node_constrain_coord_btn[-1][1])
+       
+        node_constrain_type.addButton(self.node_constrain_type_btn[-1][1])
+        layout.addRow(self.node_constrain_type_btn[-1][1])
+       
+        layout.addRow(QtWidgets.QLabel('Coord'), self.node_constrain_coord_btn[-1][2])
+     
+        layout.addRow(QtWidgets.QLabel('Column'))
+        column_node_constrain = QtWidgets.QButtonGroup(layout)
+        column_node_constrain.addButton(self.node_constrain_col_btn[-1][0])
+        column_node_constrain.addButton(self.node_constrain_col_btn[-1][1])
+        layout.addRow(self.node_constrain_col_btn[-1][0], self.node_constrain_col_btn[-1][1])
+      
+        layout.addRow(QtWidgets.QLabel('Error margin'), self.node_constrain_error_btn[-1])
+       
+        x_dir = QtWidgets.QButtonGroup(layout)
+        x_dir.addButton(self.node_constrain_x_dir_btn[-1][0])
+        x_dir.addButton(self.node_constrain_x_dir_btn[-1][1])
+        layout.addRow(QtWidgets.QLabel('Contrain node displacement in X direction'))
+        layout.addRow(self.node_constrain_x_dir_btn[-1][0], self.node_constrain_x_dir_btn[-1][1])
+
+        y_dir = QtWidgets.QButtonGroup(layout)
+        y_dir.addButton(self.node_constrain_y_dir_btn[-1][0])
+        y_dir.addButton(self.node_constrain_y_dir_btn[-1][1])
+        layout.addRow(QtWidgets.QLabel('Contrain node displacement in Y direction'))
+        layout.addRow(self.node_constrain_y_dir_btn[-1][0], self.node_constrain_y_dir_btn[-1][1])
+
+    def toggled_node_constrain(self):
+        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_coord_btn[-1][0].setEnabled)  
+        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_coord_btn[-1][1].setEnabled)
+        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_col_btn[-1][0].setDisabled)
+        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_col_btn[-1][1].setDisabled)
+        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_error_btn[-1].setDisabled)
+        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_coord_btn[-1][2].setDisabled)
+
+        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_coord_btn[-1][0].setDisabled)  
+        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_coord_btn[-1][1].setDisabled)
+        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_col_btn[-1][0].setEnabled)
+        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_col_btn[-1][1].setEnabled)
+        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_error_btn[-1].setEnabled)
+        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_coord_btn[-1][2].setEnabled)
+
+    def set_default_node_constrain(self):
+        self.node_constrain_type_btn[-1][0].setChecked(False)
+        self.node_constrain_type_btn[-1][1].setChecked(True)
+
+        self.node_constrain_coord_btn[-1][0].setDisabled(True)
+        self.node_constrain_coord_btn[-1][1].setDisabled(True)
+        
+        self.node_constrain_coord_btn[-1][2].setEnabled(True)
+        self.node_constrain_col_btn[-1][0].setEnabled(True)
+        self.node_constrain_col_btn[-1][1].setEnabled(True)
+        self.node_constrain_error_btn[-1].setEnabled(True)
+
+        self.node_constrain_coord_btn[-1][2].setText('0')
+        self.node_constrain_col_btn[-1][0].setChecked(True)
+        self.node_constrain_error_btn[-1].setText('1e-6')
+
+        self.node_constrain_x_dir_btn[-1][0].setChecked(True)
+        self.node_constrain_y_dir_btn[-1][0].setChecked(True)
+
+        self.toggled_node_constrain()
+
+    def update_default_node_constrain(self, ind):
+        node_constrain_by_coord = True if self.node_constrain_by_coord[ind] else False
+        self.node_constrain_type_btn[-1][0].setChecked(node_constrain_by_coord)
+        self.node_constrain_type_btn[-1][1].setChecked(not node_constrain_by_coord)
+
+        if node_constrain_by_coord:
+            self.node_constrain_coord_btn[-1][0].setText(str(self.node_constrain_coord[ind][0]))
+            self.node_constrain_coord_btn[-1][1].setText(str(self.node_constrain_coord[ind][1]))
+
+            self.node_constrain_coord_btn[-1][2].setDisabled(True)
+            self.node_constrain_col_btn[-1][0].setDisabled(True)
+            self.node_constrain_col_btn[-1][1].setDisabled(True)
+            self.node_constrain_error_btn[-1].setDisabled(True)
+        else:
+            self.node_constrain_coord_btn[-1][0].setDisabled(True)
+            self.node_constrain_coord_btn[-1][1].setDisabled(True)
+        
+            self.node_constrain_coord_btn[-1][2].setText(str(self.node_constrain_coord[ind]))
+            col = True if self.x_node_constrain_col[ind] else False
+            self.node_constrain_col_btn[-1][0].setChecked(col)
+            self.node_constrain_col_btn[-1][1].setChecked(not col)
+            self.node_constrain_error_btn[-1].setText(str(self.node_constrain_error[ind]))
+
+        x_ind = 0 if self.node_constrain_x_dir[ind] else 1
+        self.node_constrain_x_dir_btn[-1][x_ind].setChecked(True)
+
+        y_ind = 0 if self.node_constrain_y_dir[ind] else 1  
+        self.node_constrain_y_dir_btn[-1][y_ind].setChecked(True)
+
+        self.toggled_node_constrain()
+
+    def rewrite_node_constrain(self, layout):
+        self.reset_node_constrain_list(vals=False)
+        for ind in range(len(self.node_constrain_by_coord)):
+            self.create_node_constrain_btn()
+            self.update_default_node_constrain(ind)
+            self.add_node_constrain_btn(layout)
+
+    def reset_node_constrain_list(self, btn=True, vals=True):
+        if btn:
+            self.node_constrain_type_btn = []
+            self.node_constrain_coord_btn = []
+            self.node_constrain_col_btn = []
+            self.node_constrain_error_btn = []
+            self.node_constrain_x_dir_btn = []
+            self.node_constrain_y_dir_btn = []
+        if vals:
+            self.node_constrain_by_coord = [] 
+            self.node_constrain_coord = []
+            self.x_node_constrain_col = []
+            self.node_constrain_error = []
+            self.node_constrain_x_dir = []
+            self.node_constrain_y_dir = []
+
+    def check_node_constrain_btn(self):
+        self.warnings_node_constrain = []
+        for i in range(len(self.node_constrain_type_btn)):
+            if self.node_constrain_type_btn[i][0].isChecked():
+                self.check_param(self.warnings_node_constrain, self.node_constrain_coord_btn[i][0].text(), [int, float], 'x coordinate must be an integer or float')
+                self.check_param(self.warnings_node_constrain, self.node_constrain_coord_btn[i][1].text(), [int, float], 'y coordinate must be an integer or float')
+            else:
+                if not (self.node_constrain_col_btn[-1][0].isChecked()) and not (self.node_constrain_col_btn[-1][1].isChecked()):
+                    warning = QtWidgets.QLabel("select column")
+                    self.warnings_node_constrain.append(warning)
+                self.check_param(self.warnings_node_constrain, self.node_constrain_coord_btn[i][2].text(), [int, float], 'coordinate must be an integer or float')
+                self.check_param(self.warnings_node_constrain, self.node_constrain_error_btn[i].text(), [int, float], 'error margin must be an integer or float')
+
+    def check_node_constrain_values(self):
+        self.warnings_node_constrain = []
+        for i in range(len(self.node_constrain_type_btn)):
+            if self.node_constrain_type_btn[i][0].isChecked():
+                if ast.literal_eval(self.node_constrain_coord_btn[i][0].text()) > self.lx:
+                    warning = QtWidgets.QLabel("x coordinate exceeds mesh boundaries")
+                    self.warnings_node_constrain.append(warning)
+                if ast.literal_eval(self.node_constrain_coord_btn[i][1].text()) > self.ly:
+                    warning = QtWidgets.QLabel("y coordinate exceeds mesh boundaries")
+                    self.warnings_node_constrain.append(warning)
+            else:
+                if self.node_constrain_col_btn[-1][0].isChecked():
+                    if ast.literal_eval(self.node_constrain_coord_btn[i][2].text()) > self.lx:
+                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
+                        self.warnings_node_constrain.append(warning)
+                else:
+                    if ast.literal_eval(self.node_constrain_coord_btn[i][2].text()) > self.ly:
+                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
+                        self.warnings_node_constrain.append(warning)
+
+    def update_node_constrain(self):
+        for i in range(len(self.node_constrain_type_btn)):
+            node_constrain_by_coord = True if self.node_constrain_type_btn[i][0].isChecked() else False
+            self.node_constrain_by_coord.append(node_constrain_by_coord)
+            if node_constrain_by_coord:
+                x = ast.literal_eval(self.node_constrain_coord_btn[i][0].text())
+                y = ast.literal_eval(self.node_constrain_coord_btn[i][1].text())
+                self.node_constrain_coord.append([x,y])
+                self.x_node_constrain_col.append(None)
+                self.node_constrain_error.append(None)
+            else:
+                coord = ast.literal_eval(self.node_constrain_coord_btn[i][2].text())
+                self.node_constrain_coord.append(coord)
+                col = 1 if self.node_constrain_col_btn[i][0].isChecked() else 2
+                self.x_node_constrain_col.append(col)
+                error = ast.literal_eval(self.node_constrain_error_btn[i].text())
+                self.node_constrain_error.append(error)
+            
+            x = 1 if self.node_constrain_x_dir_btn[i][0].isChecked() else 0
+            self.node_constrain_x_dir.append(x)
+
+            y = 1 if self.node_constrain_y_dir_btn[i][0].isChecked() else 0
+            self.node_constrain_y_dir.append(y)
+
+    def convert_node_constrain_to_dict(self):
+        # list of dicts
+        self.node_constrain = []
+        for i in range(len(self.node_constrain_type_btn)):
+            if self.node_constrain_by_coord[i]:
+                aux_key = ["x_coord", "y_coord", "constrain_disp_x", "constrain_disp_y"]
+                aux_val = [self.node_constrain_coord[i][0], self.node_constrain_coord[i][1], self.node_constrain_x_dir[i], self.node_constrain_y_dir[i]]
+            else:
+                aux_key = ["coord", "axis", "eps", "constrain_disp_x", "constrain_disp_y"]
+                aux_val = [self.node_constrain_coord[i], self.x_node_constrain_col[i], self.node_constrain_error[i], self.node_constrain_x_dir[i], self.node_constrain_y_dir[i]]
+            dicti = dict(zip(aux_key, aux_val))
+            self.node_constrain.append(dicti)
+
+class ParametersFEM2D(Parameters):
+    def __init__(self):
+        self.create_btns()
+        self.set_default()
+        self.update_params()
+
+    def create_btns(self):
+        self.nelx_spin = QtWidgets.QLineEdit()
+        self.nely_spin = QtWidgets.QLineEdit()
+        self.lx_spin = QtWidgets.QLineEdit()
+        self.ly_spin = QtWidgets.QLineEdit()
+        
+        self.E_spin = QtWidgets.QLineEdit()
+        self.v_spin = QtWidgets.QLineEdit()
+        self.rho_spin = QtWidgets.QLineEdit()
+        
+        self.alpha_spin = QtWidgets.QLineEdit()
+        self.beta_spin = QtWidgets.QLineEdit()
+        self.eta_spin = QtWidgets.QLineEdit()
+        
+        self.freq_spin = QtWidgets.QLineEdit()
+        self.factor_spin = QtWidgets.QLineEdit()
+
+        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
+        self.freq_range_spin = QtWidgets.QLineEdit()
+        self.node_plot_spin = QtWidgets.QLineEdit()
+
+        self.freq_range_spin.setDisabled(True)
+        self.node_plot_spin.setDisabled(True)
+
+        self.save_check = QtWidgets.QCheckBox("Save data")
+
+    def add_btns(self, layout):
+        layout.addWidget(QtWidgets.QLabel('Nelx'))
+        layout.addWidget(self.nelx_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Nely'))
+        layout.addWidget(self.nely_spin)
+
+        layout.addWidget(QtWidgets.QLabel('lx'))
+        layout.addWidget(self.lx_spin)
+
+        layout.addWidget(QtWidgets.QLabel('ly'))
+        layout.addWidget(self.ly_spin)
+
+        layout.addWidget(QtWidgets.QLabel('E'))
+        layout.addWidget(self.E_spin)
+
+        layout.addWidget(QtWidgets.QLabel('v'))
+        layout.addWidget(self.v_spin)
+
+        layout.addWidget(QtWidgets.QLabel('rho'))
+        layout.addWidget(self.rho_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Alpha'))
+        layout.addWidget(self.alpha_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Beta'))
+        layout.addWidget(self.beta_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Eta'))
+        layout.addWidget(self.eta_spin)
+
+        layout.addWidget(QtWidgets.QLabel('Factor'))
+        layout.addWidget(self.factor_spin)
+        
+        layout.addWidget(QtWidgets.QLabel('Frequency'))
+        layout.addWidget(self.freq_spin)
+
+        layout.addWidget(self.freqrsp_check)
+        layout.addWidget(QtWidgets.QLabel('Frequency range'))
+        layout.addWidget(self.freq_range_spin)
+        layout.addWidget(QtWidgets.QLabel('Node plot'))
+        layout.addWidget(self.node_plot_spin)
+        layout.addWidget(self.save_check)
+
+    def toggled_fem2d(self):
+        self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.node_plot_spin.setEnabled)
+    
+    def set_default(self):       
+        self.nelx_spin.setText('40')
+        self.nely_spin.setText('20')
+        self.lx_spin.setText('1')
+        self.ly_spin.setText('0.5')
+
+        self.E_spin.setText('210e9')
+        self.v_spin.setText('0.3')
+        self.rho_spin.setText('7860')
+
+        self.alpha_spin.setText('0')
+        self.beta_spin.setText('0')
+        self.eta_spin.setText('0')
+
+        self.factor_spin.setText('10000')
+
+        self.freq_spin.setText('200')
+
+        self.freq_range_spin.setText("[0, 25, 5]")
+        self.node_plot_spin.setText("[1, 0.25, 0, 1]")
+
+        self.toggled_fem2d()
+
+    def update_params(self): 
+        super().update_params()
+        if self.freqrsp:
+            self.node_plot = ast.literal_eval(self.node_plot_spin.text())
+        else:
+            self.node_plot = None
+
+    def update_default(self):
+        self.nelx_spin.setText(str(self.nelx))
+        self.nely_spin.setText(str(self.nely))
+        self.lx_spin.setText(str(self.lx))
+        self.ly_spin.setText(str(self.ly))
+        
+        self.E_spin.setText(str(self.E))
+        self.v_spin.setText(str(self.v))
+        self.rho_spin.setText(str(self.rho))
+        
+        self.alpha_spin.setText(str(self.alpha))
+        self.beta_spin.setText(str(self.beta))
+        self.eta_spin.setText(str(self.eta))
+        
+        self.freq_spin.setText(str(self.freq))
+        self.factor_spin.setText(str(self.factor))
+
+        self.freqrsp_check.setChecked(self.freqrsp) 
+        if self.freqrsp:
+            self.freq_range_spin.setText(str(self.freq_range))
+            self.node_plot_spin.setText(str(self.node_plot))
+        else:
+            self.freq_range_spin.setDisabled(True)
+            self.node_plot_spin.setDisabled(True)
+
+        self.save_check.setChecked(self.save)
+
+        self.toggled_fem2d()
+
+    def export_param(self):
+        param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
+                "alpha":self.alpha, "beta":self.beta, "eta":self.eta, "factor":self.factor, "freq":self.freq, 
+                "freqrsp":self.freqrsp, "freq_range":self.freq_range, "load_matrix":self.load, 
+                "constr_matrix":self.node_constrain, "node_plot":self.node_plot, "save":self.save, "mesh_file":None}
+        
+        folder_name = 'temp'
+        directory = os.path.join(os.path.dirname(__file__), folder_name)
+        os.makedirs(directory, exist_ok=True)
+
+        try: 
+            # WRITE
+            dir_file = os.path.join(directory, 'param_file.txt')
+            # open file for writing
+            f = open(dir_file,"w")
+            # write file
+            f.write(str(param))
+            # close file
+            f.close()
+
+        except: 
+            print("Something went wrong")
+
+    def check_params(self):
+        super().check_params()
+        if self.freqrsp_check.isChecked():
+            self.check_param(self.warnings, self.node_plot_spin.text(), [list], 'Node must be a list')
+
 class ParametersOpt(Parameters):
     def __init__(self):
         super().__init__()
 
-        self.text = """ <p> <b> <font size="+7"> Parameters: </font> </b>
-                    <hr>
-                    <p> <b> <font size="+1"> nelx </b> <font size="+1"> (<i>int</i>): Number of elements on the x-axis.  </font> </p>
-                    <p> <b> <font size="+1"> nely </b> <font size="+1"> (<i>int</i>): Number of elements on the y-axis.  </font> </p>
-                    <p> <b> <font size="+1"> lx </b> <font size="+1"> (<i>float</i>): x-axis length.  </font> </p>
-                    <p> <b> <font size="+1"> ly </b> <font size="+1"> (<i>float</i>): x-axis length.  </font> </p>
-                    <p> <b> <font size="+1"> func_name </b> <font size="+1"> (<i>str</i>): Objective function used.  </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.  </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> If the multiobjective function is being calculated, weight n1 is assigned.  </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> The list can be: </font> </p>
-                       
-                            <p style="margin-left:4em"> <font size="+1"> [x_coordinate, y_coordinate, force_applied_x, force_applied_y, force_value] </font> </p>
-                            <p style="margin-left:4em"> <font size="+1"> [value_coordinate, column_to_compare, force_applied_x, force_applied_y, force_value, error_margin] </font> </p>
-                        
-                        <p style="margin-left:2em"> <font size="+1"> It is possible to merge the two options. Examples: </font> </p>
-                      
-                            <p style="margin-left:4em"> <font size="+1"> force_matrix = [[1, 1, 0, -1, 100]] -> Apply a negative force of modulus 100 N in the Y direction to the node at coordinate (1,1) </font> </p>
-                            <p style="margin-left:4em"> <font size="+1"> force_matrix = [[0, 1, 1, 0, 200, 0.001]] -> Apply a positive force of modulus 200 N in X direction to all the nodes with x=0 </font> </p>
-                            <p style="margin-left:4em"> <font size="+1"> force_matrix = [[1, 1, 0, -1, 100], [0, 1, -1, 0, 200, 0.001]] -> Apply the two options above. </font> </p>
-                        
-                    <p> <b> <font size="+1"> constr_matrix </font> </b> <font size="+1"> (<i>numpy.array</i>): It's a list of lists. </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> The list can be: </font> </p> 
-        
-                            <p style="margin-left:4em"> <font size="+1"> [x_coordinate, y_coordinate, constrain_disp_x, constrain_disp_y] </font> </p>
-                            <p style="margin-left:4em"> <font size="+1"> [value_coordinate, column_to_compare, constrain_disp_x, constrain_disp_y, error_margin] </font> </p>
-                        
-                    <p> <b> <font size="+1"> freq1 </b> <font size="+1"> (<i>int</i>): Optimized frequency. </font> </p>
-                    <p> <b> <font size="+1"> constr_func </b> <font size="+1"> (<i>list</i>): Constraint functions applied.  </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> It can be: 'Area', 'R Ratio' or 'Compliance.  </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> The first function in the list will be used to define the initial value of xval.  </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> If the same function is passed 2x,the box constraint is used. Negative values indicate the lower constraint.  </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> Example:  </font> </p>
-                                <p style="margin-left:4em"> <font size="+1"> constr_func   = ['Area', 'Area']  </font> </p>
-                                <p style="margin-left:4em"> <font size="+1"> constr_values = [50, -20]  </font> </p>
-                    <p> <b> <font size="+1"> constr_values </b> <font size="+1"> (<i>list</i>): Values of constraint functions applied.   </font> </p>
-                                <p style="margin-left:2em"> <font size="+1"> Value in position i relates to the function in position i of the list constr_func.  </font> </p>
-                                <p style="margin-left:2em"> <font size="+1"> It can be a maximum of 6 values.  </font> </p>
-                                <p style="margin-left:2em"> <font size="+1"> constr_values[i] &#60; 0 = lower constraint  </font> </p>
-                                <p style="margin-left:2em"> <font size="+1"> constr_values[i] > 0 = upper constraint  </font> </p>
-                                <p style="margin-left:2em"> <font size="+1"> If 'Compliance' is passed a tuple with constraint value and frequency respectively.  </font> </p>
-                                <p style="margin-left:2em"> <font size="+1"> Example:   </font> </p>
-                                    <p style="margin-left:4em"> <font size="+1"> constr_func   = ['Area', 'Area', 'Compliance, 'R Ratio]  </font> </p>
-                                    <p style="margin-left:4em"> <font size="+1"> constr_values = [50, -20, (50, 1000), 10]  </font> </p>
-                    <p> <b> <font size="+1"> n1 </b> <font size="+1"> (<i>float</i>): Weight n1 used in func_name. </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> If n1 &#60; 0: Maximize objective function  </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> If n1 > 0: Minimize objective function  </font> </p>
-                    <p> <b> <font size="+1"> multiobjective </b> <font size="+1"> (<i>tuple</i>): Second function and frequency in the multiobjective.  </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> First value is the second function of the multiobjective function. The assigned weight is (1 - n1).  </font> </p>
-                            <p style="margin-left:2em"> <font size="+1"> Second value is the frequency that func_name2 is being optimized.   </font> </p>
-                    <p> <b> <font size="+1"> const_func </b> <font size="+1"> (<i>float</i>):  </font> </p>
-                    <p> <b> <font size="+1"> fac_ratio </b> <font size="+1"> (<i>float</i>): Factor applied in the radius to get elements in the vicinity of each element. </font> </p>
-                    <p> <b> <font size="+1"> modes </b> <font size="+1"> (<i>int</i>): If not None is used the Mode Superposition Method to calculate the displacement. </font> </p>
-                    <p> <b> <font size="+1"> rho </b> <font size="+1"> (<i>float</i>): Density.    </font> </p>
-                    <p> <b> <font size="+1"> E </b> <font size="+1"> (<i>float</i>): Elastic modulus. </font> </p>
-                    <p> <b> <font size="+1"> v </b> <font size="+1"> (<i>float</i>): Poisson's ratio. </font> </p>
-                    <p> <b> <font size="+1"> x_min_m </b> <font size="+1"> (<i>float</i>): Minimum relative densities to mass.  </font> </p>
-                    <p> <b> <font size="+1"> x_min_k </b> <font size="+1"> (<i>float</i>): Minimum relative densities to stiffness.  </font> </p>
-                    <p> <b> <font size="+1"> alpha_par </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass.   </font> </p>
-                    <p> <b> <font size="+1"> beta_par </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness.   </font> </p>
-                    <p> <b> <font size="+1"> eta_par </b> <font size="+1"> (<i>float</i>): Damping coefficient.   </font> </p>
-                    <p> <b> <font size="+1"> alpha_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass to generate the graph. </font> </p>
-                    <p> <b> <font size="+1"> beta_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness to generate the graph.  </font> </p>
-                    <p> <b> <font size="+1"> eta_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient to generate the graph. </font> </p>
-                    <p> <b> <font size="+1"> p_par </b> <font size="+1"> (<i>int</i>): Penalization power to stiffness.  </font> </p>
-                    <p> <b> <font size="+1"> q_par </b> <font size="+1"> (<i>int</i>): Penalization power to mass.  </font> </p>
-                    <p> <b> <font size="+1"> passive_coord </b> <font size="+1"> (<i>tuple</i>): Region that the shape will not be changed.   </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> Example: </font> </p>
-                        <p style="margin-left:4em"> <font size="+1"> ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))  </font> </p>
-                    <p> <b> <font size="+1"> freq_rsp </b> <font size="+1"> (<i>list</i>): If len is 3, a frequency response graph of the original and optimized structure is generated. </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> First value is the minimum frequency of the graph.  </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> Second value is the maximum frequency of the graph.  </font> </p>
-                        <p style="margin-left:2em"> <font size="+1"> Third value is the step between each calculation of the objective function.   </font> </p>
-                    <p> <b> <font size="+1"> dens_filter </b> <font size="+1"> (<i>bool</i>): If True use density filter and False use sensitivity filter.  </font> </p>
-                    <p> <b> <font size="+1"> each_iter </b> <font size="+1"> (<i>bool</i>): If True plots the convergence graph for each iteration of the optimization.   </font> </p>
-                    <p> <b> <font size="+1"> max_iter </b> <font size="+1"> (<i>int</i>): Number of iterations. </font> </p>
-                    <p> <b> <font size="+1"> mesh_deform </b> <font size="+1"> (<i>bool</i>): If True plots the mesh deformation of the dynamic function.  </font> </p>
-                    <p> <b> <font size="+1"> factor </b> <font size="+1"> (<i>float</i>): Factor to deform the mesh.  </font> </p>
-                    <p> <b> <font size="+1"> save </b> <font size="+1"> (<i>bool</i>): if True save the optimization and frequency response graphs as PNG.  </font> </p>
-                    """
-
-        self.create_param_btns()
+        self.create_btns()
         self.set_default()
         #self.update_params()
 
@@ -233,7 +787,7 @@ class ParametersOpt(Parameters):
             print("Something went wrong")
 
 # Optimization param
-    def create_param_btns(self):
+    def create_btns(self):
         self.mma_radio = QtWidgets.QRadioButton("MMA")
         self.gcmma_radio = QtWidgets.QRadioButton("GMMA")
 
@@ -453,6 +1007,14 @@ class ParametersOpt(Parameters):
             func_name = None
         return func_name
 
+    def toggled_opt(self):
+        self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
+        self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
+        self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.alpha_plot_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.beta_plot_spin.setEnabled)
+        self.freqrsp_check.toggled.connect(self.eta_plot_spin.setEnabled)
+
     def set_default(self):
         self.mma_radio.setChecked(True)
 
@@ -499,12 +1061,7 @@ class ParametersOpt(Parameters):
 
         self.dens_filter_check.setChecked(True)
 
-        self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
-        self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
-        self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.alpha_plot_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.beta_plot_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.eta_plot_spin.setEnabled)     
+        self.toggled_opt()
 
     def update_default(self):
         self.mma_radio.setChecked(self.mma)
@@ -578,14 +1135,9 @@ class ParametersOpt(Parameters):
             self.func_name2_box.setCurrentText(self.func_name2)
         else:
             self.freq2_spin.setDisabled(True)
-            self.freq2_spin.setText('0')  
+            self.freq2_spin.setText('0')
 
-        self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
-        self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
-        self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.alpha_plot_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.beta_plot_spin.setEnabled)
-        self.freqrsp_check.toggled.connect(self.eta_plot_spin.setEnabled)  
+        self.toggled_opt()
 
     def check_params(self):
         super().check_params()
@@ -618,449 +1170,7 @@ class ParametersOpt(Parameters):
             self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'beta_plot must be an integer or float')
             self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'eta_plot must be an integer or float')
 
-# Load param
-    def create_load_btn(self):
-        by_coord_load_btn = QtWidgets.QRadioButton("Add load by coordinate")
-        by_column_load_btn = QtWidgets.QRadioButton("Add load by column")
-        self.load_type_btn.append([by_coord_load_btn, by_column_load_btn])
-
-        coord_load_x_line  = QtWidgets.QLineEdit()
-        coord_load_y_line  = QtWidgets.QLineEdit()
-        coord_load_line = QtWidgets.QLineEdit()
-        self.load_coord_btn.append([coord_load_x_line, coord_load_y_line, coord_load_line])
-        
-        x_by_col_load_btn = QtWidgets.QRadioButton("X")
-        y_by_col_load_btn = QtWidgets.QRadioButton("Y")
-        self.load_col_btn.append([x_by_col_load_btn, y_by_col_load_btn])
-
-        erro_margin_load_line  = QtWidgets.QLineEdit()
-        self.load_error_btn.append(erro_margin_load_line)
-
-        load_x_dir_line_pos = QtWidgets.QRadioButton("Positive") 
-        load_x_dir_line_neg = QtWidgets.QRadioButton("Negative")
-        load_x_dir_line_nan = QtWidgets.QRadioButton("None")
-        self.load_x_dir_btn.append([load_x_dir_line_pos, load_x_dir_line_neg, load_x_dir_line_nan])
-   
-        load_y_dir_line_pos  = QtWidgets.QRadioButton("Positive") 
-        load_y_dir_line_neg  = QtWidgets.QRadioButton("Negative")         
-        load_y_dir_line_nan = QtWidgets.QRadioButton("None")
-        self.load_y_dir_btn.append([load_y_dir_line_pos, load_y_dir_line_neg, load_y_dir_line_nan])
-
-        load_value_line = QtWidgets.QLineEdit()
-        self.load_value_btn.append(load_value_line)
-
-    def add_load_btn(self, layout):
-        load_type = QtWidgets.QButtonGroup(layout)
-        load_label = QtWidgets.QLabel('---- Load ----')
-        load_label.setAlignment(QtCore.Qt.AlignCenter)
-        layout.addRow(load_label)
-        
-        load_type.addButton(self.load_type_btn[-1][0])
-        layout.addRow(self.load_type_btn[-1][0])
-       
-        layout.addRow(QtWidgets.QLabel('X-coord'), self.load_coord_btn[-1][0])
-        layout.addRow(QtWidgets.QLabel('Y-coord'), self.load_coord_btn[-1][1])
-       
-        load_type.addButton(self.load_type_btn[-1][1])
-        layout.addRow(self.load_type_btn[-1][1])
-       
-        layout.addRow(QtWidgets.QLabel('Coord'), self.load_coord_btn[-1][2])
-     
-        layout.addRow(QtWidgets.QLabel('Column'))
-        column_load = QtWidgets.QButtonGroup(layout)
-        column_load.addButton(self.load_col_btn[-1][0])
-        column_load.addButton(self.load_col_btn[-1][1])
-        layout.addRow(self.load_col_btn[-1][0], self.load_col_btn[-1][1])
-      
-        layout.addRow(QtWidgets.QLabel('Error margin'), self.load_error_btn[-1])
-       
-        x_dir = QtWidgets.QButtonGroup(layout)
-        x_dir.addButton(self.load_x_dir_btn[-1][0])
-        x_dir.addButton(self.load_x_dir_btn[-1][1])
-        x_dir.addButton(self.load_x_dir_btn[-1][2])
-        layout.addRow(QtWidgets.QLabel('Add load in X direction'))
-        lay = QtWidgets.QHBoxLayout()
-        lay.addWidget(self.load_x_dir_btn[-1][0])
-        lay.addWidget(self.load_x_dir_btn[-1][1])
-        lay.addWidget(self.load_x_dir_btn[-1][2])
-        layout.addRow(lay)
-
-        y_dir = QtWidgets.QButtonGroup(layout)
-        y_dir.addButton(self.load_y_dir_btn[-1][0])
-        y_dir.addButton(self.load_y_dir_btn[-1][1])
-        y_dir.addButton(self.load_y_dir_btn[-1][2])
-        layout.addRow(QtWidgets.QLabel('Add load in Y direction'))
-        lay = QtWidgets.QHBoxLayout()
-        lay.addWidget(self.load_y_dir_btn[-1][0])
-        lay.addWidget(self.load_y_dir_btn[-1][1])
-        lay.addWidget(self.load_y_dir_btn[-1][2])
-        layout.addRow(lay)
-
-        layout.addRow(QtWidgets.QLabel('Force value'), self.load_value_btn[-1])
-
-    def set_default_load(self):
-        self.load_type_btn[-1][0].setChecked(True)
-        self.load_type_btn[-1][1].setChecked(False)
-
-        self.load_coord_btn[-1][0].setText(str(self.lx))
-        self.load_coord_btn[-1][1].setText(str(self.ly/2))
-        
-        self.load_coord_btn[-1][2].setDisabled(True)
-        self.load_col_btn[-1][0].setDisabled(True)
-        self.load_col_btn[-1][1].setDisabled(True)
-        self.load_error_btn[-1].setDisabled(True)
-
-        self.load_x_dir_btn[-1][0].setChecked(True)
-        self.load_y_dir_btn[-1][0].setChecked(True)
-        self.load_value_btn[-1].setText('100')
-
-        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][0].setEnabled)  
-        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][1].setEnabled)
-        self.load_type_btn[-1][0].toggled.connect(self.load_col_btn[-1][0].setDisabled)
-        self.load_type_btn[-1][0].toggled.connect(self.load_col_btn[-1][1].setDisabled)
-        self.load_type_btn[-1][0].toggled.connect(self.load_error_btn[-1].setDisabled)
-        self.load_type_btn[-1][0].toggled.connect(self.load_coord_btn[-1][2].setDisabled)
-
-        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][0].setDisabled)  
-        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][1].setDisabled)
-        self.load_type_btn[-1][1].toggled.connect(self.load_col_btn[-1][0].setEnabled)
-        self.load_type_btn[-1][1].toggled.connect(self.load_col_btn[-1][1].setEnabled)
-        self.load_type_btn[-1][1].toggled.connect(self.load_error_btn[-1].setEnabled)
-        self.load_type_btn[-1][1].toggled.connect(self.load_coord_btn[-1][2].setEnabled)
-
-    def update_default_load(self, ind):
-        self.load_type_btn[ind][0].setChecked(self.load_by_coord[ind])
-        self.load_type_btn[ind][1].setChecked(not self.load_by_coord[ind])
-
-        if self.load_by_coord[ind]:
-            self.load_coord_btn[ind][0].setText(str(self.load_coord[ind][0]))
-            self.load_coord_btn[ind][1].setText(str(self.load_coord[ind][1]))
-        
-            self.load_coord_btn[ind][2].setDisabled(True)
-            self.load_col_btn[ind][0].setDisabled(True)
-            self.load_col_btn[ind][1].setDisabled(True)
-            self.load_error_btn[ind].setDisabled(True)
-        else:
-            self.load_coord_btn[ind][0].setDisabled(True)
-            self.load_coord_btn[ind][1].setDisabled(True)
-
-            self.load_coord_btn[ind][2].setText(str(self.load_coord[ind]))
-            col = True if self.x_load_col[ind] else False
-            self.load_col_btn[ind][0].setChecked(col)
-            self.load_col_btn[ind][1].setChecked(not col)
-            self.load_error_btn[ind].setText(str(self.load_error[ind]))
-
-        ind_x = 0 if self.load_x_dir[ind] == 1 else 1 if self.load_x_dir[ind] == -1 else 2
-        self.load_x_dir_btn[ind][ind_x].setChecked(True)
-
-        ind_y = 0 if self.load_y_dir[ind] == 1 else 1 if self.load_y_dir[ind] == -1 else 2
-        self.load_y_dir_btn[ind][ind_y].setChecked(True)
-    
-        self.load_value_btn[ind].setText(str(self.load_value[ind]))
-
-        self.load_type_btn[ind][0].toggled.connect(self.load_coord_btn[ind][0].setEnabled)  
-        self.load_type_btn[ind][0].toggled.connect(self.load_coord_btn[ind][1].setEnabled)
-        self.load_type_btn[ind][0].toggled.connect(self.load_col_btn[ind][0].setDisabled)
-        self.load_type_btn[ind][0].toggled.connect(self.load_col_btn[ind][1].setDisabled)
-        self.load_type_btn[ind][0].toggled.connect(self.load_error_btn[ind].setDisabled)
-        self.load_type_btn[ind][0].toggled.connect(self.load_coord_btn[ind][2].setDisabled)
-
-        self.load_type_btn[ind][1].toggled.connect(self.load_coord_btn[ind][0].setDisabled)  
-        self.load_type_btn[ind][1].toggled.connect(self.load_coord_btn[ind][1].setDisabled)
-        self.load_type_btn[ind][1].toggled.connect(self.load_col_btn[ind][0].setEnabled)
-        self.load_type_btn[ind][1].toggled.connect(self.load_col_btn[ind][1].setEnabled)
-        self.load_type_btn[ind][1].toggled.connect(self.load_error_btn[ind].setEnabled)
-        self.load_type_btn[ind][1].toggled.connect(self.load_coord_btn[ind][2].setEnabled)
-
-    def rewrite_load(self, layout):
-        self.reset_load_list(vals=False)
-        for ind in range(len(self.load_by_coord)):
-            self.create_load_btn()
-            self.update_default_load(ind)
-            self.add_load_btn(layout)
-        
-    def reset_load_list(self, btn=True, vals=True):
-        if btn:
-            self.load_type_btn = []
-            self.load_coord_btn = []
-            self.load_col_btn = []
-            self.load_error_btn = []
-            self.load_x_dir_btn = []
-            self.load_y_dir_btn = []
-            self.load_value_btn = []
-
-        if vals:
-            # values load
-            self.load_by_coord = []
-            self.load_coord = []
-            self.x_load_col = []
-            self.load_error = []
-            self.load_x_dir = []
-            self.load_y_dir = []
-            self.load_value = []
-
-    def check_load_btn(self):
-        self.warnings_load = []
-        for i in range(len(self.load_type_btn)):
-            if self.load_type_btn[i][0].isChecked():
-                self.check_param(self.warnings_load, self.load_coord_btn[i][0].text(), [int, float], 'x coordinate must be an integer or float')
-                self.check_param(self.warnings_load, self.load_coord_btn[i][1].text(), [int, float], 'y coordinate must be an integer or float')
-            else:
-                if not (self.load_col_btn[-1][0].isChecked()) and not (self.load_col_btn[-1][1].isChecked()):
-                    warning = QtWidgets.QLabel("select column")
-                    self.warnings_load.append(warning)
-                self.check_param(self.warnings_load, self.load_coord_btn[i][2].text(), [int, float], 'coordinate must be an integer or float')
-                self.check_param(self.warnings_load, self.load_error_btn[i].text(), [int, float], 'error margin must be an integer or float')
-            
-            self.check_param(self.warnings_load, self.load_value_btn[i].text(), [int, float], 'load value must be an integer or float')
-
-    def check_load_values(self):
-        self.warnings_load = []
-        for i in range(len(self.load_type_btn)):
-            if self.load_type_btn[i][0].isChecked():
-                if ast.literal_eval(self.load_coord_btn[i][0].text()) > self.lx:
-                    warning = QtWidgets.QLabel("x coordinate exceeds mesh boundaries")
-                    self.warnings_load.append(warning)
-                if ast.literal_eval(self.load_coord_btn[i][1].text()) > self.ly:
-                    warning = QtWidgets.QLabel("y coordinate exceeds mesh boundaries")
-                    self.warnings_load.append(warning)
-            else:
-                if self.load_col_btn[-1][0].isChecked():
-                    if ast.literal_eval(self.load_coord_btn[i][2].text()) > self.lx:
-                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
-                        self.warnings_load.append(warning)
-                else:
-                    if ast.literal_eval(self.load_coord_btn[i][2].text()) > self.ly:
-                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
-                        self.warnings_load.append(warning)
-
-    def update_load(self):
-        for i in range(len(self.load_type_btn)):
-            load_by_coord = True if self.load_type_btn[i][0].isChecked() else False
-            self.load_by_coord.append(load_by_coord)
-            if load_by_coord:
-                x = ast.literal_eval(self.load_coord_btn[i][0].text())
-                y = ast.literal_eval(self.load_coord_btn[i][1].text())
-                self.load_coord.append([x,y])
-                self.x_load_col.append(None)
-                self.load_error.append(None)
-            else:
-                coord = ast.literal_eval(self.load_coord_btn[i][2].text())
-                self.load_coord.append(coord)
-                col = 1 if self.load_col_btn[i][0].isChecked() else 2
-                self.x_load_col.append(col)
-                error = ast.literal_eval(self.load_error_btn[i].text())
-                self.load_error.append(error)
-            
-            x = 1 if self.load_x_dir_btn[i][0].isChecked() else -1 if self.load_x_dir_btn[i][1].isChecked() else 0
-            self.load_x_dir.append(x)
-
-            y = 1 if self.load_y_dir_btn[i][0].isChecked() else -1 if self.load_y_dir_btn[i][1].isChecked() else 0
-            self.load_y_dir.append(y)
-
-            self.load_value.append(ast.literal_eval(self.load_value_btn[i].text()))
-
-    def convert_load_to_dict(self):
-        # list of dicts
-        self.load = []
-        for i in range(len(self.load_type_btn)):
-            if self.load_by_coord[i]:
-                aux_key = ["x_coord", "y_coord", "x_direc", "y_direc", "force"]
-                aux_val = [self.load_coord[i][0], self.load_coord[i][1], self.load_x_dir[i], self.load_y_dir[i], self.load_value[i]]
-                #dicti = {"x_coord":self.load_coord[i][0], "y_coord":self.load_coord[i][1], "x_direc":self.load_x_dir[i], "y_direc":self.load_y_dir[i], "force":self.load_value[i]}
-            else:
-                aux_key = ["coord", "axis", "eps", "x_direc", "y_direc", "force"]
-                aux_val = [self.load_coord[i], self.x_load_col[i], self.load_error[i], self.load_x_dir[i], self.load_y_dir[i], self.load_value[i]]
-                #dicti = {"coord":self.load_coord[i], "axis":self.load_coord[i], "eps":self.load_error[i], "x_direc":self.load_x_dir[i], "y_direc":self.load_y_dir[i], "force":self.load_value[i]}
-
-            dicti = dict(zip(aux_key, aux_val))
-            self.load.append(dicti)
-
-# Node contraint param
-    def create_node_constrain_btn(self):
-        by_coord_node_constrain_btn = QtWidgets.QRadioButton("Constrain node displacement by coordinate")
-        by_column_node_constrain_btn = QtWidgets.QRadioButton("Constrain node displacement by column")
-        self.node_constrain_type_btn.append([by_coord_node_constrain_btn, by_column_node_constrain_btn])
-
-        coord_node_constrain_x_line  = QtWidgets.QLineEdit()
-        coord_node_constrain_y_line  = QtWidgets.QLineEdit()
-        coord_node_constrain_line = QtWidgets.QLineEdit()
-        self.node_constrain_coord_btn.append([coord_node_constrain_x_line, coord_node_constrain_y_line, coord_node_constrain_line])
-        
-        x_by_col_node_constrain_btn = QtWidgets.QRadioButton("X")
-        y_by_col_node_constrain_btn = QtWidgets.QRadioButton("Y")
-        self.node_constrain_col_btn.append([x_by_col_node_constrain_btn, y_by_col_node_constrain_btn])
-
-        erro_margin_node_constrain_line  = QtWidgets.QLineEdit()
-        self.node_constrain_error_btn.append(erro_margin_node_constrain_line)
-
-        node_constrain_x_dir_line_yes = QtWidgets.QRadioButton("Yes") 
-        node_constrain_x_dir_line_no = QtWidgets.QRadioButton("No")
-        self.node_constrain_x_dir_btn.append([node_constrain_x_dir_line_yes, node_constrain_x_dir_line_no])
-   
-        node_constrain_y_dir_line_yes  = QtWidgets.QRadioButton("Yes") 
-        node_constrain_y_dir_line_no  = QtWidgets.QRadioButton("No")         
-        self.node_constrain_y_dir_btn.append([node_constrain_y_dir_line_yes, node_constrain_y_dir_line_no])
-
-    def add_node_constrain_btn(self, layout):
-        node_constrain_type = QtWidgets.QButtonGroup(layout)
-        node_constrain_label = QtWidgets.QLabel('---- Constrain node displacement ----')
-        node_constrain_label.setAlignment(QtCore.Qt.AlignCenter)
-        layout.addRow(node_constrain_label)
-        
-        node_constrain_type.addButton(self.node_constrain_type_btn[-1][0])
-        layout.addRow(self.node_constrain_type_btn[-1][0])
-       
-        layout.addRow(QtWidgets.QLabel('X-coor'), self.node_constrain_coord_btn[-1][0])
-        layout.addRow(QtWidgets.QLabel('Y-coord'), self.node_constrain_coord_btn[-1][1])
-       
-        node_constrain_type.addButton(self.node_constrain_type_btn[-1][1])
-        layout.addRow(self.node_constrain_type_btn[-1][1])
-       
-        layout.addRow(QtWidgets.QLabel('Coord'), self.node_constrain_coord_btn[-1][2])
-     
-        layout.addRow(QtWidgets.QLabel('Column'))
-        column_node_constrain = QtWidgets.QButtonGroup(layout)
-        column_node_constrain.addButton(self.node_constrain_col_btn[-1][0])
-        column_node_constrain.addButton(self.node_constrain_col_btn[-1][1])
-        layout.addRow(self.node_constrain_col_btn[-1][0], self.node_constrain_col_btn[-1][1])
-      
-        layout.addRow(QtWidgets.QLabel('Error margin'), self.node_constrain_error_btn[-1])
-       
-        x_dir = QtWidgets.QButtonGroup(layout)
-        x_dir.addButton(self.node_constrain_x_dir_btn[-1][0])
-        x_dir.addButton(self.node_constrain_x_dir_btn[-1][1])
-        layout.addRow(QtWidgets.QLabel('Contrain node displacement in X direction'))
-        layout.addRow(self.node_constrain_x_dir_btn[-1][0], self.node_constrain_x_dir_btn[-1][1])
-
-        y_dir = QtWidgets.QButtonGroup(layout)
-        y_dir.addButton(self.node_constrain_y_dir_btn[-1][0])
-        y_dir.addButton(self.node_constrain_y_dir_btn[-1][1])
-        layout.addRow(QtWidgets.QLabel('Contrain node displacement in Y direction'))
-        layout.addRow(self.node_constrain_y_dir_btn[-1][0], self.node_constrain_y_dir_btn[-1][1])
-
-    def set_default_node_constrain(self):
-        self.node_constrain_type_btn[-1][0].setChecked(False)
-        self.node_constrain_type_btn[-1][1].setChecked(True)
-
-        self.node_constrain_coord_btn[-1][0].setDisabled(True)
-        self.node_constrain_coord_btn[-1][1].setDisabled(True)
-        
-        self.node_constrain_coord_btn[-1][2].setEnabled(True)
-        self.node_constrain_col_btn[-1][0].setEnabled(True)
-        self.node_constrain_col_btn[-1][1].setEnabled(True)
-        self.node_constrain_error_btn[-1].setEnabled(True)
-
-        self.node_constrain_coord_btn[-1][2].setText('0')
-        self.node_constrain_col_btn[-1][0].setChecked(True)
-        self.node_constrain_error_btn[-1].setText('1e-6')
-
-        self.node_constrain_x_dir_btn[-1][0].setChecked(True)
-        self.node_constrain_y_dir_btn[-1][0].setChecked(True)
-
-        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_coord_btn[-1][0].setEnabled)  
-        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_coord_btn[-1][1].setEnabled)
-        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_col_btn[-1][0].setDisabled)
-        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_col_btn[-1][1].setDisabled)
-        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_error_btn[-1].setDisabled)
-        self.node_constrain_type_btn[-1][0].toggled.connect(self.node_constrain_coord_btn[-1][2].setDisabled)
-
-        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_coord_btn[-1][0].setDisabled)  
-        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_coord_btn[-1][1].setDisabled)
-        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_col_btn[-1][0].setEnabled)
-        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_col_btn[-1][1].setEnabled)
-        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_error_btn[-1].setEnabled)
-        self.node_constrain_type_btn[-1][1].toggled.connect(self.node_constrain_coord_btn[-1][2].setEnabled)
-
-    def reset_node_constrain_list(self):
-        self.node_constrain_type_btn = []
-        self.node_constrain_coord_btn = []
-        self.node_constrain_col_btn = []
-        self.node_constrain_error_btn = []
-        self.node_constrain_x_dir_btn = []
-        self.node_constrain_y_dir_btn = []
-
-        # values: constrain nodes by displacement
-        self.node_constrain_by_coord = [] 
-        self.node_constrain_coord = []
-        self.x_node_constrain_col = []
-        self.node_constrain_error = []
-        self.node_constrain_x_dir = []
-        self.node_constrain_y_dir = []
-
-    def check_node_constrain_btn(self):
-        self.warnings_node_constrain = []
-        for i in range(len(self.node_constrain_type_btn)):
-            if self.node_constrain_type_btn[i][0].isChecked():
-                self.check_param(self.warnings_node_constrain, self.node_constrain_coord_btn[i][0].text(), [int, float], 'x coordinate must be an integer or float')
-                self.check_param(self.warnings_node_constrain, self.node_constrain_coord_btn[i][1].text(), [int, float], 'y coordinate must be an integer or float')
-            else:
-                if not (self.node_constrain_col_btn[-1][0].isChecked()) and not (self.node_constrain_col_btn[-1][1].isChecked()):
-                    warning = QtWidgets.QLabel("select column")
-                    self.warnings_node_constrain.append(warning)
-                self.check_param(self.warnings_node_constrain, self.node_constrain_coord_btn[i][2].text(), [int, float], 'coordinate must be an integer or float')
-                self.check_param(self.warnings_node_constrain, self.node_constrain_error_btn[i].text(), [int, float], 'error margin must be an integer or float')
-
-    def check_node_constrain_values(self):
-        self.warnings_node_constrain = []
-        for i in range(len(self.node_constrain_type_btn)):
-            if self.node_constrain_type_btn[i][0].isChecked():
-                if ast.literal_eval(self.node_constrain_coord_btn[i][0].text()) > self.lx:
-                    warning = QtWidgets.QLabel("x coordinate exceeds mesh boundaries")
-                    self.warnings_node_constrain.append(warning)
-                if ast.literal_eval(self.node_constrain_coord_btn[i][1].text()) > self.ly:
-                    warning = QtWidgets.QLabel("y coordinate exceeds mesh boundaries")
-                    self.warnings_node_constrain.append(warning)
-            else:
-                if self.node_constrain_col_btn[-1][0].isChecked():
-                    if ast.literal_eval(self.node_constrain_coord_btn[i][2].text()) > self.lx:
-                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
-                        self.warnings_node_constrain.append(warning)
-                else:
-                    if ast.literal_eval(self.node_constrain_coord_btn[i][2].text()) > self.ly:
-                        warning = QtWidgets.QLabel("coordinate exceeds mesh boundaries")
-                        self.warnings_node_constrain.append(warning)
-
-    def update_node_constrain(self):
-        for i in range(len(self.node_constrain_type_btn)):
-            node_constrain_by_coord = True if self.node_constrain_type_btn[i][0].isChecked() else False
-            self.node_constrain_by_coord.append(node_constrain_by_coord)
-            if node_constrain_by_coord:
-                x = ast.literal_eval(self.node_constrain_coord_btn[i][0].text())
-                y = ast.literal_eval(self.node_constrain_coord_btn[i][1].text())
-                self.node_constrain_coord.append([x,y])
-                self.x_node_constrain_col.append(None)
-                self.node_constrain_error.append(None)
-            else:
-                coord = ast.literal_eval(self.node_constrain_coord_btn[i][2].text())
-                self.node_constrain_coord.append(coord)
-                col = 1 if self.node_constrain_col_btn[i][0].isChecked() else 2
-                self.x_node_constrain_col.append(col)
-                error = ast.literal_eval(self.node_constrain_error_btn[i].text())
-                self.node_constrain_error.append(error)
-            
-            x = 1 if self.node_constrain_x_dir_btn[i][0].isChecked() else 0
-            self.node_constrain_x_dir.append(x)
-
-            y = 1 if self.node_constrain_y_dir_btn[i][0].isChecked() else 0
-            self.node_constrain_y_dir.append(y)
-
-    def convert_node_constrain_to_dict(self):
-        # list of dicts
-        self.node_constrain = []
-        for i in range(len(self.node_constrain_type_btn)):
-            if self.node_constrain_by_coord[i]:
-                aux_key = ["x_coord", "y_coord", "constrain_disp_x", "constrain_disp_y"]
-                aux_val = [self.node_constrain_coord[i][0], self.node_constrain_coord[i][1], self.node_constrain_x_dir[i], self.node_constrain_y_dir[i]]
-
-            else:
-                aux_key = ["coord", "axis", "eps", "constrain_disp_x", "constrain_disp_y"]
-                aux_val = [self.node_constrain_coord[i], self.x_node_constrain_col[i], self.node_constrain_error[i], self.node_constrain_x_dir[i], self.node_constrain_y_dir[i]]
-
-            dicti = dict(zip(aux_key, aux_val))
-            self.node_constrain.append(dicti)
-
-# Node constraint param
+# Constraint param
     def create_constraint(self):
         self.area_check = QtWidgets.QCheckBox("Area")
         self.min_area_line  = QtWidgets.QLineEdit()
@@ -1281,7 +1391,42 @@ class ParametersOpt(Parameters):
         if self.local_r:
             self.upd_constr_func("local_r", self.min_local_r, self.max_local_r, self.freq_local_r)
 
-class ParametersText():
+class TextFem2d():
+    def __init__(self):
+        self.editor = QtWidgets.QLabel()
+        self.editor.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse)
+        self.editor.setTextFormat(QtCore.Qt.RichText)
+        self.editor.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.editor.setOpenExternalLinks(True)
+        self.text_fem = """ <p> <b> <font size="+7"> Parameters: </font> </b>
+                <hr>
+                <p> <b> <font size="+1"> nelx </font> </b> <font size="+1"> (<i>int</i>): Number of elements on the x-axis.  </font> </p>
+                <p> <b> <font size="+1"> nely </font> </b> <font size="+1"> (<i>int</i>): Number of elements on the y-axis.</font> </p>
+                <p> <b> <font size="+1"> lx </font> </b> <font size="+1"> (<i>float</i>): x-axis length.</font> </p>
+                <p> <b> <font size="+1"> ly </font> </b> <font size="+1"> (<i>float</i>): y-axis length.</font> </p>           
+                <p> <b> <font size="+1"> E </font> </b> <font size="+1"> (<i>float</i>): Elastic modulus. </font> </p>
+                <p> <b> <font size="+1"> v </font> </b> <font size="+1"> (<i>float</i>): Poisson's ratio. </font> </p>
+                <p> <b> <font size="+1"> rho </font> </b> <font size="+1"> (<i>float</i>): Density. </font> </p>
+                <p> <b> <font size="+1"> alpha </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass. </font> </p>
+                <p> <b> <font size="+1"> beta </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness. </font> </p> 
+                <p> <b> <font size="+1"> eta </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient. </font> </p>
+                <p> <b> <font size="+1"> factor </font> </b> <font size="+1"> (<i>float</i>): Factor to deform the mesh. </font> </p>
+                <p> <b> <font size="+1"> freq </font> </b> <font size="+1"> (<i>int</i>): Optimized frequency. </font> </p>
+                <p> <b> <font size="+1"> node_plot </font> </b> <font size="+1"> (<i>numpy.array</i>): The node to plot the frequency response graph.  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> The columns are respectively node, x direction, y direction. </p>
+                    <p style="margin-left:2em"> <font size="+1"> It is a 1x3 matrix. </font> </p>
+                <p> <b> <font size="+1"> freq_rsp </font> </b> <font size="+1"> (<i>list</i>): If len is 3, a frequency response graph of the original and optimized structure is generated.  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> First value is the minimum frequency of the graph. </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> Second value is the maximum frequency of the graph. </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> Third value is the step between each calculation of the objective function. </font> <</p>
+                <p> <b> <font size="+1"> save </font> </b> <font size="+1"> (<i>bool</i>): if True save the optimization and frequency response graphs as PNG. </font> </p>
+                """
+        self.set_text()
+
+    def set_text(self):
+        self.editor.setText(self.text_fem)
+
+class TextOpt():
     def __init__(self):
         self.editor = QtWidgets.QLabel()
         self.editor.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse)
@@ -1289,5 +1434,132 @@ class ParametersText():
         self.editor.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
         self.editor.setOpenExternalLinks(True)
 
-    def set_text(self, text):
-        self.editor.setText(text)
+        self.text_opt = """ <p> <b> <font size="+7"> Parameters: </font> </b>
+            <hr>
+            <p> <b> <font size="+1"> nelx </b> <font size="+1"> (<i>int</i>): Number of elements on the x-axis.  </font> </p>
+            <p> <b> <font size="+1"> nely </b> <font size="+1"> (<i>int</i>): Number of elements on the y-axis.  </font> </p>
+            <p> <b> <font size="+1"> lx </b> <font size="+1"> (<i>float</i>): x-axis length.  </font> </p>
+            <p> <b> <font size="+1"> ly </b> <font size="+1"> (<i>float</i>): x-axis length.  </font> </p>
+            <p> <b> <font size="+1"> func_name </b> <font size="+1"> (<i>str</i>): Objective function used.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> If the multiobjective function is being calculated, weight n1 is assigned.  </font> </p>
+            <p> <b> <font size="+1"> freq1 </b> <font size="+1"> (<i>int</i>): Optimized frequency. </font> </p>
+            <p> <b> <font size="+1"> n1 </b> <font size="+1"> (<i>float</i>): Weight n1 used in func_name. </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> If n1 &#60; 0: Maximize objective function  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> If n1 > 0: Minimize objective function  </font> </p>
+            <p> <b> <font size="+1"> multiobjective </b> <font size="+1"> (<i>tuple</i>): Second function and frequency in the multiobjective.  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> First value is the second function of the multiobjective function. The assigned weight is (1 - n1).  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> Second value is the frequency that func_name2 is being optimized.   </font> </p>
+            <p> <b> <font size="+1"> const_func </b> <font size="+1"> (<i>float</i>):  </font> </p>
+            <p> <b> <font size="+1"> fac_ratio </b> <font size="+1"> (<i>float</i>): Factor applied in the radius to get elements in the vicinity of each element. </font> </p>
+            <p> <b> <font size="+1"> modes </b> <font size="+1"> (<i>int</i>): If not None is used the Mode Superposition Method to calculate the displacement. </font> </p>
+            <p> <b> <font size="+1"> rho </b> <font size="+1"> (<i>float</i>): Density.    </font> </p>
+            <p> <b> <font size="+1"> E </b> <font size="+1"> (<i>float</i>): Elastic modulus. </font> </p>
+            <p> <b> <font size="+1"> v </b> <font size="+1"> (<i>float</i>): Poisson's ratio. </font> </p>
+            <p> <b> <font size="+1"> x_min_m </b> <font size="+1"> (<i>float</i>): Minimum relative densities to mass.  </font> </p>
+            <p> <b> <font size="+1"> x_min_k </b> <font size="+1"> (<i>float</i>): Minimum relative densities to stiffness.  </font> </p>
+            <p> <b> <font size="+1"> alpha_par </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass.   </font> </p>
+            <p> <b> <font size="+1"> beta_par </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness.   </font> </p>
+            <p> <b> <font size="+1"> eta_par </b> <font size="+1"> (<i>float</i>): Damping coefficient.   </font> </p>
+            <p> <b> <font size="+1"> alpha_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass to generate the graph. </font> </p>
+            <p> <b> <font size="+1"> beta_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness to generate the graph.  </font> </p>
+            <p> <b> <font size="+1"> eta_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient to generate the graph. </font> </p>
+            <p> <b> <font size="+1"> p_par </b> <font size="+1"> (<i>int</i>): Penalization power to stiffness.  </font> </p>
+            <p> <b> <font size="+1"> q_par </b> <font size="+1"> (<i>int</i>): Penalization power to mass.  </font> </p>
+            <p> <b> <font size="+1"> passive_coord </b> <font size="+1"> (<i>tuple</i>): Region that the shape will not be changed.   </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> Example: </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))  </font> </p>
+            <p> <b> <font size="+1"> freq_rsp </b> <font size="+1"> (<i>list</i>): If len is 3, a frequency response graph of the original and optimized structure is generated. </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> First value is the minimum frequency of the graph.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> Second value is the maximum frequency of the graph.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> Third value is the step between each calculation of the objective function.   </font> </p>
+            <p> <b> <font size="+1"> dens_filter </b> <font size="+1"> (<i>bool</i>): If True use density filter and False use sensitivity filter.  </font> </p>
+            <p> <b> <font size="+1"> each_iter </b> <font size="+1"> (<i>bool</i>): If True plots the convergence graph for each iteration of the optimization.   </font> </p>
+            <p> <b> <font size="+1"> max_iter </b> <font size="+1"> (<i>int</i>): Number of iterations. </font> </p>
+            <p> <b> <font size="+1"> mesh_deform </b> <font size="+1"> (<i>bool</i>): If True plots the mesh deformation of the dynamic function.  </font> </p>
+            <p> <b> <font size="+1"> factor </b> <font size="+1"> (<i>float</i>): Factor to deform the mesh.  </font> </p>
+            <p> <b> <font size="+1"> save </b> <font size="+1"> (<i>bool</i>): if True save the optimization and frequency response graphs as PNG.  </font> </p>
+            """
+        self.set_text()
+
+    def set_text(self):
+        self.editor.setText(self.text_opt)
+
+class TextBc():
+    def __init__(self):
+        self.text_load = """<p> <b> <font size="+7"> Add loads </font> </b>
+            <hr>
+            <p style="margin-left:2em"> <font size="+3"> Add loads by coordinate </font> </p>
+                    
+                <p style="margin-left:4em"> <font size="+1"> X-coord: coordinate in X-axis </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Y-coord: coordinate in Y-axis </font> </p>
+            
+            <p style="margin-left:2em"> <font size="+3"> Add loads by column </font> </p>
+                    
+                <p style="margin-left:4em"> <font size="+1"> Coord: Coordinate </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Column: Direction that the load is applied. It can be: X-Axis or Y-Axis </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Error margin: Margin of error. The more discretized the mesh, the smaller the error margin </font> </p>
+
+            <p style="margin-left:2em"> <font size="+1"> Load direction </font> </p>
+
+                <p style="margin-left:4em"> <font size="+1"> Positive: Indicates that the load is applied in the positive direction </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Negative: Indicates that the load is applied in the negative direction </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> None: Indicates that no load is applied </font> </p>
+            
+            <p style="margin-left:2em"> <font size="+1"> Load value: The module of the load in Newton </font> </p>            
+            """
+        self.editor_load = QtWidgets.QLabel()
+        self.editor_load.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse)
+        self.editor_load.setTextFormat(QtCore.Qt.RichText)
+        self.editor_load.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.editor_load.setOpenExternalLinks(True)
+        self.set_load_text()
+
+        self.text_node_constrain = """<p> <b> <font size="+7"> Constrain nodes displacements </font> </b>
+            <hr>
+            <p style="margin-left:2em"> <font size="+3"> Constrain nodes displacements by coordinate </font> </p>
+                    
+                <p style="margin-left:4em"> <font size="+1"> X-coord: coordinate in X-axis </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Y-coord: coordinate in Y-axis </font> </p>
+            
+            <p style="margin-left:2em"> <font size="+3"> Constrain nodes displacements by column </font> </p>
+                    
+                <p style="margin-left:4em"> <font size="+1"> Coord: Coordinate </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Column: Direction that the load is applied. It can be: X-Axis or Y-Axis </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Error margin: Margin of error. The more discretized the mesh, the smaller the error margin </font> </p>
+
+            <p style="margin-left:2em"> <font size="+1"> Direction </font> </p>
+
+                <p style="margin-left:4em"> <font size="+1"> Yes: Indicates that the node displacement is constrained </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> No: Indicates that no node displacement is constrained </font> </p>
+            """
+        self.editor_node_constrain = QtWidgets.QLabel()
+        self.editor_node_constrain.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse)
+        self.editor_node_constrain.setTextFormat(QtCore.Qt.RichText)
+        self.editor_node_constrain.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.editor_node_constrain.setOpenExternalLinks(True)
+        self.set_node_constrain_text()
+
+    def set_load_text(self):
+        self.editor_load.setText(self.text_load)
+
+    def set_node_constrain_text(self):
+        self.editor_node_constrain.setText(self.text_node_constrain)
+
+class TextConstraint():
+    def __init__(self):
+        self.editor = QtWidgets.QLabel()
+        self.editor.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse)
+        self.editor.setTextFormat(QtCore.Qt.RichText)
+        self.editor.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.editor.setOpenExternalLinks(True)
+
+        self.text_constraint = """
+            <p style="margin-left:2em"> <font size="+1"> If two values are passed is used a box constraint </font> </p>
+
+                <p style="margin-left:4em"> <font size="+1"> The maximum value must be greater than the minimum value </font> </p>       
+            """
+        self.set_text()
+        
+    def set_text(self):
+        self.editor.setText(self.text_constraint)

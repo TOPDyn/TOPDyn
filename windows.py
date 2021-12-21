@@ -15,7 +15,7 @@ import pyqtgraph as pg
 import plot_grid as mf
 from plots_2d import PlotsFem2d
 from plots_opt import PlotOpt
-from parameters import ParametersOpt, ParametersText
+from parameters import ParametersOpt, ParametersFEM2D, TextBc, TextConstraint, TextOpt, TextFem2d
 
 class PopUp(QtWidgets.QDialog):
     def __init__(self, warnings):
@@ -42,30 +42,27 @@ class MainWindow(QtWidgets.QDialog):
         button_opt = QtWidgets.QPushButton('Optimization', self)
         button_opt.clicked.connect(self.go_to_opt)
         layout.addWidget(button_opt)
-
-        #button_fem3d = QtWidgets.QPushButton('FEM 3D', self)
-        #button_fem3d.clicked.connect(self.go_to_fem2d)
-        #layout.addWidget(button_fem3d)
         self.setLayout(layout)
        
     def go_to_fem2d(self):
         param_2d = ParametersFEM2D()
-        fem2d = WindowsFem2d(param_2d)
+        text_main = TextFem2d()
+        fem2d = WindowsFem2d(param_2d, text_main)
         widget.addWidget(fem2d)
         widget.setCurrentIndex(widget.currentIndex()+1)
 
     def go_to_opt(self):
         param_opt = ParametersOpt()
-        opt = WindowsOptimization(param_opt)
+        text_main = TextOpt()
+        opt = WindowsOptimization(param_opt, text_main)
         widget.addWidget(opt)
         widget.setCurrentIndex(widget.currentIndex()+1)
 
 class SecondWindow(QtWidgets.QDialog):
-    def __init__(self, param):
+    def __init__(self, param, text_main):
         super(SecondWindow, self).__init__()
 
         self.pbar = QtWidgets.QProgressBar()
-        
         # lateral menu
         left_layout = QtWidgets.QVBoxLayout()
         self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
@@ -73,8 +70,6 @@ class SecondWindow(QtWidgets.QDialog):
         left_layout.addWidget(self.btn_back_menu)
 
         self.param = param
-        #self.param.create_param_btns()
-        #self.param.set_default()
         self.param.add_btns(left_layout)
 
         self.btn_to_load = QtWidgets.QPushButton('Next')
@@ -92,12 +87,8 @@ class SecondWindow(QtWidgets.QDialog):
         scroll.setWidgetResizable(True)
 
         # window 
-        self.right_widget = QtWidgets.QTabWidget()
-        
-        self.param_text = ParametersText()
-        self.param_text.set_text(self.param.text)
-        
-        self.tab1 = self.ui1()
+        self.right_widget = QtWidgets.QTabWidget()       
+        self.tab1 = self.ui1(text_main)
         self.right_widget.addTab(self.tab1, '')
         
         self.tab2 = self.ui2()
@@ -120,14 +111,19 @@ class SecondWindow(QtWidgets.QDialog):
         self.setLayout(main_layout) 
 
     # ------- pages -------
-    def ui1(self):
+    def ui1(self, text_main):
         layout_ui1 = QtWidgets.QVBoxLayout()
-        layout_ui1.addWidget(self.param_text.editor)
+        layout_ui1.addWidget(text_main.editor)
         layout_ui1.addStretch(20)
         
         main = QtWidgets.QWidget()
         main.setLayout(layout_ui1)
         return main
+
+    def upd_ui1_layout(self, new_layout):
+        if self.tab1.layout() is not None:
+            QtWidgets.QWidget().setLayout(self.tab1.layout())
+        self.tab1.setLayout(new_layout)
     
     def ui2(self):
         self.init_ui2_layout = QtWidgets.QVBoxLayout()
@@ -135,7 +131,7 @@ class SecondWindow(QtWidgets.QDialog):
         main.setLayout(self.init_ui2_layout)
         return main
 
-    def upd_ui2_layout(self, new_layout): #TODO:LEMBRAR DE MUDAR PARA O FEM2D
+    def upd_ui2_layout(self, new_layout):
         if self.tab2.layout() is not None:
             QtWidgets.QWidget().setLayout(self.tab2.layout())
         self.tab2.setLayout(new_layout)
@@ -146,13 +142,15 @@ class SecondWindow(QtWidgets.QDialog):
         self.left_widget.setLayout(new_layout)
 
     def ui_add_load(self, update=False):
+        self.add_load_text()
+
         ui_layout = QtWidgets.QFormLayout()
         self.btn_back_param = QtWidgets.QPushButton('Back')
         self.btn_back_param.clicked.connect(self.back_to_param)
         ui_layout.addRow(self.btn_back_param)
 
         self.btn_to_node_constrain = QtWidgets.QPushButton('Next')
-        self.btn_to_node_constrain.clicked.connect(self.go_to_node_constrain)
+        self.btn_to_node_constrain.clicked.connect(self.go_to_node_constrain) #TODO: ESSA FUNÇÃO NAO EXISTE AQUI NO SECOND WINDOW
         ui_layout.addRow(self.btn_to_node_constrain)
 
         self.btn_add_new_load = QtWidgets.QPushButton('Add new load')
@@ -172,47 +170,7 @@ class SecondWindow(QtWidgets.QDialog):
         self.upd_left_layout(ui_layout)
 
     def ui_add_node_constrain(self):
-        ui_layout = QtWidgets.QFormLayout()
-        self.btn_back_load = QtWidgets.QPushButton('Back')
-        self.btn_back_load.clicked.connect(self.back_to_load)
-        ui_layout.addRow(self.btn_back_load)
-
-        self.btn_to_constraint = QtWidgets.QPushButton('Next')
-        self.btn_to_constraint.clicked.connect(self.go_to_constraint)
-        ui_layout.addRow(self.btn_to_constraint)
-
-        self.btn_add_new_node_constrain = QtWidgets.QPushButton('Constrain new node displacement')
-        self.btn_add_new_node_constrain.clicked.connect(self.add_new_node_constrain)
-        ui_layout.addRow(self.btn_add_new_node_constrain)
-
-        self.btn_reset_node_constrain = QtWidgets.QPushButton('Reset constraint node displacement')
-        self.btn_reset_node_constrain.clicked.connect(self.reset_node_constrain)
-        ui_layout.addRow(self.btn_reset_node_constrain)
-
-        self.param.reset_node_constrain_list()
-        self.param.create_node_constrain_btn()
-        self.param.set_default_node_constrain()
-        self.param.add_node_constrain_btn(ui_layout)
-        self.upd_left_layout(ui_layout)
-
-    def ui_add_constraint(self):
-        ui_layout = QtWidgets.QFormLayout()
-        self.btn_back_constrain = QtWidgets.QPushButton('Back')
-        self.btn_back_constrain.clicked.connect(self.back_to_node_constrain)
-        ui_layout.addRow(self.btn_back_constrain)
-
-        self.param.create_constraint()
-        self.param.add_constraint_param(ui_layout)
-        self.param.set_default_constraint()
-
-        self.button_run = QtWidgets.QPushButton('Run')
-        self.button_run.clicked.connect(lambda: self.run())
-        ui_layout.addRow(self.button_run)
-
-        self.button_stop = QtWidgets.QPushButton('Stop')
-        self.button_stop.setEnabled(False)
-        ui_layout.addRow(self.button_stop)
-        self.upd_left_layout(ui_layout)
+        self.add_node_constrain_text()
 
     # ------- buttons ------- 
     def go_to_screen1(self):
@@ -227,7 +185,6 @@ class SecondWindow(QtWidgets.QDialog):
             dlg.exec_()
         else:
             self.param.update_params()
-            # TODO:save parameters
             self.ui_add_load()
 
     def go_to_node_constrain(self):
@@ -244,27 +201,13 @@ class SecondWindow(QtWidgets.QDialog):
                 self.param.update_load()
                 self.ui_add_node_constrain()
 
-    def go_to_constraint(self):
-        self.param.check_node_constrain_btn()
-        if len(self.param.warnings_node_constrain) != 0:
-            dlg = PopUp(self.param.warnings_node_constrain)      
-            dlg.exec_()
-        else:
-            self.param.check_node_constrain_values()
-            if len(self.param.warnings_node_constrain) != 0:
-                dlg = PopUp(self.param.warnings_node_constrain)      
-                dlg.exec_()
-            else:
-                self.param.update_node_constrain()
-                self.ui_add_constraint()
-
     def back_to_param(self):
         left_layout = QtWidgets.QVBoxLayout()
         self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
         self.btn_back_menu.clicked.connect(self.go_to_screen1)
         left_layout.addWidget(self.btn_back_menu)
         
-        self.param.create_param_btns()
+        self.param.create_btns()
         self.param.update_default()
         self.param.add_btns(left_layout)
 
@@ -274,20 +217,29 @@ class SecondWindow(QtWidgets.QDialog):
         self.upd_left_layout(left_layout)
 
     def back_to_load(self):
-        self.ui_add_load(update=True) # TODO: Precisa mostrar os valores salvos
-    
-    def back_to_node_constrain(self):
-        self.ui_add_node_constrain()
+        self.ui_add_load(update=True)
 
     def add_new_load(self):
         self.param.create_load_btn()
         self.param.set_default_load()
-        self.param.add_load_btn(self.left_widget.layout()) #TODO: Adiciona um novo esquema
+        self.param.add_load_btn(self.left_widget.layout())
 
     def add_new_node_constrain(self):
         self.param.create_node_constrain_btn()
         self.param.set_default_node_constrain()
-        self.param.add_node_constrain_btn(self.left_widget.layout()) #TODO: Adiciona um novo esquema
+        self.param.add_node_constrain_btn(self.left_widget.layout())
+
+    def add_load_text(self):
+        ui_layout = QtWidgets.QVBoxLayout()
+        self.bc_text = TextBc()
+        ui_layout.addWidget(self.bc_text.editor_load)
+        self.upd_ui1_layout(ui_layout)
+
+    def add_node_constrain_text(self):
+        ui_layout = QtWidgets.QVBoxLayout()
+        self.bc_text = TextBc()
+        ui_layout.addWidget(self.bc_text.editor_node_constrain)
+        self.upd_ui1_layout(ui_layout)
 
     def reset_load(self):
         self.ui_add_load()
@@ -295,24 +247,24 @@ class SecondWindow(QtWidgets.QDialog):
     def reset_node_constrain(self):
         self.ui_add_node_constrain()
 
-    def run(self):
-        self.param.check_constraint()
-        if len(self.param.warnings_constraint) != 0:
-            dlg = PopUp(self.param.warnings_constraint)      
-            dlg.exec_()
-        else:
-            self.button_stop.setEnabled(True)
-            self.button_run.setEnabled(False)
+    # def run(self):
+    #     self.param.check_constraint()
+    #     if len(self.param.warnings_constraint) != 0:
+    #         dlg = PopUp(self.param.warnings_constraint)      
+    #         dlg.exec_()
+    #     else:
+    #         self.button_stop.setEnabled(True)
+    #         self.button_run.setEnabled(False)
     
-            self.param.update_constraint()
-            self.param.constraint_to_list()
-            self.param.convert_load_to_dict()
-            self.param.convert_node_constrain_to_dict()
+    #         self.param.update_constraint()
+    #         self.param.constraint_to_list()
+    #         self.param.convert_load_to_dict()
+    #         self.param.convert_node_constrain_to_dict()
             
-            self._counter_button_run += 1
-            if self._counter_button_run == 1:
-                self.right_widget.setCurrentIndex(1)
-                print("entrou")
+    #         self._counter_button_run += 1
+    #         if self._counter_button_run == 1:
+    #             self.right_widget.setCurrentIndex(1)
+    #             print("entrou")
 
     # ------- functions -------     
     def delete_temp(self):
@@ -389,84 +341,380 @@ def simple_deform_parser(output):
     if m:
         return True
 
-class WindowsOptimization(SecondWindow):
-    def __init__(self, param):
-        super().__init__(param)
+class WindowsFem2d(SecondWindow):
+    def __init__(self, param, text_main):
+        super().__init__(param, text_main)
 
         self.stop_thread = False
-        
         #self.button_run.clicked.connect(lambda: self.run())
-        self.param.mesh_deform_check.toggled.connect(self.param.factor_spin.setEnabled)   
-        self.param.func_name2_box.activated.connect(self.param.freq2_spin.setEnabled) 
-        self.param.freqrsp_check.toggled.connect(self.param.freq_range_spin.setEnabled)
-        self.param.freqrsp_check.toggled.connect(self.param.alpha_plot_spin.setEnabled)
-        self.param.freqrsp_check.toggled.connect(self.param.beta_plot_spin.setEnabled)
-        self.param.freqrsp_check.toggled.connect(self.param.eta_plot_spin.setEnabled)
 
-        # Boundary Conditions
-        #TODO: Aqui preciso pegar de cada uma da lista
-        
-        self.directory = os.path.join(os.path.dirname(__file__))
-        self.dir_temp = os.path.join(self.directory, 'temp')
-    
     # ------- pages -------
     def add_canvas_ui2(self): 
         ui2_layout = QtWidgets.QVBoxLayout()
         ui2_layout.addWidget(self.pbar)
 
-        self.graph_grid = pg.PlotWidget()
-        self.grid = mf.PColorMeshItem(cmap='grey')
-        self.graph_grid.setAspectLocked(True)
-        self.graph_grid.hideAxis('bottom')
-        self.graph_grid.hideAxis('left')
-        self.graph_grid.addItem(self.grid)
-        ui2_layout.addWidget(self.graph_grid)
+        self.canvas_mesh = FigureCanvas(plt.Figure())
+        self.canvas_mesh.figure.tight_layout()
+        ui2_layout.addWidget(self.canvas_mesh)
 
-        self.graph_conv = pg.PlotWidget()
-        self.graph_conv.addLegend(labelTextColor=(0,0,0), offset=(800,10))
-        self.graph_conv.setLabel('left', self.param.func_name.lower())
-        self.graph_conv.setLabel('bottom', "iteration")
-        #self.graph_conv.setFixedWidth(self.graph_grid.width())
-        #self.graph_conv.setFixedHeight(self.graph_grid.height())
-        ui2_layout.addWidget(self.graph_conv)
-
-        self.text = QtWidgets.QPlainTextEdit()
-        self.text.setReadOnly(True)
-
-        ui2_layout.addWidget(self.text)
-
-        self.upd_ui2_layout(ui2_layout)
-
-    def add_freq_to_canvas_ui2(self): 
-        ui2_layout = QtWidgets.QVBoxLayout()
-        ui2_layout.addWidget(self.pbar)
-        ui2_layout.addWidget(self.graph_grid)
-        ui2_layout.addWidget(self.graph_conv)
-        ui2_layout.addWidget(self.graph_freq)     
-        ui2_layout.addWidget(self.text)
-
-        self.upd_ui2_layout(ui2_layout)
-
-    def add_deformed_mesh_to_canvas_ui2(self): 
-        ui2_layout = QtWidgets.QVBoxLayout()
-        ui2_layout.addWidget(self.pbar)
-        ui2_layout.addWidget(self.graph_grid)
-        ui2_layout.addWidget(self.graph_conv)
         if self.param.freqrsp:
-            ui2_layout.addWidget(self.graph_freq)
-
-        self.canvas_mesh.setFixedWidth(self.graph_grid.width())
-        self.canvas_mesh.setFixedHeight(self.graph_grid.height())
-        ui2_layout.addWidget(self.canvas_mesh)   
-        ui2_layout.addWidget(self.text)
-
+            self.canvas_freq = FigureCanvas(plt.Figure())
+            self.canvas_freq.figure.tight_layout()
+            ui2_layout.addWidget(self.canvas_freq)
         self.upd_ui2_layout(ui2_layout)
+
+    def ui_add_node_constrain(self, update=False):
+        super().ui_add_node_constrain()
+
+        ui_layout = QtWidgets.QFormLayout()
+        self.btn_back_load = QtWidgets.QPushButton('Back')
+        self.btn_back_load.clicked.connect(self.back_to_load)
+        ui_layout.addRow(self.btn_back_load)
+
+        self.button_run = QtWidgets.QPushButton('Run')
+        self.button_run.clicked.connect(lambda: self.run())
+        ui_layout.addRow(self.button_run)
+
+        self.button_stop = QtWidgets.QPushButton('Stop')
+        self.button_stop.setEnabled(False)
+        ui_layout.addRow(self.button_stop)
+
+        self.btn_add_new_node_constrain = QtWidgets.QPushButton('Constrain new node displacement')
+        self.btn_add_new_node_constrain.clicked.connect(self.add_new_node_constrain)
+        ui_layout.addRow(self.btn_add_new_node_constrain)
+
+        self.btn_reset_node_constrain = QtWidgets.QPushButton('Reset constraint node displacement')
+        self.btn_reset_node_constrain.clicked.connect(self.reset_node_constrain)
+        ui_layout.addRow(self.btn_reset_node_constrain)
+        if update:
+            self.param.rewrite_node_constrain(ui_layout)
+        else:
+            self.param.reset_node_constrain_list()
+            self.param.create_node_constrain_btn()
+            self.param.set_default_node_constrain()
+            self.param.add_node_constrain_btn(ui_layout)
+        self.upd_left_layout(ui_layout)
 
     # ------- buttons -------
-    def run(self):
-        super().run()
+    def add_fem_text(self):
+        ui_layout = QtWidgets.QVBoxLayout()
+        self.fem_text = TextFem2d()
+        ui_layout.addWidget(self.fem_text.editor)
+        self.upd_ui1_layout(ui_layout)
 
-        if len(self.param.warnings) == 0:
+    def back_to_param(self):
+        super().back_to_param()
+        self.add_fem_text()
+     
+    def run(self):
+        #super().run()
+        self.param.check_node_constrain_btn()
+        if len(self.param.warnings_node_constrain) != 0:
+            dlg = PopUp(self.param.warnings_node_constrain)      
+            dlg.exec_()
+        else:
+            self.param.check_node_constrain_values()
+            if len(self.param.warnings_node_constrain) != 0:
+                dlg = PopUp(self.param.warnings_node_constrain)      
+                dlg.exec_()
+            else:
+                self.button_stop.setEnabled(True)
+                self.button_run.setEnabled(False)
+                self.btn_back_load.setEnabled(False)
+        
+                self.param.convert_load_to_dict()
+                self.param.update_node_constrain()
+                self.param.convert_node_constrain_to_dict()
+                
+                self._counter_button_run += 1
+                if self._counter_button_run == 1:
+                    self.right_widget.setCurrentIndex(1)
+                    print("entrou")
+
+                self.add_canvas_ui2()
+                self.param.export_param() 
+                self.process_fem = QtCore.QProcess()
+                self.process_fem.readyReadStandardError.connect(self.handle_stderr)
+                self.process_fem.stateChanged.connect(self.handle_state)
+                self.process_fem.finished.connect(self.plot_graphs)
+                self.process_fem.start("python", ['process_fem2d.py'])
+                self.button_stop.clicked.connect(lambda: self.stop_execution())
+
+    def handle_stderr(self):
+        data = self.process_fem.readAllStandardError()
+        stderr = bytes(data).decode("utf8")
+        # Extract progress if it is in the data.
+        progress = simple_percent_parser(stderr)
+        if progress:
+            self.evt_update_progress(progress)
+
+    def handle_state(self, state):
+        states = {
+            QtCore.QProcess.NotRunning: 'Not running',
+            QtCore.QProcess.Starting: 'Starting',
+            QtCore.QProcess.Running: 'Running',
+        }
+        state_name = states[state]
+        print(state_name)
+
+    # ------- functions -------
+    def evt_update_mesh(self):
+        self.canvas_mesh.draw()
+
+    def evt_update_freq(self):
+        self.canvas_freq.draw()
+
+    def evt_update_progress(self, val):
+        self.pbar.setValue(val)
+
+    def stop_execution(self):
+        self.evt_update_progress(0)
+   
+        if self.process_fem is not None:
+            self.process_fem.kill()
+            self.process_fem = None
+            self.delete_temp()
+            self.button_stop.setEnabled(False)
+            self.button_run.setEnabled(True)
+            self.btn_back_load.setEnabled(True)
+        else:
+            self.stop_thread = True
+
+    def plot_graphs(self):
+        if self.process_fem is not None:
+            self.worker_plot = WorkerPlot(parent=self)
+            self.worker_plot.start()
+
+            self.worker_plot.complete_worker.connect(lambda: self.worker_plot.terminate())
+            self.worker_plot.complete_worker.connect(lambda: self.worker_plot.deleteLater())
+
+            self.worker_plot.complete_worker.connect(lambda: self.button_stop.setEnabled(False))
+            self.worker_plot.complete_worker.connect(lambda: self.button_run.setEnabled(True))
+
+            self.worker_plot.complete_worker.connect(self.delete_temp)
+        
+            self.worker_plot.update_mesh.connect(self.evt_update_mesh)
+            self.worker_plot.update_freq.connect(self.evt_update_freq)
+            self.worker_plot.update_progess.connect(self.evt_update_progress)
+            
+            self.process_fem = None
+
+class WorkerPlot(QtCore.QThread):
+    update_mesh = QtCore.pyqtSignal(bool)
+
+    update_freq = QtCore.pyqtSignal(bool)
+
+    update_progess = QtCore.pyqtSignal(int)
+
+    complete_worker = QtCore.pyqtSignal(bool)
+
+    def __init__(self, parent):    
+        super().__init__()
+        self.parent = parent
+               
+    @QtCore.pyqtSlot()
+    def run(self):
+        while True:
+            # READ
+            folder_name = 'temp'
+            directory = os.path.join(os.path.dirname(__file__), folder_name) 
+
+            file = open(os.path.join(directory, 'mesh_data.txt'), "r")
+            contents = file.read()
+            mesh_data = ast.literal_eval(contents)
+            file.close()
+
+            coord = np.loadtxt(os.path.join(directory, 'coord.txt'))
+            connect = np.loadtxt(os.path.join(directory, 'connect.txt'), dtype=int)
+            disp_vector_org = np.loadtxt(os.path.join(directory, 'disp_vector.txt'), dtype=np.complex)
+
+            load_matrix = np.loadtxt(os.path.join(directory, 'load_matrix.txt')).reshape(-1, 4) #TODO: VER A QUESTAO DO VALOR DA FORÇA NEGATIVO
+            constr_matrix = np.loadtxt(os.path.join(directory, 'constr_matrix.txt'), dtype=int)
+
+            # Deformed mesh
+            plot_2d = PlotsFem2d(coord, connect)
+            disp_vector = plot_2d.change_disp_shape(disp_vector_org.real)
+
+            coord_U = plot_2d.apply_disp(disp_vector, self.parent.param.factor)
+            collection = plot_2d.build_collection(coord_U)
+
+            if self.parent.stop_thread:
+                self.parent.stop_thread = False
+                break
+
+            self.parent.ax_mesh = self.parent.canvas_mesh.figure.subplots()
+            plot_2d.plot_collection(self.parent.ax_mesh, mesh_data["lx"], mesh_data["ly"], coord_U, collection, load_matrix, constr_matrix)
+
+            if self.parent.stop_thread:
+                self.parent.stop_thread = False
+                break
+            
+            self.update_mesh.emit(True)
+            self.update_progess.emit(90)
+
+            # Frequency response
+            vector_U = None
+            if self.parent.param.freqrsp:
+                node_plot = np.loadtxt(os.path.join(directory, 'node_plot.txt'), dtype=int).reshape(1,3)
+                vector_U = np.loadtxt(os.path.join(directory, 'vector_U.txt'), dtype=np.complex)
+        
+                self.parent.ax_freq = self.parent.canvas_freq.figure.subplots()
+                plot_2d.plot_freq_rsp(self.parent.ax_freq, node_plot, self.parent.param.freq_range, vector_U)
+
+                if self.parent.stop_thread:
+                    self.parent.stop_thread = False
+                    break
+
+                self.update_freq.emit(True)
+                self.update_progess.emit(95)
+            
+            if self.parent.param.save:
+                data = os.path.join(os.path.join(os.path.dirname(__file__)), 'data_2d')
+                os.makedirs(data, exist_ok=True)
+
+                np.savetxt(os.path.join(data, 'disp_vector.txt'), disp_vector_org)
+                if vector_U is not None:
+                    np.savetxt(os.path.join(data, 'freqrsp_vector.txt'), vector_U)
+
+                self.parent.canvas_mesh.figure.savefig(os.path.join(data, 'mesh.png'))
+                
+                if self.parent.param.freqrsp:
+                    self.parent.canvas_freq.figure.savefig(os.path.join(data, 'frequency_response.png'))
+
+            self.update_progess.emit(100)
+            break
+
+        self.complete_worker.emit(True)
+
+
+
+
+
+
+
+
+
+
+
+class WindowsOptimization(SecondWindow):
+    def __init__(self, param, text_main):
+        super().__init__(param, text_main)
+
+        self.stop_thread = False
+
+        self.constraint = TextConstraint()
+        
+        #self.button_run.clicked.connect(lambda: self.run())
+        self.param.toggled_opt()
+        # Boundary Conditions
+        #TODO: Aqui preciso pegar de cada uma da lista
+        
+        self.directory = os.path.join(os.path.dirname(__file__))
+        self.dir_temp = os.path.join(self.directory, 'temp')
+
+    # ------- param windows -------
+    def ui_add_node_constrain(self, update=False):
+        super().ui_add_node_constrain()
+
+        ui_layout = QtWidgets.QFormLayout()
+        self.btn_back_load = QtWidgets.QPushButton('Back')
+        self.btn_back_load.clicked.connect(self.back_to_load)
+        ui_layout.addRow(self.btn_back_load)
+
+        self.btn_to_constraint = QtWidgets.QPushButton('Next')
+        self.btn_to_constraint.clicked.connect(self.go_to_constraint)
+        ui_layout.addRow(self.btn_to_constraint)
+
+        self.btn_add_new_node_constrain = QtWidgets.QPushButton('Constrain new node displacement')
+        self.btn_add_new_node_constrain.clicked.connect(self.add_new_node_constrain)
+        ui_layout.addRow(self.btn_add_new_node_constrain)
+
+        self.btn_reset_node_constrain = QtWidgets.QPushButton('Reset constraint node displacement')
+        self.btn_reset_node_constrain.clicked.connect(self.reset_node_constrain)
+        ui_layout.addRow(self.btn_reset_node_constrain)
+        if update:
+            self.param.rewrite_node_constrain(ui_layout)
+        else:
+            self.param.reset_node_constrain_list()
+            self.param.create_node_constrain_btn()
+            self.param.set_default_node_constrain()
+            self.param.add_node_constrain_btn(ui_layout)
+        self.upd_left_layout(ui_layout)
+
+    def ui_add_constraint(self):
+        ui_layout = QtWidgets.QFormLayout()
+        self.btn_back_constrain = QtWidgets.QPushButton('Back')
+        self.btn_back_constrain.clicked.connect(self.back_to_node_constrain)
+        ui_layout.addRow(self.btn_back_constrain)
+
+        self.param.create_constraint()
+        self.param.add_constraint_param(ui_layout)
+        self.param.set_default_constraint()
+
+        self.button_run = QtWidgets.QPushButton('Run')
+        self.button_run.clicked.connect(lambda: self.run())
+        ui_layout.addRow(self.button_run)
+
+        self.button_stop = QtWidgets.QPushButton('Stop')
+        self.button_stop.setEnabled(False)
+        ui_layout.addRow(self.button_stop)
+        self.upd_left_layout(ui_layout)
+
+    # ------- buttons -------
+    def go_to_constraint(self):
+        self.param.check_node_constrain_btn()
+        if len(self.param.warnings_node_constrain) != 0:
+            dlg = PopUp(self.param.warnings_node_constrain)      
+            dlg.exec_()
+        else:
+            self.param.check_node_constrain_values()
+            if len(self.param.warnings_node_constrain) != 0:
+                dlg = PopUp(self.param.warnings_node_constrain)      
+                dlg.exec_()
+            else:
+                self.param.update_node_constrain()
+                self.ui_add_constraint()
+    
+    def back_to_param(self):
+        super().back_to_param()
+        self.add_opt_text()
+
+    def back_to_node_constrain(self):
+        self.ui_add_node_constrain(update=True)
+
+    def add_opt_text(self):
+        ui_layout = QtWidgets.QVBoxLayout()
+        self.text_main = TextOpt()
+        ui_layout.addWidget(self.text_main.editor)
+        self.upd_ui1_layout(ui_layout)
+
+    def add_contraint_text(self):
+        ui_layout = QtWidgets.QVBoxLayout()
+        constraint_text = TextConstraint()
+        ui_layout.addWidget(constraint_text.editor)
+        self.upd_ui1_layout(ui_layout)
+
+    def run(self):
+        #super().run()
+        self.param.check_constraint()
+        if len(self.param.warnings_constraint) != 0:
+            dlg = PopUp(self.param.warnings_constraint)      
+            dlg.exec_()
+        else:
+            self.button_stop.setEnabled(True)
+            self.button_run.setEnabled(False)
+            self.btn_back_constrain.setEnabled(False)
+    
+            self.param.update_constraint()
+            self.param.constraint_to_list()
+            self.param.convert_load_to_dict()
+            self.param.convert_node_constrain_to_dict()
+            
+            self._counter_button_run += 1
+            if self._counter_button_run == 1:
+                self.right_widget.setCurrentIndex(1)
+                print("entrou")
+
             pg.setConfigOption('background', 'w')
             pg.setConfigOption('foreground', 'k')
 
@@ -485,6 +733,53 @@ class WindowsOptimization(SecondWindow):
             
             self.button_stop.clicked.connect(lambda: self.stop_execution())
 
+    # ------- plot windows -------
+    def add_canvas_ui2(self): 
+        ui2_layout = QtWidgets.QVBoxLayout()
+        ui2_layout.addWidget(self.pbar)
+
+        self.graph_grid = pg.PlotWidget()
+        self.grid = mf.PColorMeshItem(cmap='grey')
+        self.graph_grid.setAspectLocked(True)
+        self.graph_grid.hideAxis('bottom')
+        self.graph_grid.hideAxis('left')
+        self.graph_grid.addItem(self.grid)
+        ui2_layout.addWidget(self.graph_grid)
+
+        self.graph_conv = pg.PlotWidget()
+        self.graph_conv.addLegend(labelTextColor=(0,0,0), offset=(800,10))
+        self.graph_conv.setLabel('left', self.param.func_name.lower())
+        self.graph_conv.setLabel('bottom', "iteration")
+        ui2_layout.addWidget(self.graph_conv)
+
+        self.text = QtWidgets.QPlainTextEdit()
+        self.text.setReadOnly(True)
+        ui2_layout.addWidget(self.text)
+        self.upd_ui2_layout(ui2_layout)
+
+    def add_freq_to_canvas_ui2(self): 
+        ui2_layout = QtWidgets.QVBoxLayout()
+        ui2_layout.addWidget(self.pbar)
+        ui2_layout.addWidget(self.graph_grid)
+        ui2_layout.addWidget(self.graph_conv)
+        ui2_layout.addWidget(self.graph_freq)     
+        ui2_layout.addWidget(self.text)
+        self.upd_ui2_layout(ui2_layout)
+
+    def add_deformed_mesh_to_canvas_ui2(self): 
+        ui2_layout = QtWidgets.QVBoxLayout()
+        ui2_layout.addWidget(self.pbar)
+        ui2_layout.addWidget(self.graph_grid)
+        ui2_layout.addWidget(self.graph_conv)
+        if self.param.freqrsp:
+            ui2_layout.addWidget(self.graph_freq)
+        self.canvas_mesh.setFixedWidth(self.graph_grid.width())
+        self.canvas_mesh.setFixedHeight(self.graph_grid.height())
+        ui2_layout.addWidget(self.canvas_mesh)   
+        ui2_layout.addWidget(self.text)
+        self.upd_ui2_layout(ui2_layout)
+
+    # ------- handle process output -------
     def handle_stderr(self):
         data = self.process_opt.readAllStandardError()
         stderr = bytes(data).decode("utf8")
@@ -626,10 +921,11 @@ class WindowsOptimization(SecondWindow):
 
     def finish_process(self):
         self.process_opt = None
-        #self.delete_temp()            
+        self.delete_temp()            
         self.evt_update_progress(100)
         self.button_stop.setEnabled(False)
         self.button_run.setEnabled(True)
+        self.btn_back_constrain.setEnabled(True)
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
