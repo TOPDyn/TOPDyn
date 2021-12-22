@@ -67,7 +67,7 @@ class Parameters():
                 
         self.save = self.save_check.checkState()
 
-    def check_param(self, warnings, input_val, types, war, constraint=False):
+    def check_param(self, warnings, input_val, types, war):
         try:
             if input_val:
                 for type in types:
@@ -75,14 +75,9 @@ class Parameters():
             else:
                 warning = QtWidgets.QLabel(war)
                 warnings.append(warning)
-            if constraint:
-                return True
-
-        except ValueError:
+        except:
             warning = QtWidgets.QLabel(war)
             warnings.append(warning)
-            if constraint:
-                return False
         
     def check_params(self):
         self.warnings = []
@@ -606,7 +601,7 @@ class ParametersFEM2D(Parameters):
 
         self.save_check = QtWidgets.QCheckBox("Save data")
 
-        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
+        self.freqrsp_check = QtWidgets.QCheckBox("Frequency response")  
         self.freq_range_spin = QtWidgets.QLineEdit()
         self.x_coord_plot_btn = QtWidgets.QLineEdit()
         self.y_coord_plot_btn = QtWidgets.QLineEdit()
@@ -886,7 +881,7 @@ class ParametersOpt(Parameters):
 
         self.freq2_spin = QtWidgets.QLineEdit()
 
-        self.freqrsp_check = QtWidgets.QCheckBox("Plot freq rsp")  
+        self.freqrsp_check = QtWidgets.QCheckBox("Frequency response")  
         self.freq_range_spin = QtWidgets.QLineEdit()
         self.alpha_plot_spin = QtWidgets.QLineEdit()
         self.beta_plot_spin  = QtWidgets.QLineEdit()
@@ -933,10 +928,10 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('x_min_stif'))
         layout.addRow(self.x_min_k_spin)
 
-        layout.addRow(QtWidgets.QLabel('penal stif'))
+        layout.addRow(QtWidgets.QLabel('Penal. stiffness'))
         layout.addRow(self.penal_k_spin)
 
-        layout.addRow(QtWidgets.QLabel('penal mass'))
+        layout.addRow(QtWidgets.QLabel('Penal. mass'))
         layout.addRow(self.penal_m_spin)        
 
         layout.addRow(QtWidgets.QLabel('Alpha'))
@@ -948,7 +943,7 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('Eta'))
         layout.addRow(self.eta_spin)
 
-        layout.addRow(QtWidgets.QLabel('Passive coords'))
+        layout.addRow(QtWidgets.QLabel('Passive coordinates'))
         layout.addRow(self.passive_coord_spin)
 
         layout.addRow(QtWidgets.QLabel('Modes'))
@@ -968,10 +963,10 @@ class ParametersOpt(Parameters):
 
         layout.addRow(QtWidgets.QLabel('Multiobjective Function'))
         layout.addRow(self.func_name2_box)
-        layout.addRow(QtWidgets.QLabel('Multiobjective Freq'))
+        layout.addRow(QtWidgets.QLabel('Multiobjective Frequency'))
         layout.addRow(self.freq2_spin)
 
-        layout.addRow(QtWidgets.QLabel('Max iterations'))
+        layout.addRow(QtWidgets.QLabel('Max. iterations'))
         layout.addRow(self.max_iter_spin)
 
         layout.addRow(self.save_check)
@@ -982,7 +977,7 @@ class ParametersOpt(Parameters):
         layout.addRow(self.factor_spin)
       
         layout.addRow(self.freqrsp_check)
-        layout.addRow(QtWidgets.QLabel('Freq range'))
+        layout.addRow(QtWidgets.QLabel('Frequency range'))
         layout.addRow(self.freq_range_spin)
 
         layout.addRow(QtWidgets.QLabel('Alpha plot'))
@@ -1052,6 +1047,27 @@ class ParametersOpt(Parameters):
         else:
             func_name = None
         return func_name
+
+    def get_box_name(self, func_name):
+        if func_name == "compliance":
+            box = "Compliance"
+        elif func_name == "input_power":
+            box = "Input power"
+        elif func_name == "kinetic_energy":
+            box = "Kinetic Energy"
+        elif func_name == "elastic_potential_energy":
+            box = "Elastic Potential Energy"
+        elif func_name == "r_ratio":
+            box = "Strain-to-kinetic energy ratio"
+        elif func_name == "local_ep":
+            box = "Local elastic potential energy"
+        elif func_name == "local_ki":
+            box = "Local kinetic energy"
+        elif func_name == "local_r":
+            box = "Local strain-to-kinetic energy ratio"
+        else:
+            box = "None"
+        return box
 
     def toggled_opt(self):
         self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
@@ -1141,7 +1157,10 @@ class ParametersOpt(Parameters):
         self.max_iter_spin.setText(str(self.max_iter))
         self.factor_spin.setText(str(self.factor))
 
-        self.func_name_box.setCurrentText(self.func_name)  
+        name = self.get_box_name(self.func_name)
+        index = self.func_name_box.findText(name, QtCore.Qt.MatchFixedString)
+        if index > -1:
+            self.func_name_box.setCurrentIndex(index) 
 
         if self.freqrsp:
             self.freq_range_spin.setText(str(self.freq_range))
@@ -1175,10 +1194,13 @@ class ParametersOpt(Parameters):
         if self.dens_filter:
             self.dens_filter_check.setChecked(True)
 
-        if self.func_name2 != 'None':
+        if self.func_name2 != None:
             self.freq2_spin.setText(str(self.freq2))
             self.freq2_spin.setEnabled(True)
-            self.func_name2_box.setCurrentText(self.func_name2)
+            name = self.get_box_name(self.func_name2)
+            index = self.func_name_box.findText(name, QtCore.Qt.MatchFixedString)
+            if index > -1:
+                self.func_name2_box.setCurrentIndex(index+1) 
         else:
             self.freq2_spin.setDisabled(True)
             self.freq2_spin.setText('0')
@@ -1324,8 +1346,28 @@ class ParametersOpt(Parameters):
         self.local_ki_check.toggled.connect(self.freq_local_ki_line.setEnabled)
 
     def check_min_max_constraint(self, maxi, mini, func):
-        if maxi.text() == mini.text():
-            self.warnings_constraint.append(QtWidgets.QLabel(func + " - Minimum and maximum can't have same value"))
+        if float(maxi) <= float(mini):
+            self.warnings_constraint.append(QtWidgets.QLabel(func + " - The maximum value must be greater than the minimum value."))
+
+    def check_constraint_values(self):
+        self.warnings_constraint = []
+        if self.area_check.isChecked() and self.max_area_line.text():
+            self.check_min_max_constraint(self.max_area_line.text(), self.min_area_line.text(), 'Area')
+                   
+        if self.r_ratio_check.isChecked() and self.max_r_ratio_line.text():
+            self.check_min_max_constraint(self.max_r_ratio_line.text(), self.min_r_ratio_line.text(), 'Strain-to-kinetic energy ratio')
+
+        if self.compliance_check.isChecked() and self.max_compliance_line.text():
+            self.check_min_max_constraint(self.max_compliance_line.text(), self.min_compliance_line.text(), 'Compliance')
+
+        if self.local_ep_check.isChecked() and self.max_local_ep_line.text():
+            self.check_min_max_constraint(self.max_local_ep_line.text(), self.min_local_ep_line.text(), 'Local elastic potential energy')
+
+        if self.local_ki_check.isChecked() and self.max_local_ki_line.text():
+            self.check_min_max_constraint(self.max_local_ki_line.text(), self.min_local_ki_line.text(), 'Local kinetic energy')
+
+        if self.local_r_check.isChecked() and self.max_local_r_line.text():
+            self.check_min_max_constraint(self.max_local_r_line.text(), self.min_local_r_line.text(), 'Local strain-to-kinetic energy ratio')
 
     def check_constraint(self):
         self.warnings_constraint = []
@@ -1333,9 +1375,7 @@ class ParametersOpt(Parameters):
         if self.area_check.isChecked():
             self.check_param(self.warnings_constraint, self.min_area_line.text(), [int, float], 'Area - min value must be an integer or float')
             if self.max_area_line.text():
-                aux = self.check_param(self.warnings_constraint, self.max_area_line.text(), [int, float], 'Area - max value must be an integer or float', constraint=True)
-                if aux:
-                    self.check_min_max_constraint(self.max_area_line, self.min_area_line, 'Area')
+                self.check_param(self.warnings_constraint, self.max_area_line.text(), [int, float], 'Area - max value must be an integer or float')
                    
         if self.r_ratio_check.isChecked():
             self.check_param(self.warnings_constraint, self.min_r_ratio_line.text(), [int, float], 'Strain-to-kinetic energy ratio - min value must be an integer or float')
@@ -1447,26 +1487,29 @@ class TextFem2d():
         self.editor.setOpenExternalLinks(True)
         self.text_fem = """ <p> <b> <font size="+7"> Parameters: </font> </b>
                 <hr>
-                <p> <b> <font size="+1"> nelx </font> </b> <font size="+1"> (<i>int</i>): Number of elements on the x-axis.  </font> </p>
-                <p> <b> <font size="+1"> nely </font> </b> <font size="+1"> (<i>int</i>): Number of elements on the y-axis.</font> </p>
-                <p> <b> <font size="+1"> lx </font> </b> <font size="+1"> (<i>float</i>): x-axis length.</font> </p>
-                <p> <b> <font size="+1"> ly </font> </b> <font size="+1"> (<i>float</i>): y-axis length.</font> </p>           
-                <p> <b> <font size="+1"> E </font> </b> <font size="+1"> (<i>float</i>): Elastic modulus. </font> </p>
-                <p> <b> <font size="+1"> v </font> </b> <font size="+1"> (<i>float</i>): Poisson's ratio. </font> </p>
-                <p> <b> <font size="+1"> rho </font> </b> <font size="+1"> (<i>float</i>): Density. </font> </p>
-                <p> <b> <font size="+1"> alpha </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass. </font> </p>
-                <p> <b> <font size="+1"> beta </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness. </font> </p> 
-                <p> <b> <font size="+1"> eta </font> </b> <font size="+1"> (<i>float</i>): Damping coefficient. </font> </p>
-                <p> <b> <font size="+1"> factor </font> </b> <font size="+1"> (<i>float</i>): Factor to deform the mesh. </font> </p>
-                <p> <b> <font size="+1"> freq </font> </b> <font size="+1"> (<i>int</i>): Optimized frequency. </font> </p>
-                <p> <b> <font size="+1"> node_plot </font> </b> <font size="+1"> (<i>numpy.array</i>): The node to plot the frequency response graph.  </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> The columns are respectively node, x direction, y direction. </p>
-                    <p style="margin-left:2em"> <font size="+1"> It is a 1x3 matrix. </font> </p>
-                <p> <b> <font size="+1"> freq_rsp </font> </b> <font size="+1"> (<i>list</i>): If len is 3, a frequency response graph of the original and optimized structure is generated.  </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> First value is the minimum frequency of the graph. </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> Second value is the maximum frequency of the graph. </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> Third value is the step between each calculation of the objective function. </font> <</p>
-                <p> <b> <font size="+1"> save </font> </b> <font size="+1"> (<i>bool</i>): if True save the optimization and frequency response graphs as PNG. </font> </p>
+                <p> <b> <font size="+1"> nelx </font> </b> <font size="+1"> (int): Number of elements on the x-axis.  </font> </p>
+                <p> <b> <font size="+1"> nely </font> </b> <font size="+1"> (int): Number of elements on the y-axis.</font> </p>
+                <p> <b> <font size="+1"> lx </font> </b> <font size="+1"> (float): X-axis length.</font> </p>
+                <p> <b> <font size="+1"> ly </font> </b> <font size="+1"> (float): Y-axis length.</font> </p>           
+                <p> <b> <font size="+1"> E </font> </b> <font size="+1"> (float): Elastic modulus. </font> </p>
+                <p> <b> <font size="+1"> v </font> </b> <font size="+1"> (float): Poisson's ratio. </font> </p>
+                <p> <b> <font size="+1"> rho </font> </b> <font size="+1"> (float): Density. </font> </p>
+                <p> <b> <font size="+1"> alpha </font> </b> <font size="+1"> (float): Damping coefficient proportional to mass. </font> </p>
+                <p> <b> <font size="+1"> beta </font> </b> <font size="+1"> (float): Damping coefficient proportional to stiffness. </font> </p> 
+                <p> <b> <font size="+1"> eta </font> </b> <font size="+1"> (float): Damping coefficient. </font> </p>
+                <p> <b> <font size="+1"> factor </font> </b> <font size="+1"> (float): Factor to deform the mesh. </font> </p>
+                <p> <b> <font size="+1"> freq </font> </b> <font size="+1"> (int): Optimized frequency. </font> </p>
+                <p> <b> <font size="+1"> save </font> </b> <font size="+1"> (bool): if True save the optimization and frequency response graphs as PNG. </font> </p>
+                <p> <b> <font size="+1"> Frequency response </font> </b>  <font size="+1"> It's necessary to pass the frequency range and the node that will be plotted.  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> <b> Frequency range </b> (list): It's a list with three values. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> First value is the minimum frequency of the graph. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> Second value is the maximum frequency of the graph. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> Third value is the step between each calculation of the objective function. </font> <</p>
+                
+                    <p style="margin-left:2em"> <font size="+1"> <b> Node to plot </b> : Node that will be calculated the frequency response. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> X-coord (float): X-axis coordinate of the node. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> Y-coord (float): Y-axis coordinate of the node. </font> </p>   
+                        <p style="margin-left:4em"> <font size="+1"> X or Y: The direction. </font> </p>   
                 """
         self.set_text()
 
@@ -1483,49 +1526,50 @@ class TextOpt():
 
         self.text_opt = """ <p> <b> <font size="+7"> Parameters: </font> </b>
             <hr>
-            <p> <b> <font size="+1"> nelx </b> <font size="+1"> (<i>int</i>): Number of elements on the x-axis.  </font> </p>
-            <p> <b> <font size="+1"> nely </b> <font size="+1"> (<i>int</i>): Number of elements on the y-axis.  </font> </p>
-            <p> <b> <font size="+1"> lx </b> <font size="+1"> (<i>float</i>): x-axis length.  </font> </p>
-            <p> <b> <font size="+1"> ly </b> <font size="+1"> (<i>float</i>): x-axis length.  </font> </p>
-            <p> <b> <font size="+1"> func_name </b> <font size="+1"> (<i>str</i>): Objective function used.  </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> It can be: 'Compliance', 'Input Power', 'Elastic Potential Energy', 'Kinetic Energy' or 'R Ratio'.  </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> If the multiobjective function is being calculated, weight n1 is assigned.  </font> </p>
-            <p> <b> <font size="+1"> freq1 </b> <font size="+1"> (<i>int</i>): Optimized frequency. </font> </p>
-            <p> <b> <font size="+1"> n1 </b> <font size="+1"> (<i>float</i>): Weight n1 used in func_name. </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> If n1 &#60; 0: Maximize objective function  </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> If n1 > 0: Minimize objective function  </font> </p>
-            <p> <b> <font size="+1"> multiobjective </b> <font size="+1"> (<i>tuple</i>): Second function and frequency in the multiobjective.  </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> First value is the second function of the multiobjective function. The assigned weight is (1 - n1).  </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> Second value is the frequency that func_name2 is being optimized.   </font> </p>
-            <p> <b> <font size="+1"> const_func </b> <font size="+1"> (<i>float</i>):  </font> </p>
-            <p> <b> <font size="+1"> fac_ratio </b> <font size="+1"> (<i>float</i>): Factor applied in the radius to get elements in the vicinity of each element. </font> </p>
-            <p> <b> <font size="+1"> modes </b> <font size="+1"> (<i>int</i>): If not None is used the Mode Superposition Method to calculate the displacement. </font> </p>
-            <p> <b> <font size="+1"> rho </b> <font size="+1"> (<i>float</i>): Density.    </font> </p>
-            <p> <b> <font size="+1"> E </b> <font size="+1"> (<i>float</i>): Elastic modulus. </font> </p>
-            <p> <b> <font size="+1"> v </b> <font size="+1"> (<i>float</i>): Poisson's ratio. </font> </p>
-            <p> <b> <font size="+1"> x_min_m </b> <font size="+1"> (<i>float</i>): Minimum relative densities to mass.  </font> </p>
-            <p> <b> <font size="+1"> x_min_k </b> <font size="+1"> (<i>float</i>): Minimum relative densities to stiffness.  </font> </p>
-            <p> <b> <font size="+1"> alpha_par </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass.   </font> </p>
-            <p> <b> <font size="+1"> beta_par </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness.   </font> </p>
-            <p> <b> <font size="+1"> eta_par </b> <font size="+1"> (<i>float</i>): Damping coefficient.   </font> </p>
-            <p> <b> <font size="+1"> alpha_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to mass to generate the graph. </font> </p>
-            <p> <b> <font size="+1"> beta_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient proportional to stiffness to generate the graph.  </font> </p>
-            <p> <b> <font size="+1"> eta_plot </b> <font size="+1"> (<i>float</i>): Damping coefficient to generate the graph. </font> </p>
-            <p> <b> <font size="+1"> p_par </b> <font size="+1"> (<i>int</i>): Penalization power to stiffness.  </font> </p>
-            <p> <b> <font size="+1"> q_par </b> <font size="+1"> (<i>int</i>): Penalization power to mass.  </font> </p>
-            <p> <b> <font size="+1"> passive_coord </b> <font size="+1"> (<i>tuple</i>): Region that the shape will not be changed.   </font> </p>
+            <p> <b> <font size="+1"> nelx </b> <font size="+1"> (int): Number of elements on the X-axis.  </font> </p>
+            <p> <b> <font size="+1"> nely </b> <font size="+1"> (int): Number of elements on the Y-axis.  </font> </p>
+            <p> <b> <font size="+1"> lx </b> <font size="+1"> (float): X-axis length.  </font> </p>
+            <p> <b> <font size="+1"> ly </b> <font size="+1"> (float): Y-axis length.  </font> </p>
+            <p> <b> <font size="+1"> E </b> <font size="+1"> (float): Elastic modulus. </font> </p>
+            <p> <b> <font size="+1"> v </b> <font size="+1"> (float): Poisson's ratio. </font> </p>
+            <p> <b> <font size="+1"> rho </b> <font size="+1"> (float): Density.
+            <p> <b> <font size="+1"> Factor ratio </b> <font size="+1"> (float): Factor applied in the radius to get elements in the vicinity of each element. </font> </p> 
+            <p> <b> <font size="+1"> x_min_mass </b> <font size="+1"> (float): Minimum relative densities to mass.  </font> </p>
+            <p> <b> <font size="+1"> x_min_stif </b> <font size="+1"> (float): Minimum relative densities to stiffness.  </font> </p>
+            <font size="+1"> Penal. stiffness </b> <font size="+1"> (int): Penalization power to stiffness.  </font> </p>
+            <p> <b> <font size="+1"> Penal. mass </b> <font size="+1"> (int): Penalization power to mass.  </font> </p>
+            <p> <b> <font size="+1"> Alpha </b> <font size="+1"> (float): Damping coefficient proportional to mass.   </font> </p>
+            <p> <b> <font size="+1"> Beta </b> <font size="+1"> (float): Damping coefficient proportional to stiffness.   </font> </p>
+            <p> <b> <font size="+1"> Eta </b> <font size="+1"> (float): Damping coefficient.   </font> </p>
+            <p> <b> <font size="+1"> Passive coordinates </b> <font size="+1"> (tuple): Region that the shape will not be changed.   </font> </p>
                 <p style="margin-left:2em"> <font size="+1"> Example: </font> </p>
                 <p style="margin-left:4em"> <font size="+1"> ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))  </font> </p>
-            <p> <b> <font size="+1"> freq_rsp </b> <font size="+1"> (<i>list</i>): If len is 3, a frequency response graph of the original and optimized structure is generated. </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> First value is the minimum frequency of the graph.  </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> Second value is the maximum frequency of the graph.  </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> Third value is the step between each calculation of the objective function.   </font> </p>
-            <p> <b> <font size="+1"> dens_filter </b> <font size="+1"> (<i>bool</i>): If True use density filter and False use sensitivity filter.  </font> </p>
-            <p> <b> <font size="+1"> each_iter </b> <font size="+1"> (<i>bool</i>): If True plots the convergence graph for each iteration of the optimization.   </font> </p>
-            <p> <b> <font size="+1"> max_iter </b> <font size="+1"> (<i>int</i>): Number of iterations. </font> </p>
-            <p> <b> <font size="+1"> mesh_deform </b> <font size="+1"> (<i>bool</i>): If True plots the mesh deformation of the dynamic function.  </font> </p>
-            <p> <b> <font size="+1"> factor </b> <font size="+1"> (<i>float</i>): Factor to deform the mesh.  </font> </p>
-            <p> <b> <font size="+1"> save </b> <font size="+1"> (<i>bool</i>): if True save the optimization and frequency response graphs as PNG.  </font> </p>
+            <p> <b> <font size="+1"> Modes ♀</b> <font size="+1"> (int): If not None is used the Mode Superposition Method to calculate the displacement. </font> </p>
+            <p> <b> <font size="+1"> Constant Function </b> <font size="+1"> (float):  </font> </p>
+            <p> <b> <font size="+1"> n1 </b> <font size="+1"> (float): Weight n1 used in func_name. </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> If n1 &#60; 0: Maximize objective function.  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> If n1 > 0: Minimize objective function.  </font> </p>
+            <p> <b> <font size="+1"> Frequency </b> <font size="+1"> (int): Optimized frequency. </font> </p>
+            <p> <b> <font size="+1"> Objective Function </b> <font size="+1"> (str): Objective function used.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> If the multiobjective function is being calculated, weight n1 is assigned.  </font> </p>
+            <p> <b> <font size="+1"> Multiobjective Function </b> <font size="+1"> (tuple): Second function calculated.  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> The assigned weight is (1 - n1).  </font> </p>            
+            <p> <b> <font size="+1"> Multiobjective Frequency </b> <font size="+1"> (tuple): frequency that the multiobjective function is being optimized.  </font> </p>
+            <p> <b> <font size="+1"> Max. iterations </b> <font size="+1"> (int): Number of iterations. </font> </p>
+            <p> <b> <font size="+1"> Save data </b> <font size="+1"> (bool): if checked saves: the optimization and frequency response graphs as PNG. </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> ????  </font> </p>
+            <p> <b> <font size="+1"> Density Filter </b> <font size="+1"> (bool): If checked uses density filter. Otherwise uses sensitivity filter.  </font> </p>
+            <p> <b> <font size="+1"> Plot deformed mesh </b> <font size="+1"> (bool): If checked plots the mesh deformation of the dynamic function.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> <b> Factor </b> (float): Factor to deform the mesh.  </font> </p>
+                    
+            <p> <b> <font size="+1"> Frequency response </b> <font size="+1">: It's necessary to pass the frequency range and the coefficient to plot.
+                <p style="margin-left:2em"> <font size="+1"> <b> Frequency range </b> (list): It's a list with three values. </font> </p>
+                    <p style="margin-left:4em"> <font size="+1"> First value is the minimum frequency of the graph. </font> </p>
+                    <p style="margin-left:4em"> <font size="+1"> Second value is the maximum frequency of the graph. </font> </p>
+                    <p style="margin-left:4em"> <font size="+1"> Third value is the step between each calculation of the objective function. </font> <</p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Alpha plot </b> <font size="+1"> (float): Damping coefficient proportional to mass.   </font> </p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Beta plot </b> <font size="+1"> (float): Damping coefficient proportional to stiffness.   </font> </p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Eta plot </b> <font size="+1"> (float): Damping coefficient.   </font> </p>
             """
         self.set_text()
 
@@ -1536,24 +1580,24 @@ class TextBc():
     def __init__(self):
         self.text_load = """<p> <b> <font size="+7"> Add loads </font> </b>
             <hr>
-            <p style="margin-left:2em"> <font size="+3"> Add loads by coordinate </font> </p>
+            <p style="margin-left:2em"> <font size="+3"> Add loads by coordinate: </font> </p>
                     
-                <p style="margin-left:4em"> <font size="+1"> X-coord: coordinate in X-axis </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> Y-coord: coordinate in Y-axis </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> X-coord </b> (float): coordinate in X-axis. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Y-coord </b> (float): coordinate in Y-axis. </font> </p>
             
-            <p style="margin-left:2em"> <font size="+3"> Add loads by column </font> </p>
+            <p style="margin-left:2em"> <font size="+3"> Add loads by column: </font> </p>
                     
-                <p style="margin-left:4em"> <font size="+1"> Coord: Coordinate </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> Column: Direction that the load is applied. It can be: X-Axis or Y-Axis </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> Error margin: Margin of error. The more discretized the mesh, the smaller the error margin </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Coord </b> (float): Coordinate. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Column </b>: Direction that the load is applied. It can be: X-Axis or Y-Axis. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Error margin </b> (float): Margin of error. The more discretized the mesh, the smaller the error margin </font> </p>
 
-            <p style="margin-left:2em"> <font size="+1"> Load direction </font> </p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Load direction </b>: </font> </p>
 
-                <p style="margin-left:4em"> <font size="+1"> Positive: Indicates that the load is applied in the positive direction </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> Negative: Indicates that the load is applied in the negative direction </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> None: Indicates that no load is applied </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Positive: Indicates that the load is applied in the positive direction. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Negative: Indicates that the load is applied in the negative direction. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> None: Indicates that no load is applied. </font> </p>
             
-            <p style="margin-left:2em"> <font size="+1"> Load value: The module of the load in Newton </font> </p>            
+            <p style="margin-left:2em"> <font size="+1"> <b> Load value </b>: The module of the load in Newton. </font> </p>            
             """
         self.editor_load = QtWidgets.QLabel()
         self.editor_load.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse)
@@ -1564,21 +1608,21 @@ class TextBc():
 
         self.text_node_constrain = """<p> <b> <font size="+7"> Constrain nodes displacements </font> </b>
             <hr>
-            <p style="margin-left:2em"> <font size="+3"> Constrain nodes displacements by coordinate </font> </p>
+            <p style="margin-left:2em"> <font size="+3"> Constrain nodes displacements by coordinate: </font> </p>
                     
-                <p style="margin-left:4em"> <font size="+1"> X-coord: coordinate in X-axis </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> Y-coord: coordinate in Y-axis </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> X-coord </b> (float): coordinate in X-axis. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Y-coord </b> (float): coordinate in Y-axis. </font> </p>
             
-            <p style="margin-left:2em"> <font size="+3"> Constrain nodes displacements by column </font> </p>
+            <p style="margin-left:2em"> <font size="+3"> Constrain nodes displacements by column: </font> </p>
                     
-                <p style="margin-left:4em"> <font size="+1"> Coord: Coordinate </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> Column: Direction that the load is applied. It can be: X-Axis or Y-Axis </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> Error margin: Margin of error. The more discretized the mesh, the smaller the error margin </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Coord </b> (float): Coordinate. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Column </b>: Direction that the load is applied. It can be: X-Axis or Y-Axis. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> <b> Error margin </b> (float): Margin of error. The more discretized the mesh, the smaller the error margin. </font> </p>
 
-            <p style="margin-left:2em"> <font size="+1"> Direction </font> </p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Direction: </b> </font> </p>
 
-                <p style="margin-left:4em"> <font size="+1"> Yes: Indicates that the node displacement is constrained </font> </p>
-                <p style="margin-left:4em"> <font size="+1"> No: Indicates that no node displacement is constrained </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> Yes: Indicates that the node displacement is constrained. </font> </p>
+                <p style="margin-left:4em"> <font size="+1"> No: Indicates that no node displacement is constrained. </font> </p>
             """
         self.editor_node_constrain = QtWidgets.QLabel()
         self.editor_node_constrain.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse)

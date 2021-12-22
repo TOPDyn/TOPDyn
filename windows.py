@@ -647,37 +647,42 @@ class WindowsOptimization(SecondWindow):
             dlg = PopUp(self.param.warnings_constraint)      
             dlg.exec_()
         else:
-            self.button_stop.setEnabled(True)
-            self.button_run.setEnabled(False)
-            self.btn_back_constrain.setEnabled(False)
-    
-            self.param.update_constraint()
-            self.param.constraint_to_list()
-            self.param.convert_load_to_dict()
-            self.param.convert_node_constrain_to_dict()
-            
-            self._counter_button_run += 1
-            if self._counter_button_run == 1:
-                self.right_widget.setCurrentIndex(1)
-                print("entrou")
-
-            pg.setConfigOption('background', 'w')
-            pg.setConfigOption('foreground', 'k')
-
-            self.add_canvas_ui2()
-            self.param.export_param()
-
-            self.process_opt = QtCore.QProcess()
-            self.process_opt.readyReadStandardOutput.connect(self.handle_stdout)
-            self.process_opt.readyReadStandardError.connect(self.handle_stderr)
-            self.process_opt.stateChanged.connect(self.handle_state)
-            self.process_opt.finished.connect(lambda: self.finish_process())
-            if self.param.mma:
-                self.process_opt.start("python", ['process_mma.py'])
+            self.param.check_constraint_values()
+            if len(self.param.warnings_constraint) != 0:
+                dlg = PopUp(self.param.warnings_constraint)      
+                dlg.exec_()
             else:
-                self.process_opt.start("python", ['process_gcmma.py'])
-            
-            self.button_stop.clicked.connect(lambda: self.stop_execution())
+                self.button_stop.setEnabled(True)
+                self.button_run.setEnabled(False)
+                self.btn_back_constrain.setEnabled(False)
+        
+                self.param.update_constraint()
+                self.param.constraint_to_list()
+                self.param.convert_load_to_dict()
+                self.param.convert_node_constrain_to_dict()
+                
+                self._counter_button_run += 1
+                if self._counter_button_run == 1:
+                    self.right_widget.setCurrentIndex(1)
+                    print("entrou")
+
+                pg.setConfigOption('background', 'w')
+                pg.setConfigOption('foreground', 'k')
+
+                self.add_canvas_ui2()
+                self.param.export_param()
+
+                self.process_opt = QtCore.QProcess()
+                self.process_opt.readyReadStandardOutput.connect(self.handle_stdout)
+                self.process_opt.readyReadStandardError.connect(self.handle_stderr)
+                self.process_opt.stateChanged.connect(self.handle_state)
+                self.process_opt.finished.connect(lambda: self.finish_process())
+                if self.param.mma:
+                    self.process_opt.start("python", ['process_mma.py'])
+                else:
+                    self.process_opt.start("python", ['process_gcmma.py'])
+                
+                self.button_stop.clicked.connect(lambda: self.stop_execution())
 
     # ------- plot windows -------
     def add_canvas_ui2(self): 
@@ -707,8 +712,14 @@ class WindowsOptimization(SecondWindow):
         ui2_layout = QtWidgets.QVBoxLayout()
         ui2_layout.addWidget(self.pbar)
         ui2_layout.addWidget(self.graph_grid)
+        self.graph_grid.setFixedWidth(self.grid_width)
+        self.graph_grid.setFixedHeight(self.grid_height)
         ui2_layout.addWidget(self.graph_conv)
-        ui2_layout.addWidget(self.graph_freq)     
+        self.graph_conv.setFixedWidth(self.conv_width)
+        self.graph_conv.setFixedHeight(self.conv_height)
+        ui2_layout.addWidget(self.graph_freq)  
+        self.graph_freq.setFixedWidth(self.conv_width)
+        self.graph_freq.setFixedHeight(self.conv_height)   
         ui2_layout.addWidget(self.text)
         self.upd_ui2_layout(ui2_layout)
 
@@ -716,13 +727,21 @@ class WindowsOptimization(SecondWindow):
         ui2_layout = QtWidgets.QVBoxLayout()
         ui2_layout.addWidget(self.pbar)
         ui2_layout.addWidget(self.graph_grid)
+        self.graph_grid.setFixedWidth(self.grid_width)
+        self.graph_grid.setFixedHeight(self.grid_height)
         ui2_layout.addWidget(self.graph_conv)
+        self.graph_conv.setFixedWidth(self.conv_width)
+        self.graph_conv.setFixedHeight(self.conv_height)
         if self.param.freqrsp:
             ui2_layout.addWidget(self.graph_freq)
+            self.graph_freq.setFixedWidth(self.conv_width)
+            self.graph_freq.setFixedHeight(self.conv_height)  
+        ui2_layout.addWidget(self.canvas_mesh)
         self.canvas_mesh.setFixedWidth(self.graph_grid.width())
         self.canvas_mesh.setFixedHeight(self.graph_grid.height())
-        ui2_layout.addWidget(self.canvas_mesh)   
         ui2_layout.addWidget(self.text)
+        self.text.setFixedWidth(self.text_width)
+        self.text.setFixedHeight(self.text_height)
         self.upd_ui2_layout(ui2_layout)
 
     # ------- handle process output -------
@@ -768,6 +787,17 @@ class WindowsOptimization(SecondWindow):
             self.set_message("Xval vector: " + out2 + "\n")
             if out3 is not None:
                 self.set_message("Natural frequencies: " + out3)
+
+            # keep standard size
+            if outeriter == 1:
+                self.conv_height = self.graph_conv.height()
+                self.conv_width = self.graph_conv.width()
+
+                self.grid_height = self.graph_grid.height()
+                self.grid_width = self.graph_grid.width()
+
+                self.text_height = self.text.height()
+                self.text_width = self.text.width() 
 
         plot_freq = simple_freq_parser(stderr)
         if plot_freq:

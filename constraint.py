@@ -83,7 +83,7 @@ class Constraint:
                 aux_fval, fvirg = self.obj_func.calculate("local_r", disp_vector_localR, omega_par=omega_localR)
 
                 if gradients:
-                    aux_dfdx = self.dif_func.calculate("local_r", fvirg, disp_vector_localR, omega_localR, xval, dyna_stif=dyna_stif_localR, )
+                    aux_dfdx = self.dif_func.calculate("local_r", fvirg, disp_vector_localR, omega_localR, xval, dyna_stif=dyna_stif_localR)
             
             elif self.constr_func[ind] == "compliance":
                 if self.ind_constr2[ind] == 0:
@@ -93,7 +93,7 @@ class Constraint:
 
                 aux_fval, fvirg = self.obj_func.calculate("compliance", disp_vector_comp)
                 if gradients:
-                    aux_dfdx = self.dif_func.calculate("compliance", fvirg, disp_vector_comp, self.coord,  omega_comp, xval)
+                    aux_dfdx = self.dif_func.calculate("compliance", fvirg, disp_vector_comp, omega_comp, xval)
 
             elif self.constr_func[ind] == "r_ratio":
                 aux_fval, fvirg = self.obj_func.calculate("r_ratio", disp_vector, stif_matrix, mass_matrix, omega_par)
@@ -186,7 +186,7 @@ class Constraint:
         aux_r = None
 
         for i, value in enumerate(constr_values):
-            if type(value) is tuple:
+            if type(value) is list:
                 freq_constr[i] = value[1]
                 constr_values[i] = value[0]
                 ind_freq_constr.append(i)

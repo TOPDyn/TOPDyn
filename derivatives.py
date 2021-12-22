@@ -352,7 +352,7 @@ class Derivatives:
                 deriv_ek[el, 0] = (lam[ind]@dKed@disp_vector[ind]).real
         return deriv_ek
 
-    def __derivative_local_R(df_ep, df_ki, fvirg):
+    def __derivative_local_R(self, df_ep, df_ki, fvirg):
         """ Calculates the derivative of the local strain-to-kinetic function.
 
         Args:
