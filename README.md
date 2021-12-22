@@ -37,7 +37,7 @@ Update your video card drivers.
 
 - More about MMA and GCMMA: [Krister Svanberg](https://people.kth.se/~krille/).
 
-> :raised_hand: Run **windows.py** :raised_hand:
+<p align="center"> > :raised_hand: Run **windows.py** :raised_hand: </p>
 
 ## :closed_book: Documentation 
 
