@@ -37,7 +37,7 @@ Update your video card drivers.
 
 - More about MMA and GCMMA: [Krister Svanberg](https://people.kth.se/~krille/).
 
-> :raised_hand: Run **windows.py** :raised_hand:
+> :raised_hand: Each API has a **main file** with an usage example and It's the place where you must put your code. :raised_hand:
 
 ## :closed_book: Documentation 
 
