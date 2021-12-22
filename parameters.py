@@ -1544,7 +1544,7 @@ class TextOpt():
             <p> <b> <font size="+1"> Passive coordinates </b> <font size="+1"> (tuple): Region that the shape will not be changed.   </font> </p>
                 <p style="margin-left:2em"> <font size="+1"> Example: </font> </p>
                 <p style="margin-left:4em"> <font size="+1"> ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))  </font> </p>
-            <p> <b> <font size="+1"> Modes ♀</b> <font size="+1"> (int): If not None is used the Mode Superposition Method to calculate the displacement. </font> </p>
+            <p> <b> <font size="+1"> Modes </b> <font size="+1"> (int): If not None is used the Mode Superposition Method to calculate the displacement. </font> </p>
             <p> <b> <font size="+1"> Constant Function </b> <font size="+1"> (float):  </font> </p>
             <p> <b> <font size="+1"> n1 </b> <font size="+1"> (float): Weight n1 used in func_name. </font> </p>
                     <p style="margin-left:2em"> <font size="+1"> If n1 &#60; 0: Maximize objective function.  </font> </p>
@@ -1556,8 +1556,9 @@ class TextOpt():
                     <p style="margin-left:2em"> <font size="+1"> The assigned weight is (1 - n1).  </font> </p>            
             <p> <b> <font size="+1"> Multiobjective Frequency </b> <font size="+1"> (tuple): frequency that the multiobjective function is being optimized.  </font> </p>
             <p> <b> <font size="+1"> Max. iterations </b> <font size="+1"> (int): Number of iterations. </font> </p>
-            <p> <b> <font size="+1"> Save data </b> <font size="+1"> (bool): if checked saves: the optimization and frequency response graphs as PNG. </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> ????  </font> </p>
+            <p> <b> <font size="+1"> Save data </b> <font size="+1"> (bool): if checked saves: </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> Xval, objective function, constraint function and frequency response values.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> Optimization part, deformed mesh and frequency response graphs as PNG.  </font> </p>
             <p> <b> <font size="+1"> Density Filter </b> <font size="+1"> (bool): If checked uses density filter. Otherwise uses sensitivity filter.  </font> </p>
             <p> <b> <font size="+1"> Plot deformed mesh </b> <font size="+1"> (bool): If checked plots the mesh deformation of the dynamic function.  </font> </p>
                 <p style="margin-left:2em"> <font size="+1"> <b> Factor </b> (float): Factor to deform the mesh.  </font> </p>
