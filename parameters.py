@@ -82,13 +82,13 @@ class Parameters():
     def check_params(self):
         self.warnings = []
 
-        self.check_param(self.warnings, self.nelx_spin.text(), [int], 'nelx must be an integer')
+        self.check_param(self.warnings, self.nelx_spin.text(), [int], 'Nelx must be an integer')
 
-        self.check_param(self.warnings, self.nely_spin.text(), [int], 'nely must be an integer')
+        self.check_param(self.warnings, self.nely_spin.text(), [int], 'Nely must be an integer')
 
-        self.check_param(self.warnings, self.lx_spin.text(), [int, float], 'lx must be an integer or float')
+        self.check_param(self.warnings, self.lx_spin.text(), [int, float], 'Lx must be an integer or float')
 
-        self.check_param(self.warnings, self.ly_spin.text(), [int, float], 'ly must be an integer or float')
+        self.check_param(self.warnings, self.ly_spin.text(), [int, float], 'Ly must be an integer or float')
 
         self.check_param(self.warnings, self.E_spin.text(), [int, float], "E must be an integer or float")
 
@@ -96,11 +96,11 @@ class Parameters():
 
         self.check_param(self.warnings, self.rho_spin.text(), [int, float], 'rho must be an integer or float')
 
-        self.check_param(self.warnings, self.alpha_spin.text(), [int, float], 'alpha must be an integer or float')
+        self.check_param(self.warnings, self.alpha_spin.text(), [int, float], 'Alpha must be an integer or float')
 
-        self.check_param(self.warnings, self.beta_spin.text(), [int, float], 'beta must be an integer or float')
+        self.check_param(self.warnings, self.beta_spin.text(), [int, float], 'Beta must be an integer or float')
 
-        self.check_param(self.warnings, self.eta_spin.text(), [int, float], 'eta must be an integer or float')
+        self.check_param(self.warnings, self.eta_spin.text(), [int, float], 'Eta must be an integer or float')
 
         self.check_param(self.warnings, self.factor_spin.text(), [int, float], 'Factor must be an integer or float')
 
@@ -599,9 +599,9 @@ class ParametersFEM2D(Parameters):
         self.freq_spin = QtWidgets.QLineEdit()
         self.factor_spin = QtWidgets.QLineEdit()
 
-        self.save_check = QtWidgets.QCheckBox("Save data")
+        self.save_check = QtWidgets.QCheckBox("Save Data")
 
-        self.freqrsp_check = QtWidgets.QCheckBox("Frequency response")  
+        self.freqrsp_check = QtWidgets.QCheckBox("Frequency Response")  
         self.freq_range_spin = QtWidgets.QLineEdit()
         self.x_coord_plot_btn = QtWidgets.QLineEdit()
         self.y_coord_plot_btn = QtWidgets.QLineEdit()
@@ -615,10 +615,10 @@ class ParametersFEM2D(Parameters):
         layout.addRow(QtWidgets.QLabel('Nely'))
         layout.addRow(self.nely_spin)
 
-        layout.addRow(QtWidgets.QLabel('lx'))
+        layout.addRow(QtWidgets.QLabel('Lx'))
         layout.addRow(self.lx_spin)
 
-        layout.addRow(QtWidgets.QLabel('ly'))
+        layout.addRow(QtWidgets.QLabel('Ly'))
         layout.addRow(self.ly_spin)
 
         layout.addRow(QtWidgets.QLabel('E'))
@@ -647,10 +647,10 @@ class ParametersFEM2D(Parameters):
 
         layout.addRow(self.save_check)
         layout.addRow(self.freqrsp_check)
-        layout.addRow(QtWidgets.QLabel('Frequency range'))
+        layout.addRow(QtWidgets.QLabel('Frequency Range'))
         layout.addRow(self.freq_range_spin)
 
-        layout.addRow(QtWidgets.QLabel('Node plot:'))
+        layout.addRow(QtWidgets.QLabel('Node to plot:'))
         layout.addRow(QtWidgets.QLabel('X-coord'), self.x_coord_plot_btn)
         layout.addRow(QtWidgets.QLabel('Y-coord'), self.y_coord_plot_btn)
 
@@ -776,18 +776,18 @@ class ParametersFEM2D(Parameters):
     def check_params(self):
         super().check_params()
         if self.freqrsp_check.isChecked():
-            self.check_param(self.warnings, self.x_coord_plot_btn.text(), [int, float], 'Node plot: node coordinate must be an integer or float')
-            self.check_param(self.warnings, self.y_coord_plot_btn.text(), [int, float], 'Node plot: node coordinate must be an integer or float')
+            self.check_param(self.warnings, self.x_coord_plot_btn.text(), [int, float], 'Node to plot: node coordinate must be an integer or float')
+            self.check_param(self.warnings, self.y_coord_plot_btn.text(), [int, float], 'Node to plot: node coordinate must be an integer or float')
         if len(self.warnings) == 0:
             self.check_node_plot()
 
     def check_node_plot(self):
         if self.freqrsp_check.isChecked():
             if ast.literal_eval(self.x_coord_plot_btn.text()) > self.lx:
-                warning = QtWidgets.QLabel("Node plot: x coordinate exceeds mesh boundaries")
+                warning = QtWidgets.QLabel("Node to plot: x coordinate exceeds mesh boundaries")
                 self.warnings.append(warning)
             if ast.literal_eval(self.y_coord_plot_btn.text()) > self.ly:
-                warning = QtWidgets.QLabel("Node plot: y coordinate exceeds mesh boundaries")
+                warning = QtWidgets.QLabel("Node to plot: y coordinate exceeds mesh boundaries")
                 self.warnings.append(warning)
 
 class ParametersOpt(Parameters):
@@ -881,16 +881,16 @@ class ParametersOpt(Parameters):
 
         self.freq2_spin = QtWidgets.QLineEdit()
 
-        self.freqrsp_check = QtWidgets.QCheckBox("Frequency response")  
+        self.freqrsp_check = QtWidgets.QCheckBox("Frequency Response")  
         self.freq_range_spin = QtWidgets.QLineEdit()
         self.alpha_plot_spin = QtWidgets.QLineEdit()
         self.beta_plot_spin  = QtWidgets.QLineEdit()
         self.eta_plot_spin   = QtWidgets.QLineEdit()
 
         self.max_iter_spin = QtWidgets.QLineEdit() 
-        self.save_check = QtWidgets.QCheckBox("Save data")
+        self.save_check = QtWidgets.QCheckBox("Save Data")
         self.dens_filter_check = QtWidgets.QCheckBox("Density Filter")      
-        self.mesh_deform_check = QtWidgets.QCheckBox("Plot deformed mesh")
+        self.mesh_deform_check = QtWidgets.QCheckBox("Plot Deformed Mesh")
         self.factor_spin = QtWidgets.QLineEdit()
     
     def add_btns(self, layout):
@@ -904,10 +904,10 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('Nely'))
         layout.addRow(self.nely_spin)
 
-        layout.addRow(QtWidgets.QLabel('lx'))
+        layout.addRow(QtWidgets.QLabel('Lx'))
         layout.addRow(self.lx_spin)
 
-        layout.addRow(QtWidgets.QLabel('ly'))
+        layout.addRow(QtWidgets.QLabel('Ly'))
         layout.addRow(self.ly_spin)
 
         layout.addRow(QtWidgets.QLabel('E'))
@@ -919,7 +919,7 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('rho'))
         layout.addRow(self.rho_spin)
 
-        layout.addRow(QtWidgets.QLabel('Factor ratio'))
+        layout.addRow(QtWidgets.QLabel('Ratio Factor'))
         layout.addRow(self.fac_ratio_spin)
 
         layout.addRow(QtWidgets.QLabel('x_min_mass'))
@@ -928,10 +928,10 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('x_min_stif'))
         layout.addRow(self.x_min_k_spin)
 
-        layout.addRow(QtWidgets.QLabel('Penal. stiffness'))
+        layout.addRow(QtWidgets.QLabel('Penal. Stiffness'))
         layout.addRow(self.penal_k_spin)
 
-        layout.addRow(QtWidgets.QLabel('Penal. mass'))
+        layout.addRow(QtWidgets.QLabel('Penal. Mass'))
         layout.addRow(self.penal_m_spin)        
 
         layout.addRow(QtWidgets.QLabel('Alpha'))
@@ -943,7 +943,7 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('Eta'))
         layout.addRow(self.eta_spin)
 
-        layout.addRow(QtWidgets.QLabel('Passive coordinates'))
+        layout.addRow(QtWidgets.QLabel('Passive Coordinates'))
         layout.addRow(self.passive_coord_spin)
 
         layout.addRow(QtWidgets.QLabel('Modes'))
@@ -952,7 +952,7 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('Constant Function'))
         layout.addRow(self.const_func_spin)
 
-        layout.addRow(QtWidgets.QLabel('n1'))
+        layout.addRow(QtWidgets.QLabel('Objective Function Weight'))
         layout.addRow(self.n1_spin)
 
         layout.addRow(QtWidgets.QLabel('Frequency'))
@@ -966,7 +966,7 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('Multiobjective Frequency'))
         layout.addRow(self.freq2_spin)
 
-        layout.addRow(QtWidgets.QLabel('Max. iterations'))
+        layout.addRow(QtWidgets.QLabel('Max. Iterations'))
         layout.addRow(self.max_iter_spin)
 
         layout.addRow(self.save_check)
@@ -977,16 +977,16 @@ class ParametersOpt(Parameters):
         layout.addRow(self.factor_spin)
       
         layout.addRow(self.freqrsp_check)
-        layout.addRow(QtWidgets.QLabel('Frequency range'))
+        layout.addRow(QtWidgets.QLabel('Frequency Range'))
         layout.addRow(self.freq_range_spin)
 
-        layout.addRow(QtWidgets.QLabel('Alpha plot'))
+        layout.addRow(QtWidgets.QLabel('Alpha Plot'))
         layout.addRow(self.alpha_plot_spin)
 
-        layout.addRow(QtWidgets.QLabel('Beta plot'))
+        layout.addRow(QtWidgets.QLabel('Beta Plot'))
         layout.addRow(self.beta_plot_spin)
 
-        layout.addRow(QtWidgets.QLabel('Eta plot'))
+        layout.addRow(QtWidgets.QLabel('Eta Plot'))
         layout.addRow(self.eta_plot_spin)
 
     def update_params(self): 
@@ -1000,8 +1000,15 @@ class ParametersOpt(Parameters):
         self.penal_k = ast.literal_eval(self.penal_k_spin.text()) #p_par
         self.penal_m = ast.literal_eval(self.penal_m_spin.text()) #q_par
 
-        self.passive_coord = ast.literal_eval(self.passive_coord_spin.text())
-        self.modes = ast.literal_eval(self.modes_spin.text())
+        if self.passive_coord_spin.text():
+            self.passive_coord = ast.literal_eval(self.passive_coord_spin.text())
+        else: 
+            self.passive_coord = None
+        if self.modes_spin.text():
+            self.modes = ast.literal_eval(self.modes_spin.text())
+        else:
+            self.modes = None
+
         self.const_func = ast.literal_eval(self.const_func_spin.text())
         self.n1 = ast.literal_eval(self.n1_spin.text())
         self.func_name = self.get_func_name(self.func_name_box)
@@ -1100,7 +1107,6 @@ class ParametersOpt(Parameters):
         self.eta_spin.setText('0')
 
         self.passive_coord_spin.setText('((0, 0.5), (0.95, 1))')
-        self.modes_spin.setText('None')
         self.const_func_spin.setText('100')
         self.n1_spin.setText('1')
         self.freq_spin.setText('10')
@@ -1148,8 +1154,10 @@ class ParametersOpt(Parameters):
         self.beta_spin.setText(str(self.beta))
         self.eta_spin.setText(str(self.eta))
 
-        self.passive_coord_spin.setText(str(self.passive_coord))
-        self.modes_spin.setText(str(self.modes))
+        if self.passive_coord is not None:
+            self.passive_coord_spin.setText(str(self.passive_coord))
+        if self.modes is not None:
+            self.modes_spin.setText(str(self.modes))
         self.const_func_spin.setText(str(self.const_func))
         self.n1_spin.setText(str(self.n1))
         self.freq_spin.setText(str(self.freq))       
@@ -1211,32 +1219,64 @@ class ParametersOpt(Parameters):
         super().check_params()
 
         if str(self.func_name2_box.currentText()) is not None:
-            self.check_param(self.warnings, self.freq2_spin.text(), [int], 'Frequency must be an integer')
+            self.check_param(self.warnings, self.freq2_spin.text(), [int], 'Multiobjective frequency function must be an integer')
 
-        self.check_param(self.warnings, self.x_min_m_spin.text(), [int, float], 'x_min_m must be an integer or float')
+        self.check_param(self.warnings, self.x_min_m_spin.text(), [int, float], 'x_min_mass must be an integer or float')
 
-        self.check_param(self.warnings, self.x_min_k_spin.text(), [int, float], 'x_min_k must be an integer or float')
+        self.check_param(self.warnings, self.x_min_k_spin.text(), [int, float], 'x_min_stif must be an integer or float')
 
-        self.check_param(self.warnings, self.penal_k_spin.text(), [int], 'penal_k must be an integer')
+        self.check_param(self.warnings, self.penal_k_spin.text(), [int], 'Penal. stiffness must be an integer')
 
-        self.check_param(self.warnings, self.penal_m_spin.text(), [int], 'penal_m must be an integer')
+        self.check_param(self.warnings, self.penal_m_spin.text(), [int], 'Penal. mass must be an integer')
 
-        self.check_param(self.warnings, self.const_func_spin.text(), [int, float], 'const_func must be an integer or float')
+        self.check_param(self.warnings, self.const_func_spin.text(), [int, float], 'Constant Function must be an integer or float')
 
-        self.check_param(self.warnings, self.n1_spin.text(), [int, float], 'n1 must be an integer or float')
+        self.check_param(self.warnings, self.n1_spin.text(), [int, float], 'Objective function weight must be an integer or float')
 
-        self.check_param(self.warnings, self.fac_ratio_spin.text(), [int, float], 'fac_ratio must be an integer or float')
+        self.check_param(self.warnings, self.fac_ratio_spin.text(), [int, float], 'Ratio Factor must be an integer or float')
 
-        if not isinstance(ast.literal_eval(self.modes_spin.text()), int) and not (ast.literal_eval(self.modes_spin.text()) is None): 
-            warning = QtWidgets.QLabel('modes must be an integer or None')
-            self.warnings.append(warning)
+        if self.modes_spin.text():
+            self.check_param(self.warnings, self.modes_spin.text(), [int], 'Modes must be an integer.')
+            #TODO: PRECISA VERIFICAR SE O NUMERO DE MODES É VALIDO.
+  
+        if self.passive_coord_spin.text():
+            aux_war = 'Passive Coordinates must be a tuple of tuples'
+            try:
+                if isinstance(ast.literal_eval(self.passive_coord_spin.text()), tuple):
+                    for item in ast.literal_eval(self.passive_coord_spin.text()):
+                        if not isinstance(item, tuple):
+                            self.warnings.append(QtWidgets.QLabel(aux_war))
+                            break
+            except:
+                warning = QtWidgets.QLabel(aux_war)
+                self.warnings.append(warning)
 
-        self.check_param(self.warnings, self.max_iter_spin.text(), [int, float], 'max_iter must be an integer or float')
+            if len(self.warnings) == 0:
+                aux_passive = ast.literal_eval(self.passive_coord_spin.text())
+
+                self.check_passive_coord(aux_passive, ast.literal_eval(self.lx_spin.text()), 'x')
+                self.check_passive_coord(aux_passive, ast.literal_eval(self.ly_spin.text()), 'y')
+            
+        self.check_param(self.warnings, self.max_iter_spin.text(), [int, float], 'Max. Iterations must be an integer or float')
 
         if self.freqrsp_check.isChecked():
-            self.check_param(self.warnings, self.alpha_plot_spin.text(), [int, float], 'alpha_plot must be an integer or float')
-            self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'beta_plot must be an integer or float')
-            self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'eta_plot must be an integer or float')
+            self.check_param(self.warnings, self.alpha_plot_spin.text(), [int, float], 'Alpha Plot must be an integer or float')
+            self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'Beta Plot must be an integer or float')
+            self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'Eta Plot must be an integer or float')
+
+    def check_passive_coord(self, passive_coord, coord, axis):
+        if axis == 'x':
+            war1 = "Passive Coordinates on X-Axis exceeds Lx."
+            war2 = "Passive Coordinates on X-Axis are invalid:"
+        else:
+            war1 = "Passive Coordinates on Y-Axis exceeds Ly."
+            war2 = "Passive Coordinates on Y-Axis are invalid:"
+          
+        if passive_coord[0][0] < passive_coord[0][1]:
+            if passive_coord[0][0] > coord or passive_coord[0][1] > coord:
+                self.warnings.append(QtWidgets.QLabel(war1))
+        else:
+            self.warnings.append(QtWidgets.QLabel(war2 + " The first value must be less than the second value."))
 
 # Constraint
     def create_constraint(self):
@@ -1487,29 +1527,29 @@ class TextFem2d():
         self.editor.setOpenExternalLinks(True)
         self.text_fem = """ <p> <b> <font size="+7"> Parameters: </font> </b>
                 <hr>
-                <p> <b> <font size="+1"> nelx </font> </b> <font size="+1"> (int): Number of elements on the x-axis.  </font> </p>
-                <p> <b> <font size="+1"> nely </font> </b> <font size="+1"> (int): Number of elements on the y-axis.</font> </p>
-                <p> <b> <font size="+1"> lx </font> </b> <font size="+1"> (float): X-axis length.</font> </p>
-                <p> <b> <font size="+1"> ly </font> </b> <font size="+1"> (float): Y-axis length.</font> </p>           
+                <p> <b> <font size="+1"> Nelx </font> </b> <font size="+1"> (int): Number of elements on the x-axis.  </font> </p>
+                <p> <b> <font size="+1"> Nely </font> </b> <font size="+1"> (int): Number of elements on the y-axis.</font> </p>
+                <p> <b> <font size="+1"> Lx </font> </b> <font size="+1"> (float): X-axis length.</font> </p>
+                <p> <b> <font size="+1"> Ly </font> </b> <font size="+1"> (float): Y-axis length.</font> </p>           
                 <p> <b> <font size="+1"> E </font> </b> <font size="+1"> (float): Elastic modulus. </font> </p>
                 <p> <b> <font size="+1"> v </font> </b> <font size="+1"> (float): Poisson's ratio. </font> </p>
                 <p> <b> <font size="+1"> rho </font> </b> <font size="+1"> (float): Density. </font> </p>
-                <p> <b> <font size="+1"> alpha </font> </b> <font size="+1"> (float): Damping coefficient proportional to mass. </font> </p>
-                <p> <b> <font size="+1"> beta </font> </b> <font size="+1"> (float): Damping coefficient proportional to stiffness. </font> </p> 
-                <p> <b> <font size="+1"> eta </font> </b> <font size="+1"> (float): Damping coefficient. </font> </p>
-                <p> <b> <font size="+1"> factor </font> </b> <font size="+1"> (float): Factor to deform the mesh. </font> </p>
-                <p> <b> <font size="+1"> freq </font> </b> <font size="+1"> (int): Optimized frequency. </font> </p>
-                <p> <b> <font size="+1"> save </font> </b> <font size="+1"> (bool): if True save the optimization and frequency response graphs as PNG. </font> </p>
-                <p> <b> <font size="+1"> Frequency response </font> </b>  <font size="+1"> It's necessary to pass the frequency range and the node that will be plotted.  </font> </p>
+                <p> <b> <font size="+1"> Alpha </font> </b> <font size="+1"> (float): Damping coefficient proportional to mass. </font> </p>
+                <p> <b> <font size="+1"> Beta </font> </b> <font size="+1"> (float): Damping coefficient proportional to stiffness. </font> </p> 
+                <p> <b> <font size="+1"> Eta </font> </b> <font size="+1"> (float): Damping coefficient. </font> </p>
+                <p> <b> <font size="+1"> Factor </font> </b> <font size="+1"> (float): Factor to deform the mesh. </font> </p>
+                <p> <b> <font size="+1"> Frequency </font> </b> <font size="+1"> (int): Optimized frequency. </font> </p>
+                <p> <b> <font size="+1"> Save Data </font> </b> <font size="+1"> (bool): if True save the optimization and frequency response graphs as PNG. </font> </p>
+                <p> <b> <font size="+1"> Frequency Response </font> </b>  <font size="+1"> It's necessary to pass the frequency range and the node that will be plotted.  </font> </p>
                     <p style="margin-left:2em"> <font size="+1"> <b> Frequency range </b> (list): It's a list with three values. </font> </p>
-                        <p style="margin-left:4em"> <font size="+1"> First value is the minimum frequency of the graph. </font> </p>
-                        <p style="margin-left:4em"> <font size="+1"> Second value is the maximum frequency of the graph. </font> </p>
-                        <p style="margin-left:4em"> <font size="+1"> Third value is the step between each calculation of the objective function. </font> <</p>
+                        <p style="margin-left:4em"> <font size="+1"> - First value is the minimum frequency of the graph. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> - Second value is the maximum frequency of the graph. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> - Third value is the step between each calculation of the objective function. </font> <</p>
                 
                     <p style="margin-left:2em"> <font size="+1"> <b> Node to plot </b> : Node that will be calculated the frequency response. </font> </p>
-                        <p style="margin-left:4em"> <font size="+1"> X-coord (float): X-axis coordinate of the node. </font> </p>
-                        <p style="margin-left:4em"> <font size="+1"> Y-coord (float): Y-axis coordinate of the node. </font> </p>   
-                        <p style="margin-left:4em"> <font size="+1"> X or Y: The direction. </font> </p>   
+                        <p style="margin-left:4em"> <font size="+1"> - X-coord (float): X-axis coordinate of the node. </font> </p>
+                        <p style="margin-left:4em"> <font size="+1"> - Y-coord (float): Y-axis coordinate of the node. </font> </p>   
+                        <p style="margin-left:4em"> <font size="+1"> - X or Y: The direction. </font> </p>   
                 """
         self.set_text()
 
@@ -1526,51 +1566,51 @@ class TextOpt():
 
         self.text_opt = """ <p> <b> <font size="+7"> Parameters: </font> </b>
             <hr>
-            <p> <b> <font size="+1"> nelx </b> <font size="+1"> (int): Number of elements on the X-axis.  </font> </p>
-            <p> <b> <font size="+1"> nely </b> <font size="+1"> (int): Number of elements on the Y-axis.  </font> </p>
-            <p> <b> <font size="+1"> lx </b> <font size="+1"> (float): X-axis length.  </font> </p>
-            <p> <b> <font size="+1"> ly </b> <font size="+1"> (float): Y-axis length.  </font> </p>
+            <p> <b> <font size="+1"> Nelx </b> <font size="+1"> (int): Number of elements on the X-axis.  </font> </p>
+            <p> <b> <font size="+1"> Nely </b> <font size="+1"> (int): Number of elements on the Y-axis.  </font> </p>
+            <p> <b> <font size="+1"> Lx </b> <font size="+1"> (float): X-axis length.  </font> </p>
+            <p> <b> <font size="+1"> Ly </b> <font size="+1"> (float): Y-axis length.  </font> </p>
             <p> <b> <font size="+1"> E </b> <font size="+1"> (float): Elastic modulus. </font> </p>
             <p> <b> <font size="+1"> v </b> <font size="+1"> (float): Poisson's ratio. </font> </p>
             <p> <b> <font size="+1"> rho </b> <font size="+1"> (float): Density.
-            <p> <b> <font size="+1"> Factor ratio </b> <font size="+1"> (float): Factor applied in the radius to get elements in the vicinity of each element. </font> </p> 
+            <p> <b> <font size="+1"> Ratio Factor </b> <font size="+1"> (float): Factor applied in the radius to get elements in the vicinity of each element. </font> </p> 
             <p> <b> <font size="+1"> x_min_mass </b> <font size="+1"> (float): Minimum relative densities to mass.  </font> </p>
             <p> <b> <font size="+1"> x_min_stif </b> <font size="+1"> (float): Minimum relative densities to stiffness.  </font> </p>
-            <font size="+1"> Penal. stiffness </b> <font size="+1"> (int): Penalization power to stiffness.  </font> </p>
-            <p> <b> <font size="+1"> Penal. mass </b> <font size="+1"> (int): Penalization power to mass.  </font> </p>
+            <font size="+1"> Penal. Stiffness </b> <font size="+1"> (int): Penalization power to stiffness.  </font> </p>
+            <p> <b> <font size="+1"> Penal. Mass </b> <font size="+1"> (int): Penalization power to mass.  </font> </p>
             <p> <b> <font size="+1"> Alpha </b> <font size="+1"> (float): Damping coefficient proportional to mass.   </font> </p>
             <p> <b> <font size="+1"> Beta </b> <font size="+1"> (float): Damping coefficient proportional to stiffness.   </font> </p>
             <p> <b> <font size="+1"> Eta </b> <font size="+1"> (float): Damping coefficient.   </font> </p>
-            <p> <b> <font size="+1"> Passive coordinates </b> <font size="+1"> (tuple): Region that the shape will not be changed.   </font> </p>
+            <p> <b> <font size="+1"> Passive Coordinates </b> <font size="+1"> (tuple): Region that the shape will not be changed.   </font> </p>
                 <p style="margin-left:2em"> <font size="+1"> Example: </font> </p>
                 <p style="margin-left:4em"> <font size="+1"> ((0.5, 1), (0.3, 0.6)) = ((x_initial, x_final), (y_initial, y_final))  </font> </p>
             <p> <b> <font size="+1"> Modes </b> <font size="+1"> (int): If not None is used the Mode Superposition Method to calculate the displacement. </font> </p>
             <p> <b> <font size="+1"> Constant Function </b> <font size="+1"> (float):  </font> </p>
-            <p> <b> <font size="+1"> n1 </b> <font size="+1"> (float): Weight n1 used in func_name. </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> If n1 &#60; 0: Maximize objective function.  </font> </p>
-                    <p style="margin-left:2em"> <font size="+1"> If n1 > 0: Minimize objective function.  </font> </p>
+            <p> <b> <font size="+1"> Objective Function Weight </b> <font size="+1"> (float): Weight associated with the objective function.. </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> - If n1 &#60; 0: Maximize objective function.  </font> </p>
+                    <p style="margin-left:2em"> <font size="+1"> - If n1 > 0: Minimize objective function.  </font> </p>
             <p> <b> <font size="+1"> Frequency </b> <font size="+1"> (int): Optimized frequency. </font> </p>
             <p> <b> <font size="+1"> Objective Function </b> <font size="+1"> (str): Objective function used.  </font> </p>
                 <p style="margin-left:2em"> <font size="+1"> If the multiobjective function is being calculated, weight n1 is assigned.  </font> </p>
             <p> <b> <font size="+1"> Multiobjective Function </b> <font size="+1"> (tuple): Second function calculated.  </font> </p>
                     <p style="margin-left:2em"> <font size="+1"> The assigned weight is (1 - n1).  </font> </p>            
             <p> <b> <font size="+1"> Multiobjective Frequency </b> <font size="+1"> (tuple): frequency that the multiobjective function is being optimized.  </font> </p>
-            <p> <b> <font size="+1"> Max. iterations </b> <font size="+1"> (int): Number of iterations. </font> </p>
-            <p> <b> <font size="+1"> Save data </b> <font size="+1"> (bool): if checked saves: </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> Xval, objective function, constraint function and frequency response values.  </font> </p>
-                <p style="margin-left:2em"> <font size="+1"> Optimization part, deformed mesh and frequency response graphs as PNG.  </font> </p>
+            <p> <b> <font size="+1"> Max. Iterations </b> <font size="+1"> (int): Number of iterations. </font> </p>
+            <p> <b> <font size="+1"> Save Data </b> <font size="+1"> (bool): if checked saves: </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> - Xval, objective function, constraint function and frequency response values.  </font> </p>
+                <p style="margin-left:2em"> <font size="+1"> - Optimization part, deformed mesh and frequency response graphs as PNG.  </font> </p>
             <p> <b> <font size="+1"> Density Filter </b> <font size="+1"> (bool): If checked uses density filter. Otherwise uses sensitivity filter.  </font> </p>
-            <p> <b> <font size="+1"> Plot deformed mesh </b> <font size="+1"> (bool): If checked plots the mesh deformation of the dynamic function.  </font> </p>
+            <p> <b> <font size="+1"> Plot Deformed Mesh </b> <font size="+1"> (bool): If checked plots the mesh deformation of the dynamic function.  </font> </p>
                 <p style="margin-left:2em"> <font size="+1"> <b> Factor </b> (float): Factor to deform the mesh.  </font> </p>
                     
-            <p> <b> <font size="+1"> Frequency response </b> <font size="+1">: It's necessary to pass the frequency range and the coefficient to plot.
-                <p style="margin-left:2em"> <font size="+1"> <b> Frequency range </b> (list): It's a list with three values. </font> </p>
-                    <p style="margin-left:4em"> <font size="+1"> First value is the minimum frequency of the graph. </font> </p>
-                    <p style="margin-left:4em"> <font size="+1"> Second value is the maximum frequency of the graph. </font> </p>
-                    <p style="margin-left:4em"> <font size="+1"> Third value is the step between each calculation of the objective function. </font> <</p>
-            <p style="margin-left:2em"> <font size="+1"> <b> Alpha plot </b> <font size="+1"> (float): Damping coefficient proportional to mass.   </font> </p>
-            <p style="margin-left:2em"> <font size="+1"> <b> Beta plot </b> <font size="+1"> (float): Damping coefficient proportional to stiffness.   </font> </p>
-            <p style="margin-left:2em"> <font size="+1"> <b> Eta plot </b> <font size="+1"> (float): Damping coefficient.   </font> </p>
+            <p> <b> <font size="+1"> Frequency Response </b> <font size="+1">: It's necessary to pass the frequency range and the coefficient to plot.
+                <p style="margin-left:2em"> <font size="+1"> <b> Frequency Range </b> (list): It's a list with three values. </font> </p>
+                    <p style="margin-left:4em"> <font size="+1"> - First value is the minimum frequency of the graph. </font> </p>
+                    <p style="margin-left:4em"> <font size="+1"> - Second value is the maximum frequency of the graph. </font> </p>
+                    <p style="margin-left:4em"> <font size="+1"> - Third value is the step between each calculation of the objective function. </font> <</p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Alpha Plot </b> <font size="+1"> (float): Damping coefficient proportional to mass.   </font> </p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Beta Plot </b> <font size="+1"> (float): Damping coefficient proportional to stiffness.   </font> </p>
+            <p style="margin-left:2em"> <font size="+1"> <b> Eta Plot </b> <font size="+1"> (float): Damping coefficient.   </font> </p>
             """
         self.set_text()
 

@@ -137,8 +137,16 @@ class SecondWindow(QtWidgets.QDialog):
 
     def ui_add_load(self, update=False):
         self.add_load_text()
-
+        
         ui_layout = QtWidgets.QFormLayout()
+        self.btn_add_new_load = QtWidgets.QPushButton('Add new load')
+        self.btn_add_new_load.clicked.connect(self.add_new_load)
+        ui_layout.addRow(self.btn_add_new_load)
+
+        self.btn_reset_load = QtWidgets.QPushButton('Reset Load')
+        self.btn_reset_load.clicked.connect(self.reset_load)
+        ui_layout.addRow(self.btn_reset_load)
+
         self.btn_back_param = QtWidgets.QPushButton('Back')
         self.btn_back_param.clicked.connect(self.back_to_param)
         ui_layout.addRow(self.btn_back_param)
@@ -147,13 +155,6 @@ class SecondWindow(QtWidgets.QDialog):
         self.btn_to_node_constrain.clicked.connect(self.go_to_node_constrain) #TODO: ESSA FUNÇÃO NAO EXISTE AQUI NO SECOND WINDOW
         ui_layout.addRow(self.btn_to_node_constrain)
 
-        self.btn_add_new_load = QtWidgets.QPushButton('Add new load')
-        self.btn_add_new_load.clicked.connect(self.add_new_load)
-        ui_layout.addRow(self.btn_add_new_load)
-
-        self.btn_reset_load = QtWidgets.QPushButton('Reset Load')
-        self.btn_reset_load.clicked.connect(self.reset_load)
-        ui_layout.addRow(self.btn_reset_load)
         if update:
             self.param.rewrite_load(ui_layout)
         else:
@@ -574,13 +575,6 @@ class WindowsOptimization(SecondWindow):
         super().ui_add_node_constrain()
 
         ui_layout = QtWidgets.QFormLayout()
-        self.btn_back_load = QtWidgets.QPushButton('Back')
-        self.btn_back_load.clicked.connect(self.back_to_load)
-        ui_layout.addRow(self.btn_back_load)
-
-        self.btn_to_constraint = QtWidgets.QPushButton('Next')
-        self.btn_to_constraint.clicked.connect(self.go_to_constraint)
-        ui_layout.addRow(self.btn_to_constraint)
 
         self.btn_add_new_node_constrain = QtWidgets.QPushButton('Constrain new node displacement')
         self.btn_add_new_node_constrain.clicked.connect(self.add_new_node_constrain)
@@ -589,6 +583,15 @@ class WindowsOptimization(SecondWindow):
         self.btn_reset_node_constrain = QtWidgets.QPushButton('Reset constraint node displacement')
         self.btn_reset_node_constrain.clicked.connect(self.reset_node_constrain)
         ui_layout.addRow(self.btn_reset_node_constrain)
+
+        self.btn_back_load = QtWidgets.QPushButton('Back')
+        self.btn_back_load.clicked.connect(self.back_to_load)
+        ui_layout.addRow(self.btn_back_load)
+
+        self.btn_to_constraint = QtWidgets.QPushButton('Next')
+        self.btn_to_constraint.clicked.connect(self.go_to_constraint)
+        ui_layout.addRow(self.btn_to_constraint)
+        
         if update:
             self.param.rewrite_node_constrain(ui_layout)
         else:
@@ -699,7 +702,7 @@ class WindowsOptimization(SecondWindow):
 
         self.graph_conv = pg.PlotWidget()
         self.graph_conv.addLegend(labelTextColor=(0,0,0), offset=(800,10))
-        self.graph_conv.setLabel('left', self.param.func_name.lower())
+        self.graph_conv.setLabel('left', "normalized functions")
         self.graph_conv.setLabel('bottom', "iteration")
         ui2_layout.addWidget(self.graph_conv)
 

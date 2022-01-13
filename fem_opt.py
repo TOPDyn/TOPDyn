@@ -107,7 +107,7 @@ class FemOpt:
         modal_shape = modal_shape[:, index_order]
         return natural_frequencies, modal_shape
 
-    def _mode_superposition(self, natural_frequencies, modal_shape, omega_par, alpha, beta, eta):    
+    def _mode_superposition(self, natural_frequencies, modal_shape, omega_par, alpha, beta, eta, stif_matrix):    
         """ Perform an harmonic analysis through superposition method and returns the response of
             all nodes due the external or internal equivalent load. It has been implemented two
             different damping models: Viscous Proportional and Hysteretic Proportional
@@ -136,7 +136,7 @@ class FemOpt:
         data = np.divide(1, (F_kg + F_mg + F_cg))
         diag = np.diag(data)
         #disp_vector = modal_shape @ (diag @ F_aux[:,i])
-        rows = self.stif_matrix.shape[0]
+        rows = stif_matrix.shape[0]
         disp_vector = np.zeros((rows), dtype=complex)
         if self.free_ind is not None:
             disp_vector[self.free_ind] = modal_shape @ (diag @ F_aux)
@@ -158,7 +158,7 @@ class FemOpt:
         """
         if self.modes is not None:
             natural_frequencies, modal_shape = self._modal_analysis(mass_matrix, stif_matrix)
-            disp_vector = self._mode_superposition(natural_frequencies, modal_shape, omega_par, alpha, beta, eta)
+            disp_vector = self._mode_superposition(natural_frequencies, modal_shape, omega_par, alpha, beta, eta, stif_matrix)
         else:  
             disp_vector = self._harmonic_problem(dyna_stif)
             natural_frequencies = None
