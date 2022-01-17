@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtWidgets
 import os
 import ast
 
-class Parameters():
+class ParamBoundConditions():
     def __init__(self) -> None:
         # btn load
         self.load_type_btn = []
@@ -41,73 +41,6 @@ class Parameters():
         self.warnings = []
         self.warnings_load = []
         self.warnings_node_constrain = []
-
-    def update_params(self): 
-        self.nelx = ast.literal_eval(self.nelx_spin.text())
-        self.nely = ast.literal_eval(self.nely_spin.text())
-        self.lx   = ast.literal_eval(self.lx_spin.text())
-        self.ly   = ast.literal_eval(self.ly_spin.text())
-        
-        self.E = ast.literal_eval(self.E_spin.text())
-        self.v = ast.literal_eval(self.v_spin.text())
-        self.rho   = ast.literal_eval(self.rho_spin.text())
-        
-        self.alpha = ast.literal_eval(self.alpha_spin.text())
-        self.beta  = ast.literal_eval(self.beta_spin.text())
-        self.eta   = ast.literal_eval(self.eta_spin.text())
-        
-        self.factor = ast.literal_eval(self.factor_spin.text())
-        self.freq = ast.literal_eval(self.freq_spin.text())
-
-        self.freqrsp = self.freqrsp_check.checkState()
-        if self.freqrsp:
-            self.freq_range = ast.literal_eval(self.freq_range_spin.text())
-        else:
-            self.freq_range = None
-                
-        self.save = self.save_check.checkState()
-
-    def check_param(self, warnings, input_val, types, war):
-        try:
-            if input_val:
-                for type in types:
-                    isinstance(ast.literal_eval(input_val), type)
-            else:
-                warning = QtWidgets.QLabel(war)
-                warnings.append(warning)
-        except:
-            warning = QtWidgets.QLabel(war)
-            warnings.append(warning)
-        
-    def check_params(self):
-        self.warnings = []
-
-        self.check_param(self.warnings, self.nelx_spin.text(), [int], 'Nelx must be an integer')
-
-        self.check_param(self.warnings, self.nely_spin.text(), [int], 'Nely must be an integer')
-
-        self.check_param(self.warnings, self.lx_spin.text(), [int, float], 'Lx must be an integer or float')
-
-        self.check_param(self.warnings, self.ly_spin.text(), [int, float], 'Ly must be an integer or float')
-
-        self.check_param(self.warnings, self.E_spin.text(), [int, float], "E must be an integer or float")
-
-        self.check_param(self.warnings, self.v_spin.text(), [int, float], 'v must be an integer or float')
-
-        self.check_param(self.warnings, self.rho_spin.text(), [int, float], 'rho must be an integer or float')
-
-        self.check_param(self.warnings, self.alpha_spin.text(), [int, float], 'Alpha must be an integer or float')
-
-        self.check_param(self.warnings, self.beta_spin.text(), [int, float], 'Beta must be an integer or float')
-
-        self.check_param(self.warnings, self.eta_spin.text(), [int, float], 'Eta must be an integer or float')
-
-        self.check_param(self.warnings, self.factor_spin.text(), [int, float], 'Factor must be an integer or float')
-
-        self.check_param(self.warnings, self.freq_spin.text(), [int], 'Frequency must be an integer')
-        
-        if self.freqrsp_check.isChecked():
-            self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
 
 # Load
     def create_load_btn(self):
@@ -576,13 +509,13 @@ class Parameters():
             dicti = dict(zip(aux_key, aux_val))
             self.node_constrain.append(dicti)
 
-class ParametersFEM2D(Parameters):
-    def __init__(self):
-        self.create_btns()
-        self.set_default()
-        self.update_params()
+class Parameters(ParamBoundConditions):
+    def __init__(self) -> None:
+        super().__init__()
+        self.warnings = []
 
     def create_btns(self):
+        self.iges_file_check = QtWidgets.QCheckBox("Upload iges file")
         self.nelx_spin = QtWidgets.QLineEdit()
         self.nely_spin = QtWidgets.QLineEdit()
         self.lx_spin = QtWidgets.QLineEdit()
@@ -591,7 +524,7 @@ class ParametersFEM2D(Parameters):
         self.E_spin = QtWidgets.QLineEdit()
         self.v_spin = QtWidgets.QLineEdit()
         self.rho_spin = QtWidgets.QLineEdit()
-        
+
         self.alpha_spin = QtWidgets.QLineEdit()
         self.beta_spin = QtWidgets.QLineEdit()
         self.eta_spin = QtWidgets.QLineEdit()
@@ -603,12 +536,148 @@ class ParametersFEM2D(Parameters):
 
         self.freqrsp_check = QtWidgets.QCheckBox("Frequency Response")  
         self.freq_range_spin = QtWidgets.QLineEdit()
+
+    def update_params(self): 
+        self.nelx = ast.literal_eval(self.nelx_spin.text())
+        self.nely = ast.literal_eval(self.nely_spin.text())
+        self.lx   = ast.literal_eval(self.lx_spin.text())
+        self.ly   = ast.literal_eval(self.ly_spin.text())
+        
+        self.E = ast.literal_eval(self.E_spin.text())
+        self.v = ast.literal_eval(self.v_spin.text())
+        self.rho   = ast.literal_eval(self.rho_spin.text())
+        
+        self.alpha = ast.literal_eval(self.alpha_spin.text())
+        self.beta  = ast.literal_eval(self.beta_spin.text())
+        self.eta   = ast.literal_eval(self.eta_spin.text())
+        
+        self.factor = ast.literal_eval(self.factor_spin.text())
+        self.freq = ast.literal_eval(self.freq_spin.text())
+
+        self.freqrsp = self.freqrsp_check.checkState()
+        if self.freqrsp:
+            self.freq_range = ast.literal_eval(self.freq_range_spin.text())
+        else:
+            self.freq_range = None
+                
+        self.save = self.save_check.checkState()
+
+    def update_default(self):
+        self.nelx_spin.setText(str(self.nelx))
+        self.nely_spin.setText(str(self.nely))
+        self.lx_spin.setText(str(self.lx))
+        self.ly_spin.setText(str(self.ly))
+        
+        self.E_spin.setText(str(self.E))
+        self.v_spin.setText(str(self.v))
+        self.rho_spin.setText(str(self.rho))
+        
+        self.alpha_spin.setText(str(self.alpha))
+        self.beta_spin.setText(str(self.beta))
+        self.eta_spin.setText(str(self.eta))
+        
+        self.freq_spin.setText(str(self.freq))
+        self.factor_spin.setText(str(self.factor))
+
+        self.freqrsp_check.setChecked(self.freqrsp) 
+        
+        self.save_check.setChecked(self.save)
+
+    def check_param(self, warnings, input_val, types, war):
+        try:
+            if input_val:
+                for type in types:
+                    isinstance(ast.literal_eval(input_val), type)
+            else:
+                warning = QtWidgets.QLabel(war)
+                warnings.append(warning)
+        except:
+            warning = QtWidgets.QLabel(war)
+            warnings.append(warning)
+        
+    def check_params(self):
+        self.warnings = []
+
+        self.check_param(self.warnings, self.nelx_spin.text(), [int], 'Nelx must be an integer')
+
+        self.check_param(self.warnings, self.nely_spin.text(), [int], 'Nely must be an integer')
+
+        self.check_param(self.warnings, self.lx_spin.text(), [int, float], 'Lx must be an integer or float')
+
+        self.check_param(self.warnings, self.ly_spin.text(), [int, float], 'Ly must be an integer or float')
+
+        self.check_param(self.warnings, self.E_spin.text(), [int, float], "E must be an integer or float")
+
+        self.check_param(self.warnings, self.v_spin.text(), [int, float], 'v must be an integer or float')
+
+        self.check_param(self.warnings, self.rho_spin.text(), [int, float], 'rho must be an integer or float')
+
+        self.check_param(self.warnings, self.alpha_spin.text(), [int, float], 'Alpha must be an integer or float')
+
+        self.check_param(self.warnings, self.beta_spin.text(), [int, float], 'Beta must be an integer or float')
+
+        self.check_param(self.warnings, self.eta_spin.text(), [int, float], 'Eta must be an integer or float')
+
+        self.check_param(self.warnings, self.factor_spin.text(), [int, float], 'Factor must be an integer or float')
+
+        self.check_param(self.warnings, self.freq_spin.text(), [int], 'Frequency must be an integer')
+        
+        if self.freqrsp_check.isChecked():
+            self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
+
+    def toggled_iges_check(self):
+        self.iges_file_check.toggled.connect(self.iges_check_handler)
+        self.iges_file_check.toggled.connect(self.nelx_spin.setDisabled)
+        self.iges_file_check.toggled.connect(self.nely_spin.setDisabled)
+        self.iges_file_check.toggled.connect(self.lx_spin.setDisabled)
+        self.iges_file_check.toggled.connect(self.ly_spin.setDisabled)
+
+    def iges_check_handler(self):
+        if self.iges_file_check.checkState():
+            self.open_dialog_box()
+    
+    def open_dialog_box(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName()
+        path = filename[0]
+        print(path)
+
+        with open(path, "r") as f:
+            self.iges_path = f.readline()
+            print(self.iges_path)
+
+    def export_param(self, param):  
+        folder_name = 'temp'
+        directory = os.path.join(os.path.dirname(__file__), folder_name)
+        os.makedirs(directory, exist_ok=True)
+        try: 
+            # WRITE
+            dir_file = os.path.join(directory, 'param_file.txt')
+            # open file for writing
+            f = open(dir_file,"w")
+            # write file
+            f.write(str(param))
+            # close file
+            f.close()
+        except: 
+            print("Something went wrong")
+
+class ParametersFEM2D(Parameters):
+    def __init__(self):
+        super().__init__()
+        self.create_btns()
+        self.set_default()
+        self.update_params()
+
+    def create_btns(self):
+        super().create_btns()
         self.x_coord_plot_btn = QtWidgets.QLineEdit()
         self.y_coord_plot_btn = QtWidgets.QLineEdit()
         self.x_dir_plot_btn = QtWidgets.QRadioButton("X")
         self.y_dir_plot_btn = QtWidgets.QRadioButton("Y")       
 
     def add_btns(self, layout):
+        layout.addRow(self.iges_file_check)
+
         layout.addRow(QtWidgets.QLabel('Nelx'))
         layout.addRow(self.nelx_spin)
 
@@ -661,12 +730,13 @@ class ParametersFEM2D(Parameters):
         layout.addRow(self.y_dir_plot_btn)     
 
     def toggled_fem2d(self):
+        self.toggled_iges_check()
         self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
         self.freqrsp_check.toggled.connect(self.x_coord_plot_btn.setEnabled)
         self.freqrsp_check.toggled.connect(self.y_coord_plot_btn.setEnabled)
         self.freqrsp_check.toggled.connect(self.x_dir_plot_btn.setEnabled)
         self.freqrsp_check.toggled.connect(self.y_dir_plot_btn.setEnabled)
-    
+
     def set_default(self):       
         self.nelx_spin.setText('40')
         self.nely_spin.setText('20')
@@ -703,23 +773,7 @@ class ParametersFEM2D(Parameters):
             self.y_dir_plot = 1 if self.y_dir_plot_btn.isChecked() else 0
 
     def update_default(self):
-        self.nelx_spin.setText(str(self.nelx))
-        self.nely_spin.setText(str(self.nely))
-        self.lx_spin.setText(str(self.lx))
-        self.ly_spin.setText(str(self.ly))
-        
-        self.E_spin.setText(str(self.E))
-        self.v_spin.setText(str(self.v))
-        self.rho_spin.setText(str(self.rho))
-        
-        self.alpha_spin.setText(str(self.alpha))
-        self.beta_spin.setText(str(self.beta))
-        self.eta_spin.setText(str(self.eta))
-        
-        self.freq_spin.setText(str(self.freq))
-        self.factor_spin.setText(str(self.factor))
-
-        self.freqrsp_check.setChecked(self.freqrsp) 
+        super().update_default()
         if self.freqrsp:
             self.freq_range_spin.setText(str(self.freq_range))
             self.x_coord_plot_btn.setText(str(self.x_coord_plot))
@@ -738,8 +792,6 @@ class ParametersFEM2D(Parameters):
             self.x_dir_plot_btn.setDisabled(True)
             self.y_dir_plot_btn.setDisabled(True)
 
-        self.save_check.setChecked(self.save)
-
         self.toggled_fem2d()
 
     def set_node_plot(self):
@@ -748,30 +800,14 @@ class ParametersFEM2D(Parameters):
         else:
             self.node_plot = None
 
-    def export_param(self):
-
+    def create_dict_param(self): #TODO: Esse aqui é o mesmo também! Só muda essa definição de param
         self.set_node_plot()
 
         param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
                 "alpha":self.alpha, "beta":self.beta, "eta":self.eta, "factor":self.factor, "freq":self.freq, 
                 "freqrsp":self.freqrsp, "freq_range":self.freq_range, "load_matrix":self.load, 
                 "constr_matrix":self.node_constrain, "node_plot":self.node_plot, "save":self.save, "mesh_file":None}
-        
-        folder_name = 'temp'
-        directory = os.path.join(os.path.dirname(__file__), folder_name)
-        os.makedirs(directory, exist_ok=True)
-
-        try: 
-            # WRITE
-            dir_file = os.path.join(directory, 'param_file.txt')
-            # open file for writing
-            f = open(dir_file,"w")
-            # write file
-            f.write(str(param))
-            # close file
-            f.close()
-        except: 
-            print("Something went wrong")
+        return param
 
     def check_params(self):
         super().check_params()
@@ -797,8 +833,8 @@ class ParametersOpt(Parameters):
         self.create_btns()
         self.set_default()
         #self.update_params()
-
-    def export_param(self):
+       
+    def create_dict_param(self):
         param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
                 "alpha_par":self.alpha, "beta_par":self.beta, "eta_par":self.eta, "factor":self.factor, "freq":self.freq, 
                 "freqrsp":self.freqrsp, "freq_range":self.freq_range, "load_matrix":self.load,
@@ -809,54 +845,26 @@ class ParametersOpt(Parameters):
                 "func_name":self.func_name,"func_name2":self.func_name2,"freq2":self.freq2,"alpha_plot":self.alpha_plot,
                 "beta_plot":self.beta_plot,"eta_plot":self.eta_plot,"max_iter":self.max_iter,
                 "save":self.const_func,"save":self.save,"dens_filter":self.dens_filter,"mesh_deform":self.mesh_deform}
-        
-        folder_name = 'temp'
-        directory = os.path.join(os.path.dirname(__file__), folder_name)
-        os.makedirs(directory, exist_ok=True)
-
-        try: 
-            # WRITE
-            dir_file = os.path.join(directory, 'param_file.txt')
-            # open file for writing
-            f = open(dir_file,"w")
-            # write file
-            f.write(str(param))
-            # close file
-            f.close()
-
-        except: 
-            print("Something went wrong")
+        return param
 
 # Optimization param
     def create_btns(self):
+        super().create_btns()
+
         self.mma_radio = QtWidgets.QRadioButton("MMA")
         self.gcmma_radio = QtWidgets.QRadioButton("GMMA")
 
-        # QLineEdit
-        self.nelx_spin = QtWidgets.QLineEdit()
-        self.nely_spin = QtWidgets.QLineEdit()
-        self.lx_spin = QtWidgets.QLineEdit()
-        self.ly_spin = QtWidgets.QLineEdit()
-        
-        self.E_spin = QtWidgets.QLineEdit()
-        self.v_spin = QtWidgets.QLineEdit()
-        self.rho_spin = QtWidgets.QLineEdit()
         self.fac_ratio_spin = QtWidgets.QLineEdit()
 
         self.x_min_m_spin = QtWidgets.QLineEdit()
         self.x_min_k_spin = QtWidgets.QLineEdit()
         self.penal_k_spin   = QtWidgets.QLineEdit() #p_par
         self.penal_m_spin   = QtWidgets.QLineEdit() #q_par
-        
-        self.alpha_spin = QtWidgets.QLineEdit()
-        self.beta_spin = QtWidgets.QLineEdit()
-        self.eta_spin = QtWidgets.QLineEdit()
 
         self.passive_coord_spin = QtWidgets.QLineEdit()    
         self.modes_spin = QtWidgets.QLineEdit()
         self.const_func_spin = QtWidgets.QLineEdit()
         self.n1_spin = QtWidgets.QLineEdit()
-        self.freq_spin = QtWidgets.QLineEdit()
 
         self.func_name_box = QtWidgets.QComboBox()
         self.func_name_box.addItem("Compliance")
@@ -881,22 +889,20 @@ class ParametersOpt(Parameters):
 
         self.freq2_spin = QtWidgets.QLineEdit()
 
-        self.freqrsp_check = QtWidgets.QCheckBox("Frequency Response")  
-        self.freq_range_spin = QtWidgets.QLineEdit()
         self.alpha_plot_spin = QtWidgets.QLineEdit()
         self.beta_plot_spin  = QtWidgets.QLineEdit()
         self.eta_plot_spin   = QtWidgets.QLineEdit()
 
         self.max_iter_spin = QtWidgets.QLineEdit() 
-        self.save_check = QtWidgets.QCheckBox("Save Data")
         self.dens_filter_check = QtWidgets.QCheckBox("Density Filter")      
         self.mesh_deform_check = QtWidgets.QCheckBox("Plot Deformed Mesh")
-        self.factor_spin = QtWidgets.QLineEdit()
     
     def add_btns(self, layout):
         layout.addRow(QtWidgets.QLabel('Optimization Method'))
         layout.addRow(self.mma_radio)
         layout.addRow(self.gcmma_radio)
+
+        layout.addRow(self.iges_file_check)
 
         layout.addRow(QtWidgets.QLabel('Nelx'))
         layout.addRow(self.nelx_spin)
@@ -1077,6 +1083,7 @@ class ParametersOpt(Parameters):
         return box
 
     def toggled_opt(self):
+        self.toggled_iges_check()
         self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
         self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
         self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
@@ -1132,17 +1139,10 @@ class ParametersOpt(Parameters):
         self.toggled_opt()
 
     def update_default(self):
+        super().update_default()
         self.mma_radio.setChecked(self.mma)
         self.gcmma_radio.setChecked(not self.mma)
 
-        self.nelx_spin.setText(str(self.nelx))
-        self.nely_spin.setText(str(self.nely))
-        self.lx_spin.setText(str(self.lx))
-        self.ly_spin.setText(str(self.ly))
-
-        self.E_spin.setText(str(self.E))
-        self.v_spin.setText(str(self.v))
-        self.rho_spin.setText(str(self.rho))
         self.fac_ratio_spin.setText(str(self.fac_ratio))
 
         self.x_min_m_spin.setText(str(self.x_min_m))
@@ -1150,20 +1150,14 @@ class ParametersOpt(Parameters):
         self.penal_k_spin.setText(str(self.penal_k))
         self.penal_m_spin.setText(str(self.penal_m))
 
-        self.alpha_spin.setText(str(self.alpha))
-        self.beta_spin.setText(str(self.beta))
-        self.eta_spin.setText(str(self.eta))
-
         if self.passive_coord is not None:
             self.passive_coord_spin.setText(str(self.passive_coord))
         if self.modes is not None:
             self.modes_spin.setText(str(self.modes))
         self.const_func_spin.setText(str(self.const_func))
-        self.n1_spin.setText(str(self.n1))
-        self.freq_spin.setText(str(self.freq))       
+        self.n1_spin.setText(str(self.n1))    
         
         self.max_iter_spin.setText(str(self.max_iter))
-        self.factor_spin.setText(str(self.factor))
 
         name = self.get_box_name(self.func_name)
         index = self.func_name_box.findText(name, QtCore.Qt.MatchFixedString)
@@ -1195,9 +1189,6 @@ class ParametersOpt(Parameters):
             self.factor_spin.setEnabled(True)
         else:
             self.factor_spin.setDisabled(True)
-
-        if self.save:
-            self.save_check.setChecked(True)
 
         if self.dens_filter:
             self.dens_filter_check.setChecked(True)

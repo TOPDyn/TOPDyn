@@ -405,7 +405,8 @@ class WindowsFem2d(SecondWindow):
                     self.right_widget.setCurrentIndex(1)
 
                 self.add_canvas_ui2()
-                self.param.export_param() 
+                dict_param = self.param.create_dict_param()
+                self.param.export_param(dict_param) 
                 self.process_fem = QtCore.QProcess()
                 self.process_fem.readyReadStandardError.connect(self.handle_stderr)
                 self.process_fem.stateChanged.connect(self.handle_state)
@@ -673,7 +674,8 @@ class WindowsOptimization(SecondWindow):
                 pg.setConfigOption('foreground', 'k')
 
                 self.add_canvas_ui2()
-                self.param.export_param()
+                dict_param = self.param.create_dict_param()
+                self.param.export_param(dict_param)
 
                 self.process_opt = QtCore.QProcess()
                 self.process_opt.readyReadStandardOutput.connect(self.handle_stdout)

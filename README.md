@@ -17,6 +17,14 @@ Feature to be implemented:
 
 - Projection filters;
 
+- CREATE UI AND INTEGRATE
+
+- UPLOAD IGES FILE
+
+- REVIEW - FEM3D
+
+- INTERFACE - FEM3D
+
 ## Prerequisites
 
 You will need Python 3.6.8 and the pip package manager.
