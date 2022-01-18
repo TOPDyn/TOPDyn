@@ -514,8 +514,18 @@ class Parameters(ParamBoundConditions):
         super().__init__()
         self.warnings = []
 
+        self.iges_path = None
+
     def create_btns(self):
-        self.iges_file_check = QtWidgets.QCheckBox("Upload iges file")
+        self.iges_file_btn = QtWidgets.QPushButton("Choose File") 
+        self.element_size = QtWidgets.QLineEdit()
+        self.element_size.setDisabled(True)
+        self.del_iges_btn = QtWidgets.QPushButton("x")
+        self.del_iges_btn.setStyleSheet('QPushButton {background-color: red; color: white;}') # border-radius: 15px;
+        self.del_iges_btn.hide()
+        self.iges_name = QtWidgets.QLabel('file.iges')
+        self.iges_name.hide()
+
         self.nelx_spin = QtWidgets.QLineEdit()
         self.nely_spin = QtWidgets.QLineEdit()
         self.lx_spin = QtWidgets.QLineEdit()
@@ -537,11 +547,17 @@ class Parameters(ParamBoundConditions):
         self.freqrsp_check = QtWidgets.QCheckBox("Frequency Response")  
         self.freq_range_spin = QtWidgets.QLineEdit()
 
-    def update_params(self): 
-        self.nelx = ast.literal_eval(self.nelx_spin.text())
-        self.nely = ast.literal_eval(self.nely_spin.text())
-        self.lx   = ast.literal_eval(self.lx_spin.text())
-        self.ly   = ast.literal_eval(self.ly_spin.text())
+    def update_params(self):
+        if self.iges_path is None:
+            self.nelx = ast.literal_eval(self.nelx_spin.text())
+            self.nely = ast.literal_eval(self.nely_spin.text())
+            self.lx   = ast.literal_eval(self.lx_spin.text())
+            self.ly   = ast.literal_eval(self.ly_spin.text())
+        else:
+            self.nelx = None
+            self.nely = None
+            self.lx   = None
+            self.ly   = None
         
         self.E = ast.literal_eval(self.E_spin.text())
         self.v = ast.literal_eval(self.v_spin.text())
@@ -554,19 +570,25 @@ class Parameters(ParamBoundConditions):
         self.factor = ast.literal_eval(self.factor_spin.text())
         self.freq = ast.literal_eval(self.freq_spin.text())
 
-        self.freqrsp = self.freqrsp_check.checkState()
+        self.freqrsp = self.freqrsp_check.isChecked()
         if self.freqrsp:
             self.freq_range = ast.literal_eval(self.freq_range_spin.text())
         else:
             self.freq_range = None
                 
-        self.save = self.save_check.checkState()
+        self.save = self.save_check.isChecked()
 
     def update_default(self):
-        self.nelx_spin.setText(str(self.nelx))
-        self.nely_spin.setText(str(self.nely))
-        self.lx_spin.setText(str(self.lx))
-        self.ly_spin.setText(str(self.ly))
+        if self.iges_path is not None:
+            self.nelx_spin.setText('40')
+            self.nely_spin.setText('20')
+            self.lx_spin.setText('1')
+            self.ly_spin.setText('0.5')
+        else:
+            self.nelx_spin.setText(str(self.nelx))
+            self.nely_spin.setText(str(self.nely))
+            self.lx_spin.setText(str(self.lx))
+            self.ly_spin.setText(str(self.ly))
         
         self.E_spin.setText(str(self.E))
         self.v_spin.setText(str(self.v))
@@ -625,25 +647,38 @@ class Parameters(ParamBoundConditions):
         if self.freqrsp_check.isChecked():
             self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
 
-    def toggled_iges_check(self):
-        self.iges_file_check.toggled.connect(self.iges_check_handler)
-        self.iges_file_check.toggled.connect(self.nelx_spin.setDisabled)
-        self.iges_file_check.toggled.connect(self.nely_spin.setDisabled)
-        self.iges_file_check.toggled.connect(self.lx_spin.setDisabled)
-        self.iges_file_check.toggled.connect(self.ly_spin.setDisabled)
+        if self.iges_path is not None:
+            type = self.iges_path[-5:]
+            if type != '.iges':
+                self.warnings.append(QtWidgets.QLabel('File must be an iges file.'))
 
-    def iges_check_handler(self):
-        if self.iges_file_check.checkState():
-            self.open_dialog_box()
+    def clicked_iges_btns(self):
+        self.iges_file_btn.clicked.connect(self.open_dialog_box)
+        self.del_iges_btn.clicked.connect(self.hide_iges_btns)
     
     def open_dialog_box(self):
         filename = QtWidgets.QFileDialog.getOpenFileName()
-        path = filename[0]
-        print(path)
-
-        with open(path, "r") as f:
-            self.iges_path = f.readline()
-            print(self.iges_path)
+        if filename[0]:
+            self.iges_path = filename[0]
+            self.del_iges_btn.show()
+            self.iges_name.setText(self.iges_path.rpartition('/')[-1])
+            self.iges_name.show()
+            self.element_size.setDisabled(False)
+            self.nelx_spin.setDisabled(True)
+            self.nely_spin.setDisabled(True)
+            self.lx_spin.setDisabled(True)
+            self.ly_spin.setDisabled(True)
+    
+    def hide_iges_btns(self):
+        print("ENTROU AQUIIIII HEEEEEEEIN")
+        self.iges_path = None
+        self.del_iges_btn.hide()
+        self.iges_name.hide()
+        self.element_size.setDisabled(True)
+        self.nelx_spin.setDisabled(False)
+        self.nely_spin.setDisabled(False)
+        self.lx_spin.setDisabled(False)
+        self.ly_spin.setDisabled(False)
 
     def export_param(self, param):  
         folder_name = 'temp'
@@ -666,7 +701,7 @@ class ParametersFEM2D(Parameters):
         super().__init__()
         self.create_btns()
         self.set_default()
-        self.update_params()
+        #self.update_params()
 
     def create_btns(self):
         super().create_btns()
@@ -676,7 +711,12 @@ class ParametersFEM2D(Parameters):
         self.y_dir_plot_btn = QtWidgets.QRadioButton("Y")       
 
     def add_btns(self, layout):
-        layout.addRow(self.iges_file_check)
+        layout.addRow(QtWidgets.QLabel('Upload File:'), self.iges_file_btn)
+
+        layout.addRow(self.del_iges_btn, self.iges_name)
+
+        layout.addRow(QtWidgets.QLabel('Element size'))
+        layout.addRow(self.element_size)
 
         layout.addRow(QtWidgets.QLabel('Nelx'))
         layout.addRow(self.nelx_spin)
@@ -730,7 +770,7 @@ class ParametersFEM2D(Parameters):
         layout.addRow(self.y_dir_plot_btn)     
 
     def toggled_fem2d(self):
-        self.toggled_iges_check()
+        self.clicked_iges_btns()
         self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
         self.freqrsp_check.toggled.connect(self.x_coord_plot_btn.setEnabled)
         self.freqrsp_check.toggled.connect(self.y_coord_plot_btn.setEnabled)
@@ -800,13 +840,13 @@ class ParametersFEM2D(Parameters):
         else:
             self.node_plot = None
 
-    def create_dict_param(self): #TODO: Esse aqui é o mesmo também! Só muda essa definição de param
+    def create_dict_param(self):
         self.set_node_plot()
 
         param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
                 "alpha":self.alpha, "beta":self.beta, "eta":self.eta, "factor":self.factor, "freq":self.freq, 
                 "freqrsp":self.freqrsp, "freq_range":self.freq_range, "load_matrix":self.load, 
-                "constr_matrix":self.node_constrain, "node_plot":self.node_plot, "save":self.save, "mesh_file":None}
+                "constr_matrix":self.node_constrain, "node_plot":self.node_plot, "save":self.save, "mesh_file":self.iges_path}
         return param
 
     def check_params(self):
@@ -838,7 +878,7 @@ class ParametersOpt(Parameters):
         param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
                 "alpha_par":self.alpha, "beta_par":self.beta, "eta_par":self.eta, "factor":self.factor, "freq":self.freq, 
                 "freqrsp":self.freqrsp, "freq_range":self.freq_range, "load_matrix":self.load,
-                "constr_matrix":self.node_constrain, "save":self.save, "mesh_file":None, "mma":self.mma,
+                "constr_matrix":self.node_constrain, "save":self.save, "mesh_file":self.iges_path, "mma":self.mma,
                 "fac_ratio":self.fac_ratio, "x_min_m":self.x_min_m, "x_min_k":self.x_min_k, "penal_k":self.penal_k,
                 "penal_m":self.penal_m, "constr_func":self.constr_func, "constr_values":self.constr_values,
                 "passive_coord":self.passive_coord, "modes":self.modes,"const_func":self.const_func,"n1":self.n1,
@@ -847,13 +887,10 @@ class ParametersOpt(Parameters):
                 "save":self.const_func,"save":self.save,"dens_filter":self.dens_filter,"mesh_deform":self.mesh_deform}
         return param
 
-# Optimization param
     def create_btns(self):
         super().create_btns()
-
         self.mma_radio = QtWidgets.QRadioButton("MMA")
         self.gcmma_radio = QtWidgets.QRadioButton("GMMA")
-
         self.fac_ratio_spin = QtWidgets.QLineEdit()
 
         self.x_min_m_spin = QtWidgets.QLineEdit()
@@ -902,7 +939,7 @@ class ParametersOpt(Parameters):
         layout.addRow(self.mma_radio)
         layout.addRow(self.gcmma_radio)
 
-        layout.addRow(self.iges_file_check)
+        layout.addRow(self.iges_file_btn)
 
         layout.addRow(QtWidgets.QLabel('Nelx'))
         layout.addRow(self.nelx_spin)
@@ -997,7 +1034,6 @@ class ParametersOpt(Parameters):
 
     def update_params(self): 
         super().update_params()
-
         self.mma = True if self.mma_radio.isChecked() else False
         self.fac_ratio = ast.literal_eval(self.fac_ratio_spin.text())
 
@@ -1035,10 +1071,10 @@ class ParametersOpt(Parameters):
             self.eta_plot   = None
 
         self.max_iter = ast.literal_eval(self.max_iter_spin.text())
-        self.save = self.save_check.checkState()
+        self.save = self.save_check.isChecked()
 
-        self.dens_filter  = self.dens_filter_check.checkState()
-        self.mesh_deform  = self.mesh_deform_check.checkState()
+        self.dens_filter  = self.dens_filter_check.isChecked()
+        self.mesh_deform  = self.mesh_deform_check.isChecked()
 
     def get_func_name(self, btn):       
         if str(btn.currentText()) == "Compliance":
@@ -1083,7 +1119,7 @@ class ParametersOpt(Parameters):
         return box
 
     def toggled_opt(self):
-        self.toggled_iges_check()
+        self.clicked_iges_btns()
         self.mesh_deform_check.toggled.connect(self.factor_spin.setEnabled)   
         self.func_name2_box.activated.connect(self.freq2_spin.setEnabled) 
         self.freqrsp_check.toggled.connect(self.freq_range_spin.setEnabled)
@@ -1093,7 +1129,6 @@ class ParametersOpt(Parameters):
 
     def set_default(self):
         self.mma_radio.setChecked(True)
-
         self.nelx_spin.setText('50')
         self.nely_spin.setText('100')
         self.lx_spin.setText('0.5')
@@ -1142,7 +1177,6 @@ class ParametersOpt(Parameters):
         super().update_default()
         self.mma_radio.setChecked(self.mma)
         self.gcmma_radio.setChecked(not self.mma)
-
         self.fac_ratio_spin.setText(str(self.fac_ratio))
 
         self.x_min_m_spin.setText(str(self.x_min_m))
