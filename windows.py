@@ -78,6 +78,8 @@ class SecondWindow(QtWidgets.QDialog):
         self.left_widget = QtWidgets.QWidget()
         self.left_widget.setLayout(left_layout)
         scroll = QtWidgets.QScrollArea()
+        #scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        #scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setWidget(self.left_widget)
         scroll.setWidgetResizable(True)
 
@@ -120,7 +122,7 @@ class SecondWindow(QtWidgets.QDialog):
         self.tab1.setLayout(new_layout)
     
     def ui2(self):
-        self.init_ui2_layout = QtWidgets.QVBoxLayout()
+        self.init_ui2_layout = QtWidgets.QFormLayout()
         main = QtWidgets.QWidget()
         main.setLayout(self.init_ui2_layout)
         return main
@@ -137,8 +139,8 @@ class SecondWindow(QtWidgets.QDialog):
 
     def ui_add_load(self, update=False):
         self.add_load_text()
-        
         ui_layout = QtWidgets.QFormLayout()
+        ui_layout.setVerticalSpacing(10)
         self.btn_add_new_load = QtWidgets.QPushButton('Add new load')
         self.btn_add_new_load.clicked.connect(self.add_new_load)
         ui_layout.addRow(self.btn_add_new_load)
@@ -152,7 +154,7 @@ class SecondWindow(QtWidgets.QDialog):
         ui_layout.addRow(self.btn_back_param)
 
         self.btn_to_node_constrain = QtWidgets.QPushButton('Next')
-        self.btn_to_node_constrain.clicked.connect(self.go_to_node_constrain) #TODO: ESSA FUNÇÃO NAO EXISTE AQUI NO SECOND WINDOW
+        self.btn_to_node_constrain.clicked.connect(self.go_to_node_constrain)
         ui_layout.addRow(self.btn_to_node_constrain)
 
         if update:
@@ -198,6 +200,7 @@ class SecondWindow(QtWidgets.QDialog):
 
     def back_to_param(self):
         left_layout = QtWidgets.QFormLayout()
+        left_layout.setVerticalSpacing(20)
         self.btn_back_menu = QtWidgets.QPushButton('Back to Menu')
         self.btn_back_menu.clicked.connect(self.go_to_screen1)
         left_layout.addRow(self.btn_back_menu)
@@ -252,19 +255,18 @@ class SecondWindow(QtWidgets.QDialog):
 # Regular expressions to extract values from QProcess
 progress_re = re.compile("Total complete: (\d+)%")
 
-update_data_re = re.compile("Update data")
+update_data_re = re.compile("Updating data")
 
-plot_freqresp = re.compile("Plot frequency response")
+plot_freqresp_re = re.compile("Ploting frequency response")
 
-create_plot_re = re.compile("Create plot")
+create_plot_re = re.compile("Creating plot")
 
-mesh_deform = re.compile("Plot deformed mesh")
+mesh_deform_re = re.compile("Ploting deformed mesh")
 
-save_figs = re.compile("Save figs")
+save_figs_re = re.compile("Saving figures")
 
 def simple_percent_parser(output):
-    """
-    Matches lines using the update_data_re regex,
+    """ Matches lines using the progress_re regex,
     returning a single integer for the % progress.
     """
     m = progress_re.search(output)
@@ -273,8 +275,7 @@ def simple_percent_parser(output):
         return int(pc_complete)
 
 def simple_update_parser(output):
-    """
-    Matches lines using the progress_re regex,
+    """ Matches lines using the update_data_re regex,
     returning a bool.
     """
     m = update_data_re.search(output)
@@ -282,26 +283,23 @@ def simple_update_parser(output):
         return True
 
 def simple_freq_parser(output):
-    """
-    Matches lines using the progress_re regex,
+    """ Matches lines using the plot_freqresp_re regex,
     returning a bool.
     """
-    m = plot_freqresp.search(output)
+    m = plot_freqresp_re.search(output)
     if m:
         return True
 
 def simple_save_parser(output):
-    """
-    Matches lines using the progress_re regex,
+    """ Matches lines using the save_figs_re regex,
     returning a bool.
     """
-    m = save_figs.search(output)
+    m = save_figs_re.search(output)
     if m:
         return True
 
 def simple_create_parser(output):
-    """
-    Matches lines using the create_plot_re regex,
+    """ Matches lines using the create_plot_re regex,
     returning a bool.
     """
     m = create_plot_re.search(output)
@@ -309,11 +307,10 @@ def simple_create_parser(output):
         return True
 
 def simple_deform_parser(output):
-    """
-    Matches lines using the create_plot_re regex,
+    """ Matches lines using the mesh_deform_re regex,
     returning a bool.
     """
-    m = mesh_deform.search(output)
+    m = mesh_deform_re.search(output)
     if m:
         return True
 
@@ -576,7 +573,7 @@ class WindowsOptimization(SecondWindow):
         super().ui_add_node_constrain()
 
         ui_layout = QtWidgets.QFormLayout()
-
+        ui_layout.setVerticalSpacing(10)
         self.btn_add_new_node_constrain = QtWidgets.QPushButton('Constrain new node displacement')
         self.btn_add_new_node_constrain.clicked.connect(self.add_new_node_constrain)
         ui_layout.addRow(self.btn_add_new_node_constrain)
@@ -606,6 +603,7 @@ class WindowsOptimization(SecondWindow):
         self.add_contraint_text()
 
         ui_layout = QtWidgets.QFormLayout()
+        ui_layout.setVerticalSpacing(15)
         self.btn_back_constrain = QtWidgets.QPushButton('Back')
         self.btn_back_constrain.clicked.connect(self.back_to_node_constrain)
         ui_layout.addRow(self.btn_back_constrain)
@@ -757,6 +755,7 @@ class WindowsOptimization(SecondWindow):
         progress = simple_percent_parser(stderr)
         if progress:
             self.evt_update_progress(progress)
+            self.set_message(stderr)
         
         updata_data = simple_update_parser(stderr)
         if updata_data:
@@ -862,15 +861,13 @@ class WindowsOptimization(SecondWindow):
             for ind, f in enumerate(self.plot_opt.constr_func):
                 pen_set = self.plot_opt.set_pen(f)
                 self.curves_conv.append(self.graph_conv.plot(name=self.plot_opt.labels_constr[ind], pen=pen_set))
-        
-        self.set_message(stderr) # TODO: APAGAR DEPOIS
 
-    def handle_stdout(self): #TODO: APAGAR DEPOIS
+    def handle_stdout(self):
         data = self.process_opt.readAllStandardOutput()
         stdout = bytes(data).decode("utf8")
         self.set_message(stdout)
 
-    def handle_state(self, state): #TODO: APAGAR DEPOIS
+    def handle_state(self, state):
         states = {
             QtCore.QProcess.NotRunning: 'Not running',
             QtCore.QProcess.Starting: 'Starting',

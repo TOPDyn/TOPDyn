@@ -70,7 +70,7 @@ f.write(str(values_write))
 f.close()
 
 np.savetxt(os.path.join(directory, 'constr_values.txt'), constraint.constr_values, fmt='%d')
-sys.stderr.write("Create plot")
+sys.stderr.write("Creating plot\n")
 sys.stderr.flush()
 
 # Beam initial settings
@@ -180,7 +180,7 @@ if outeriter == 0:
     np.savetxt(os.path.join(directory, 'xval_log.txt'), xval_mma.xval)
     if natural_freqs is not None:
         np.savetxt(os.path.join(directory, 'natural_freqs.txt'), natural_freqs)
-    sys.stderr.write("Update data")
+    sys.stderr.write("Updating data\n")
     sys.stderr.flush()
 
 sys.stderr.write("Total complete: 20%\n")
@@ -285,7 +285,7 @@ while (kktnorm > kkttol) and (outit < param["max_iter"]) and (kconv < 5):
     np.savetxt(os.path.join(directory, 'xval_log.txt'), xval_mma.xval)
     if natural_freqs is not None:
         np.savetxt(os.path.join(directory, 'natural_freqs.txt'), natural_freqs)
-    sys.stderr.write("Update data")
+    sys.stderr.write("Updating data\n")
     sys.stderr.flush()
 
 sys.stderr.write("Total complete: 90%\n")
@@ -311,7 +311,7 @@ if param["freqrsp"]:
     np.savetxt(os.path.join(directory, 'f_original.txt'), f_original.real)
     np.savetxt(os.path.join(directory, 'f_optimized.txt'), f_optimized.real)
 
-    sys.stderr.write("Plot frequency response")
+    sys.stderr.write("Ploting frequency response\n")
     sys.stderr.flush()
 
 # Deformed mesh
@@ -331,10 +331,10 @@ if param["mesh_deform"]:
     dir_file = os.path.join(directory, 'disp_vector.txt')
     np.savetxt(dir_file, disp_vector.real)
 
-    sys.stderr.write("Plot deformed mesh")
+    sys.stderr.write("Ploting deformed mesh")
     sys.stderr.flush()
     
 if param["save"]:
     save_data.save_data(multiobj_bool, outit, f_original, f_optimized)
-    sys.stderr.write("Save figs")
+    sys.stderr.write("Saving figures")
     sys.stderr.flush()

@@ -652,15 +652,20 @@ class ParametersFEM2D(Parameters):
         self.x_coord_plot_btn = QtWidgets.QLineEdit()
         self.y_coord_plot_btn = QtWidgets.QLineEdit()
         self.x_dir_plot_btn = QtWidgets.QRadioButton("X")
-        self.y_dir_plot_btn = QtWidgets.QRadioButton("Y")       
+        self.y_dir_plot_btn = QtWidgets.QRadioButton("Y")
 
-    def add_btns(self, layout):
+    def add_white_space(self, layout, updt):
+        if updt:
+            layout.addRow(QtWidgets.QLabel(''))
+
+    def add_btns(self, layout, updt=True):
         layout.addRow(QtWidgets.QLabel('Nelx'))
         layout.addRow(self.nelx_spin)
-
+        #self.add_white_space(layout, updt)
+        
         layout.addRow(QtWidgets.QLabel('Nely'))
         layout.addRow(self.nely_spin)
-
+        
         layout.addRow(QtWidgets.QLabel('Lx'))
         layout.addRow(self.lx_spin)
 
