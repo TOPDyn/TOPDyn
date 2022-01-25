@@ -38,7 +38,7 @@ class Mesh:
 
         Args:
             coord (:obj:`numpy.array`): Coordinates of the element.
-
+            
         Returns:
             Number of elements in each direction.
         """
@@ -49,10 +49,8 @@ class Mesh:
 
     def get_size_el(self):
         """ Get size of mesh.
-
         Args:
             coord (:obj:`numpy.array`): Coordinates of the element.
-
         Returns:
             Size of mesh.
         """
@@ -63,10 +61,8 @@ class Mesh:
 
     def generate_ind_rows_cols(self):
         """ Node indexes to make the assembly
-
         Args: 
             connect (:obj:`numpy.array`): Element connectivity.
-
         Returns:
             Node indexes to make the assembly
         """
@@ -91,7 +87,6 @@ class Mesh:
 
     def regular_mesh_Q4(self):
         """ Create a regular Q4 mesh.
-
         Args:
             lx (:obj:`float`): X-axis length.
             ly (:obj:`float`): Y-axis length.
@@ -120,7 +115,6 @@ class Mesh:
 
     def regular_mesh_H8(self):
         """ Creates a regular H8 mesh.
-
         Args:
             nelx (:obj:`int`): Number of elements on the X-axis.
             nely (:obj:`int`): Number of elements on the Y-axis.

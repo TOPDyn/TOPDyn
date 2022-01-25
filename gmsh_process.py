@@ -53,7 +53,7 @@ def _get_matrices_2D(three_dim, num_el=None):
     _, element_indexes, connectivity = gmsh.model.mesh.getElements()
     
     map_nodes = dict(zip(node_indexes, np.arange(1, len(node_indexes)+1, 1)))
-    nodal_coordinates_matrix = _get_nodal_coordinates_matrix(node_indexes, coords, map_nodes)
+    nodal_coordinates_matrix = _get_nodal_coordinates_matrix(three_dim, node_indexes, coords, map_nodes)
     
     if three_dim:
         connectivity_matrix = _get_connectivity_matrix_3D(connectivity[2], nodal_coordinates_matrix)
