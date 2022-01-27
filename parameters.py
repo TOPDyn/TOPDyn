@@ -800,10 +800,10 @@ class ParametersFEM2D(Parameters):
 
     def check_node_plot(self):
         if self.freqrsp_check.isChecked():
-            if ast.literal_eval(self.x_coord_plot_btn.text()) > self.lx:
+            if ast.literal_eval(self.x_coord_plot_btn.text()) > ast.literal_eval(self.lx_spin.text()):
                 warning = QtWidgets.QLabel("Node to plot: x coordinate exceeds mesh boundaries")
                 self.warnings.append(warning)
-            if ast.literal_eval(self.y_coord_plot_btn.text()) > self.ly:
+            if ast.literal_eval(self.y_coord_plot_btn.text()) > ast.literal_eval(self.lx_spin.text()):
                 warning = QtWidgets.QLabel("Node to plot: y coordinate exceeds mesh boundaries")
                 self.warnings.append(warning)
 
