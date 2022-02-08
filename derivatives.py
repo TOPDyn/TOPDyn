@@ -3,7 +3,27 @@ from scipy.sparse.linalg import spsolve
 from global_matrices import GlobalMatrices
 
 class Derivatives:
+    """ Derivative of objective functions. """
     def __init__(self, ngl, free_ind, ind_passive, passive_el, coord, connect, E, v, rho, alpha, beta, p_par, q_par, x_min_k, x_min_m, load_vector) -> None:
+        """
+        Args:
+            ngl (:obj:`int`): Degrees of freedom.
+            free_ind (:obj:`numpy.array`): Free dofs.
+            ind_passive (:obj:`numpy.array`): Index of passive elements.
+            passive_el (:obj:`numpy.array`): Passive element nodes.
+            coord (:obj:`numpy.array`): mesh coordinates. 
+            connect (:obj:`numpy.array`): Connectivity of elements.
+            E (:obj:`float`, optional): Elastic modulus.
+            v (:obj:`float`, optional): Poisson's ratio.
+            rho (:obj:`float`, optional): Density. 
+            alpha (:obj:`float`, optional): Damping coefficient proportional to mass.
+            beta (:obj:`float`, optional): Damping coefficient proportional to stiffness.
+            p_par (:obj:`int`, optional): Penalization power to stiffness.
+            q_par (:obj:`int`, optional): Penalization power to mass.
+            x_min_k (:obj:`float`, optional): Minimum relative densities to stiffness.
+            x_min_m (:obj:`float`, optional): Minimum relative densities to mass.
+            load_vector (:obj:`numpy.array`): Load.
+        """  
         self.ngl = ngl
         self.ind_passive = ind_passive
         self.passive_el = passive_el 
@@ -22,6 +42,16 @@ class Derivatives:
         self.global_matrices = GlobalMatrices(coord, connect, E, v, rho)
 
     def normalize_derivative(self, n, f0_scale, df0dx):
+        """ Normalize derivative vector.
+        
+        Args:
+            n (:obj:`float`): Weighting factor.
+            f0_scale (:obj:`float`): Reference value.
+            dfdx (:obj:`numpy.array`): Derivative vector.
+
+        Returns:
+            df0dx (:obj:`numpy.array`): Normalized derivative vector.
+        """
         df0dx = n * 100 * df0dx/f0_scale
         return df0dx
 
@@ -33,7 +63,7 @@ class Derivatives:
             dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
 
         Returns:
-            Lambda parameter solution.
+            lam (:obj:`numpy.array`): Lambda parameter solution.
         """
         aux1 = np.zeros(self.ngl, dtype=complex)
         fadj = 0
@@ -52,10 +82,10 @@ class Derivatives:
         Args:
             disp_vector (:obj:`numpy.array`): Displacement vector.
             dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
-            omega_par (:obj:`float`): 2 * pi * frequency.
+            omega_par (:obj:`float`): Angular frequency.
            
         Returns:
-            Lambda parameter solution.
+            lam (:obj:`numpy.array`): Lambda parameter solution.
         """
         aux = np.zeros(self.ngl, dtype=complex)
         fadj = 0
@@ -73,10 +103,10 @@ class Derivatives:
 
         Args:
             disp_vector (:obj:`numpy.array`): Displacement vector.
-            fvirg (:obj:`float`): Function value.
+            fvirg (:obj:`float`): Function value without logarithm.
 
         Returns:
-            Lambda parameter solution.
+            lam (:obj:`numpy.array`): Lambda parameter solution.
         """
         lam = (disp_vector.conjugate()@self.load_vector)/fvirg
         return lam
@@ -90,7 +120,7 @@ class Derivatives:
             dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix. 
 
         Returns:
-            Lambda parameter solution.
+            lam (:obj:`numpy.array`): Lambda parameter solution.
         """
         lam = np.zeros(stif_matrix.shape[0], dtype=complex)
         if self.free_ind is not None:
@@ -108,10 +138,10 @@ class Derivatives:
             disp_vector (:obj:`numpy.array`): Displacement vector.
             mass_matrix (:obj:`numpy.array`): Mass matrix.
             dyna_stif (array): Stifness matrix.
-            omega_par (:obj:`float`): 2 * pi * frequency.
+            omega_par (:obj:`float`): Angular frequency.
          
         Returns:
-            Lambda parameter solution.
+            lam (:obj:`numpy.array`): Lambda parameter solution.
         """
         lam = np.zeros(mass_matrix.shape[0], dtype=complex)
         if omega_par == 0:
@@ -129,15 +159,15 @@ class Derivatives:
 
         Args:
             disp_vector (:obj:`numpy.array`): Displacement vector.
-            dyna_stif (array): Stifness matrix. 
+            dyna_stif (array): Dynamic matrix. 
             stif_matrix (:obj:`numpy.array`): Stiffness matrix.
             mass_matrix (:obj:`numpy.array`): Mass matrix.
-            omega_par (:obj:`float`): 2 * pi * frequency.
-            fvirg (:obj:`float`): Strain-to-kinetic function.
-            kinetic_e (:obj:`float`):: Kinetic energy.
+            omega_par (:obj:`float`): Angular frequency.
+            fvirg (:obj:`float`): Strain-to-kinetic function without logarithm.
+            kinetic_e (:obj:`float`): Kinetic energy.
 
         Returns:
-            Lambda parameter solution.
+            lam (:obj:`numpy.array`): Lambda parameter solution.
         """
         lam = np.zeros(mass_matrix.shape[0], dtype=complex)
         if omega_par == 0:
@@ -154,13 +184,13 @@ class Derivatives:
         """ calculates the derivative of the compliance function.
 
         Args:
-            omega_par (:obj:`float`): 2 * pi * frequency
+            omega_par (:obj:`float`): Angular frequency.
             xval (:obj:`numpy.array`): Indicates where there is mass.
             disp_vector (:obj:`numpy.array`): Displacement vector.
             lam (:obj:`float`): Lambda parameter.
 
         Returns:
-            Derivative of the compliance function.
+            deriv_f (:obj:`numpy.array`): Compliance derivative.
         """
         deriv_f = np.empty((len(self.connect), 1))
         
@@ -181,12 +211,12 @@ class Derivatives:
         """ Calculates the derivative of the input power function.
         
         Args:
-            omega_par (:obj:`float`): 2 * pi * frequency
+            omega_par (:obj:`float`): Angular frequency.
             xval (:obj:`numpy.array`): Indicates where there is mass.
             disp_vector (:obj:`numpy.array`): Displacement vector.
             
         Returns:
-            Derivative of the input power function.
+            deriv_f (:obj:`numpy.array`): Input power derivative.
         """
         deriv_f = np.empty((len(self.connect), 1))
     
@@ -208,13 +238,13 @@ class Derivatives:
         """ Calculates the derivative of the elastic potential energy function.
 
         Args:
-            omega_par (:obj:`float`): 2 * pi * frequency
+            omega_par (:obj:`float`): Angular frequency.
             xval (:obj:`numpy.array`): Indicates where there is mass.
             disp_vector (:obj:`numpy.array`): Displacement.
             lam (:obj:`float`): Lambda parameter.
 
         Returns:
-            Derivative elastic potential energy function.
+            deriv_ep (:obj:`numpy.array`): Elastic potential energy derivative.
         """
         deriv_ep = np.empty((len(self.connect), 1), dtype=complex)
     
@@ -236,13 +266,13 @@ class Derivatives:
         """ Calculates the derivative of the kinetic energy function.
 
         Args:
-            omega_par (:obj:`float`): 2 * pi * frequency
+            omega_par (:obj:`float`): Angular frequency.
             xval (:obj:`numpy.array`): Indicates where there is mass.
             disp_vector (:obj:`numpy.array`): Displacement vector.
             lam (:obj:`float`): Lambda parameter.
 
         Returns:
-            Derivative of the kinetic energy function.
+            deriv_ek (:obj:`numpy.array`): Kinetic energy derivative.
         """
         deriv_ek = np.empty((len(self.connect), 1), dtype=complex)
     
@@ -263,15 +293,15 @@ class Derivatives:
         """ Calculates the derivative of the strain-to-kinetic function.
 
         Args:
-            omega_par (:obj:`float`): 2 * pi * frequency
+            omega_par (:obj:`float`): Angular frequency.
             xval (:obj:`numpy.array`): Indicates where there is mass.
             disp_vector (:obj:`numpy.array`): Displacement vector.
             lam (:obj:`float`): Lambda parameter.
-            fvirg (:obj:`float`): Strain-to-kinetic function.
+            fvirg (:obj:`float`): Strain-to-kinetic function without logarithm.
             kinetic_e (:obj:`float`): Kinetic energy function.
 
         Returns:
-            Derivative of the strain-to-kinetic function function.
+            deriv_R (:obj:`numpy.array`): Strain-to-kinetic derivative.
         """
         deriv_R = np.empty((len(self.connect), 1), dtype=complex)
     
@@ -297,10 +327,10 @@ class Derivatives:
             lam (:obj:`float`): Lambda parameter.
             xval (:obj:`numpy.array`): Indicates where there is mass.
             disp_vector (:obj:`numpy.array`): Displacement vector.
-            omega_par (:obj:`float`): 2 * pi * frequency. 
+            omega_par (:obj:`float`): Angular frequency. 
             
         Returns:
-            Derivative of the local elastic potential energy function.
+            deriv_f (:obj:`numpy.array`): Local elastic potential energy derivative.
         """
         deriv_f = np.empty((len(self.connect), 1), dtype=complex)
 
@@ -326,13 +356,13 @@ class Derivatives:
         """ Calculates the derivative of the local kinetic energy function.
 
         Args:
-            omega_par (:obj:`float`): 2 * pi * frequency.
+            omega_par (:obj:`float`): Angular frequency.
             xval (:obj:`numpy.array`): Indicates where there is mass.
             disp_vector (:obj:`numpy.array`): Displacement vector.        
             lam (:obj:`float`): Lambda parameter.
             
         Returns:
-            Derivative of the local input power energy function.
+            deriv_ek (:obj:`numpy.array`): Local input power energy derivative.
         """ 
         deriv_ek = np.empty((len(self.connect), 1), dtype=complex)
         for el in range(len(self.connect)):
@@ -358,7 +388,7 @@ class Derivatives:
         Args:
             df_ep (:obj:`numpy.array`): Elastic potential energy derivative.
             df_ki (:obj:`numpy.array`): Kinetic energy derivative.
-            fvirg (:obj:`float`): Local strain-to-kinetic function.
+            fvirg (:obj:`float`): Local strain-to-kinetic function without logarithm.
 
         Returns:
             Derivative of the local strain-to-kinetic function function.
@@ -367,6 +397,20 @@ class Derivatives:
         return df_ep * (1/fvirg[1]) - (fvirg[0]/fvirg[1]**2)*df_ki
 
     def calculate(self, func_name, fvirg, disp_vector, omega_par, xval, mass_matrix=None, stif_matrix=None, dyna_stif=None):
+        """ Calculte derivative of function.
+        Args:
+            func_name (:obj:`str`): Objective function used.
+            fvirg (:obj:`float`): Function value without logarithm.
+            disp_vector (:obj:`numpy.array`): Displacement vector. 
+            omega_par (:obj:`float`): Angular frequency.
+            xval (:obj:`numpy.array`): Indicates where there is mass. 
+            mass_matrix (:obj:`numpy.array`, optional): Mass matrix. Default to None. 
+            stif_matrix (:obj:`numpy.array`, optional): Stiffness matrix. Default to None.
+            dyna_stif (:obj:`numpy.array`, optional): Dynamic stiffness matrix. Default to None.
+            
+        Returns:
+            df0dx (:obj:`numpy.array`): Objective function derivative.
+        """
         if func_name == "compliance":
             lam_par = self.__lambda_compliance(disp_vector, fvirg)
             df0dx   = self.__derivative_compliance(omega_par, xval, disp_vector, lam_par)

@@ -10,12 +10,22 @@ from fem_2d import Fem2D
 
 folder_name = 'temp'
 directory = os.path.join(os.path.dirname(__file__), folder_name)
-dir_file = os.path.join(directory, 'param_file.txt')
-# READ
-file = open(dir_file, "r")
+# READ PARAMS
+param_file = os.path.join(directory, 'param_file.txt')
+file = open(param_file, "r")
 contents = file.read()
 param = ast.literal_eval(contents)
-file.close()   
+file.close()
+# READ LOAD MATRIX
+load_file = os.path.join(directory, 'param_load_matrix.txt')
+load_matrix = np.loadtxt(load_file)
+if len(load_matrix.shape) == 1:
+    load_matrix = load_matrix.reshape(1, -1)
+# READ NODE CONSTRAIN MATRIX
+node_constrain_file = os.path.join(directory, 'param_node_constrain_matrix.txt')
+node_constrain_matrix = np.loadtxt(node_constrain_file)
+if len(node_constrain_matrix.shape) == 1:
+    node_constrain_matrix = node_constrain_matrix.reshape(1, -1)
 
 # PROCESS
 mesh_2d = Mesh(False, None, param["mesh_file"], param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
@@ -23,7 +33,7 @@ mesh_2d = Mesh(False, None, param["mesh_file"], param["nelx"], param["nely"], No
 sys.stderr.write("Total complete: 10%\n")
 sys.stderr.flush()
 
-bc = BoundConditions(False, mesh_2d.nelx, mesh_2d.nely, None, mesh_2d.coord, param["load_matrix"], param["constr_matrix"])
+bc = BoundConditions(False, mesh_2d.nelx, mesh_2d.nely, None, mesh_2d.coord, load_matrix, node_constrain_matrix)
 
 sys.stderr.write("Total complete: 20%\n")
 sys.stderr.flush()

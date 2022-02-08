@@ -28,22 +28,7 @@ class Fem2D():
         self.disp_vector = self.harmonic_solution(self.freq)
         
     def assembly_matrices(self):
-        """ Assembly matrices.
-
-        Args:
-            coord (:obj:`numpy.array`): Coordinates of the element.
-            connect (:obj:`numpy.array`): Element connectivity.
-            ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
-            ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
-            nelx (:obj:`int`): Number of elements on the X-axis.
-            nely (:obj:`int`): Number of elements on the Y-axis.
-            E (:obj:`float`): Elastic modulus.
-            v (:obj:`float`): Poisson's ratio.  
-            rho (:obj:`float`): Density.  
-
-        Returns:
-            Stiffness and mass matrices.
-        """
+        """ Assembly matrices. """
         data_k = np.zeros((self.nelx * self.nely, 64), dtype=float)
         data_m = np.zeros((self.nelx * self.nely, 64), dtype=float)
         
@@ -58,16 +43,13 @@ class Fem2D():
         self.mass_matrix = csc_matrix((data_m, (self.ind_rows, self.ind_cols)), shape=(self.ngl, self.ngl))
 
     def harmonic_solution(self, freq):
-        """ Direct method and no damping
+        """ Direct method and no damping.
 
-        Args:
-            alpha (:obj:`float`): Damping coefficient proportional to mass. 
-            beta (:obj:`float`): Damping coefficient proportional to stiffness.  
-            eta (:obj:`float`): Damping coefficient. 
+        Args: 
             freq (:obj:`int`): Analyzed frequency.
 
         Returns:
-            Displacement array.
+            disp_vector (:obj:`numpy.array`): Displacement vector.
         """
         omega = 2 * np.pi * freq
         damp_matrix = self.alpha * self.mass_matrix + (self.beta + self.eta/omega) * self.stif_matrix
@@ -91,27 +73,14 @@ class Fem2D():
         """ Get the displacement values for a specific node.
 
         Args:
-            coord (:obj:`numpy.array`): Coordinates of the element.
-            connect (:obj:`numpy.array`): Element connectivity.
-            ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
-            ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
-            nelx (:obj:`int`): Number of elements on the X-axis.
-            nely (:obj:`int`): Number of elements on the Y-axis.
-            E (:obj:`float`): Elastic modulus.
-            v (:obj:`float`): Poisson's ratio.  
-            rho (:obj:`float`): Density.  
-            alpha (:obj:`float`): Damping coefficient proportional to mass. 
-            beta (:obj:`float`): Damping coefficient proportional to stiffness.  
-            eta (:obj:`float`): Damping coefficient. 
             freq_rsp (:obj:`list`): Frequency range.
                 First value is the minimum frequency.
                 Second value is the maximum frequency.
                 Third value is the step between each calculation of the objective function. 
-            node_plot (:obj:`int`): TODO ESTOU PASSANDO OUTRA COISA
-            load_vector (:obj:`numpy.array`): Load.
+            force_ind (:obj:`int`): Index to get displacement value.
 
         Returns:
-            Displacement array.        
+            vector_U (:obj:`numpy.array`): Specified index displacement.        
         """
         if freq_rsp[0] == 0:
             freq_rsp[0] = 1e-12

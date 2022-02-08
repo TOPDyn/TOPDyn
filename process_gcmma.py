@@ -24,7 +24,19 @@ dir_file = os.path.join(directory, 'param_file.txt')
 file = open(dir_file, "r")
 contents = file.read()
 param = ast.literal_eval(contents)
-file.close()   
+file.close()  
+
+# Read load matrix
+load_file = os.path.join(directory, 'param_load_matrix.txt')
+load_matrix = np.loadtxt(load_file)
+if len(load_matrix.shape) == 1:
+    load_matrix = load_matrix.reshape(1, -1)
+
+# Read node constrain matrix
+node_constrain_file = os.path.join(directory, 'param_node_constrain_matrix.txt')
+node_constrain_matrix = np.loadtxt(node_constrain_file)
+if len(node_constrain_matrix.shape) == 1:
+    node_constrain_matrix = node_constrain_matrix.reshape(1, -1) 
 
 # Vars
 func_name2 = param["func_name2"]
@@ -37,7 +49,7 @@ omega1_par = 2 * np.pi * param["freq"]
 ########## 2D #############
 mesh_2d = Mesh(False, None, param["mesh_file"], param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
 
-bc = BoundConditions(None, mesh_2d.nelx, mesh_2d.nely, None, mesh_2d.coord, param["load_matrix"], param["constr_matrix"])
+bc = BoundConditions(None, mesh_2d.nelx, mesh_2d.nely, None, mesh_2d.coord, load_matrix, node_constrain_matrix)
 
 ########## CLASSES #############
 fem_opt = FemOpt(mesh_2d.coord, mesh_2d.connect, param["E"], param["v"], param["rho"], mesh_2d.nelx, mesh_2d.nely, mesh_2d.ind_rows, \

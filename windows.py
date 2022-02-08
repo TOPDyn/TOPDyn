@@ -14,7 +14,8 @@ import numpy as np
 import plot_grid as mf
 from plots_2d import PlotsFem2d
 from plots_opt import PlotOpt
-from parameters import ParametersOpt, ParametersFEM2D, TextBc, TextConstraint, TextOpt, TextFem2d
+from parameters import ParametersOpt, ParametersFEM2D
+from param_texts import TextBc, TextConstraint, TextOpt, TextFem2d
 
 class PopUp(QtWidgets.QDialog):
     def __init__(self, warnings):
@@ -158,12 +159,12 @@ class SecondWindow(QtWidgets.QDialog):
         ui_layout.addRow(self.btn_to_node_constrain)
 
         if update:
-            self.param.rewrite_load(ui_layout)
+            self.param.load.rewrite(ui_layout)
         else:
-            self.param.reset_load_list()
-            self.param.create_load_btn()
-            self.param.set_default_load()
-            self.param.add_load_btn(ui_layout)
+            self.param.load.reset_list()
+            self.param.load.create_btn()
+            self.param.load.set_default()
+            self.param.load.add_btn(ui_layout)
         self.upd_left_layout(ui_layout)
 
     def ui_add_node_constrain(self):
@@ -185,17 +186,17 @@ class SecondWindow(QtWidgets.QDialog):
             self.ui_add_load()
 
     def go_to_node_constrain(self):
-        self.param.check_load_btn()
-        if len(self.param.warnings_load) != 0:
-            dlg = PopUp(self.param.warnings_load)      
+        self.param.load.check_btn()
+        if len(self.param.load.warnings) != 0:
+            dlg = PopUp(self.param.load.warnings)      
             dlg.exec_()
         else:
-            self.param.check_load_values()
-            if len(self.param.warnings_load) != 0:
-                dlg = PopUp(self.param.warnings_load)      
+            self.param.load.check_values()
+            if len(self.param.load.warnings) != 0:
+                dlg = PopUp(self.param.load.warnings)      
                 dlg.exec_()
             else:
-                self.param.update_load()
+                self.param.load.update()
                 self.ui_add_node_constrain()
 
     def back_to_param(self):
@@ -218,14 +219,14 @@ class SecondWindow(QtWidgets.QDialog):
         self.ui_add_load(update=True)
 
     def add_new_load(self):
-        self.param.create_load_btn()
-        self.param.set_default_load()
-        self.param.add_load_btn(self.left_widget.layout())
+        self.param.load.create_btn()
+        self.param.load.set_default()
+        self.param.load.add_btn(self.left_widget.layout())
 
     def add_new_node_constrain(self):
-        self.param.create_node_constrain_btn()
-        self.param.set_default_node_constrain()
-        self.param.add_node_constrain_btn(self.left_widget.layout())
+        self.param.node_constrain.create_btn()
+        self.param.node_constrain.set_default()
+        self.param.node_constrain.add_btn(self.left_widget.layout())
 
     def add_load_text(self):
         ui_layout = QtWidgets.QFormLayout()
@@ -365,12 +366,12 @@ class WindowsFem2d(SecondWindow):
         self.btn_reset_node_constrain.clicked.connect(self.reset_node_constrain)
         ui_layout.addRow(self.btn_reset_node_constrain)
         if update:
-            self.param.rewrite_node_constrain(ui_layout)
+            self.param.node_constrain.rewrite(ui_layout)
         else:
-            self.param.reset_node_constrain_list()
-            self.param.create_node_constrain_btn()
-            self.param.set_default_node_constrain()
-            self.param.add_node_constrain_btn(ui_layout)
+            self.param.node_constrain.reset_list()
+            self.param.node_constrain.create_btn()
+            self.param.node_constrain.set_default()
+            self.param.node_constrain.add_btn(ui_layout)
         self.upd_left_layout(ui_layout)
 
     # ------- buttons -------
@@ -379,31 +380,29 @@ class WindowsFem2d(SecondWindow):
         self.add_fem_text()
      
     def run(self):
-        self.param.check_node_constrain_btn()
-        if len(self.param.warnings_node_constrain) != 0:
-            dlg = PopUp(self.param.warnings_node_constrain)      
+        self.param.node_constrain.check_btn()
+        if len(self.param.node_constrain.warnings) != 0:
+            dlg = PopUp(self.param.node_constrain.warnings)      
             dlg.exec_()
         else:
-            self.param.check_node_constrain_values()
-            if len(self.param.warnings_node_constrain) != 0:
-                dlg = PopUp(self.param.warnings_node_constrain)      
+            self.param.node_constrain.check_values()
+            if len(self.param.node_constrain.warnings) != 0:
+                dlg = PopUp(self.param.node_constrain.warnings)      
                 dlg.exec_()
             else:
                 self.button_stop.setEnabled(True)
                 self.button_run.setEnabled(False)
                 self.btn_back_load.setEnabled(False)
         
-                self.param.convert_load_to_dict()
-                self.param.update_node_constrain()
-                self.param.convert_node_constrain_to_dict()
+                self.param.node_constrain.update()
                 
                 self._counter_button_run += 1
                 if self._counter_button_run == 1:
                     self.right_widget.setCurrentIndex(1)
 
                 self.add_canvas_ui2()
-                dict_param = self.param.create_dict_param()
-                self.param.export_param(dict_param) 
+                self.param.create_dict_param()
+                self.param.export_param() 
                 self.process_fem = QtCore.QProcess()
                 self.process_fem.readyReadStandardError.connect(self.handle_stderr)
                 self.process_fem.stateChanged.connect(self.handle_state)
@@ -591,12 +590,12 @@ class WindowsOptimization(SecondWindow):
         ui_layout.addRow(self.btn_to_constraint)
         
         if update:
-            self.param.rewrite_node_constrain(ui_layout)
+            self.param.node_constrain.rewrite(ui_layout)
         else:
-            self.param.reset_node_constrain_list()
-            self.param.create_node_constrain_btn()
-            self.param.set_default_node_constrain()
-            self.param.add_node_constrain_btn(ui_layout)
+            self.param.node_constrain.reset_list()
+            self.param.node_constrain.create_btn()
+            self.param.node_constrain.set_default()
+            self.param.node_constrain.add_btn(ui_layout)
         self.upd_left_layout(ui_layout)
 
     def ui_add_constraint(self):
@@ -623,17 +622,17 @@ class WindowsOptimization(SecondWindow):
 
     # ------- buttons -------
     def go_to_constraint(self):
-        self.param.check_node_constrain_btn()
-        if len(self.param.warnings_node_constrain) != 0:
-            dlg = PopUp(self.param.warnings_node_constrain)      
+        self.param.node_constrain.check_btn()
+        if len(self.param.node_constrain.warnings) != 0:
+            dlg = PopUp(self.param.node_constrain.warnings)      
             dlg.exec_()
         else:
-            self.param.check_node_constrain_values()
-            if len(self.param.warnings_node_constrain) != 0:
-                dlg = PopUp(self.param.warnings_node_constrain)      
+            self.param.node_constrain.check_values()
+            if len(self.param.node_constrain.warnings) != 0:
+                dlg = PopUp(self.param.node_constrain.warnings)      
                 dlg.exec_()
             else:
-                self.param.update_node_constrain()
+                self.param.node_constrain.update()
                 self.ui_add_constraint()
     
     def back_to_param(self):
@@ -660,9 +659,7 @@ class WindowsOptimization(SecondWindow):
         
                 self.param.update_constraint()
                 self.param.constraint_to_list()
-                self.param.convert_load_to_dict()
-                self.param.convert_node_constrain_to_dict()
-                
+                        
                 self._counter_button_run += 1
                 if self._counter_button_run == 1:
                     self.right_widget.setCurrentIndex(1)
@@ -672,8 +669,8 @@ class WindowsOptimization(SecondWindow):
                 pg.setConfigOption('foreground', 'k')
 
                 self.add_canvas_ui2()
-                dict_param = self.param.create_dict_param()
-                self.param.export_param(dict_param)
+                self.param.create_dict_param()
+                self.param.export_param()
 
                 self.process_opt = QtCore.QProcess()
                 self.process_opt.readyReadStandardOutput.connect(self.handle_stdout)

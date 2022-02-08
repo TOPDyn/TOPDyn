@@ -4,10 +4,40 @@ from fem_opt import FemOpt
 from objective_functions import ObjectiveFunctions
 from derivatives import Derivatives
 
-class Constraint:   
+class Constraint:
+    """ Constraint functions """ 
     def __init__(self, constr_func, constr_values, nelx, nely, lx, ly, coord, connect, E, v, rho, ind_rows, ind_cols, alpha, beta, \
                 eta, x_min_k, x_min_m, p_par, q_par, free_ind, load_vector, modes, const_func, ind_passive, passive_el, gradients=True) -> None:
-
+        """
+        Args:
+            constr_func (:obj:`list`)  : Constraint functions applied.
+            constr_values (:obj:`list`): Values of constraint functions applied.
+            nelx (:obj:`int`): Number of elements on the x-axis. 
+            nely (:obj:`int`): Number of elements on the y-axis. 
+            lx (:obj:`float`): X-axis length.
+            ly (:obj:`float`): Y-axis length.
+            coord (:obj:`numpy.array`): mesh coordinates. 
+            connect (:obj:`numpy.array`): Connectivity of elements
+            E (:obj:`float`, optional): Elastic modulus.
+            v (:obj:`float`, optional): Poisson's ratio.
+            rho (:obj:`float`, optional): Density. 
+            ind_rows (:obj:`numpy.array`): Node indexes to make the assembly.
+            ind_cols (:obj:`numpy.array`): Node indexes to make the assembly.
+            alpha (:obj:`float`, optional): Damping coefficient proportional to mass.
+            beta (:obj:`float`, optional): Damping coefficient proportional to stiffness.
+            eta (:obj:`float`, optional): Damping coefficient.
+            x_min_k (:obj:`float`, optional): Minimum relative densities to stiffness.
+            x_min_m (:obj:`float`, optional): Minimum relative densities to mass.
+            p_par (:obj:`int`, optional): Penalization power to stiffness.
+            q_par (:obj:`int`, optional): Penalization power to mass.
+            free_ind (:obj:`numpy.array`): Free dofs.  
+            load_vector (:obj:`numpy.array`): Load.
+            modes (:obj:`int`, optional): The number of eigenvalues and eigenvectors desired. 
+            const_func,  TODO
+            ind_passive (:obj:`numpy.array`): Index of passive elements.
+            passive_el (:obj:`numpy.array`): Passive element nodes.
+            gradients (:obj:`bool`): If True calculates the derivatives.Defaults to True.
+        """
         self.fem_opt = FemOpt(coord, connect, E, v, rho, nelx, nely, ind_rows, ind_cols, \
                         x_min_k, x_min_m, p_par, q_par, free_ind, load_vector, modes)
 
@@ -44,8 +74,18 @@ class Constraint:
         self.area = self.__calc_area()
     
     def calculate(self, xval, disp_vector, dyna_stif, stif_matrix, mass_matrix, damp_matrix, omega_par, gradients=True):
-        """ Calculates constraint functions and derivative functions. """
-
+        """ Calculates constraint functions and their derivatives. 
+        
+        Args:
+            xval (:obj:`numpy.array`): Indicates where there is mass.
+            disp_vector (:obj:`numpy.array`): Displacement.
+            dyna_stif (:obj:`numpy.array`): Dynamic stiffness matrix.
+            stif_matrix (:obj:`numpy.array`): Stiffness matrix.
+            mass_matrix (:obj:`numpy.array`): Mass matrix.
+            damp_matrix (:obj:`numpy.array`): Damping matrix.
+            omega_par (:obj:`float`): 2 pi frequency.
+            gradients (:obj:`float`): If True calculates the derivatives.
+        """
         for ind in range(len(self.constr_func)):
             if self.constr_func[ind] == "area":
                 aux_fval = self.calc_total_area(xval)
@@ -113,24 +153,21 @@ class Constraint:
 
     def calc_total_area(self, xval):
         """ Calculates the total element area.
+
         Args:
-            lx (:obj:`float`): X-axis length.
-            ly (:obj:`float`): Y-axis length.
-            nelx (:obj:`int`): Number of elements on the X-axis.
-            nely (:obj:`int`): Number of elements on the Y-axis.
+            xval (:obj:`numpy.array`): Indicates where there is mass.
+
         Returns:
             Total element area.
         """
         return (100/(self.lx * self.ly)) * np.sum(xval * self.area)
 
     def __calc_area(self):
-        """ Calculates the total area. TODO ANTES SE CHAMAVA CALC_A
-        Args:
-            coord (:obj:`numpy.array`): Coordinates of the element.
-            ind (:obj:`numpy.array`): Element connectivity.
+        """ Calculates the total area.
+
         Returns:
-            The element area.
-        """   
+            area (:obj:`numpy.array`): The element area.
+        """ 
         ind = self.connect[:, 1:] - 1
         area = np.empty((len(ind), 1))
         area[:, 0] = abs(self.coord[ind[:, 0], 1] * self.coord[ind[:, 1], 2] + self.coord[ind[:, 3], 1] * self.coord[ind[:, 0], 2] + \
@@ -148,32 +185,39 @@ class Constraint:
             self.f_scale_constr[self.ind_freq_constr] = self.fval[self.ind_freq_constr, 0]
 
     def update_dfdx(self, dfdx):
+        """ Update derivative vector.
+
+        Args:
+            dfdx (:obj:`numpy.array`): New derivative vector.
+        """
         self.dfdx = dfdx
 
     def update_fval(self, fval):
+        """ Update constraint function values.
+
+        Args:
+            fval (:obj:`numpy.array`): Newconstraint function values.
+        """
         self.fval = fval
 
     def normalize_fval(self):
-        """ Normalizes constraint functions.
-        Args:
-            f_scale_constr (:obj:`float`): Value of the function.
-            fval (:obj:`numpy.array`): Constraint functions.
-        
-        Returns:
-            Normalized functions.
-        """
+        """ Normalizes constraint functions. """
         if self.freq_constr_bool:
             self.fval[:, 0] = 100 * self.fval[:, 0]/self.f_scale_constr
         
         self.fval[:, 0] -= self.constr_values
 
     def __rewrite_constr_values(self, constr_func, constr_values):
-        """ Separates the constraint value and the frequency of the constrain function.
+        """ Separates the constraint value and the frequency of the constraint function.
+        
         Args:
-            constr_values (:obj:`list`): Values of constraint functions applied.
+            constr_values (:obj:`list`): Values of constraint functions applied with frequency.
             constr_func (:obj:`list`)  : Constraint functions applied.
+        
         Returns:
-            constr_values, freq_constr, ind_freq_constr
+            constr_values (:obj:`numpy.array`): Values of constraint functions applied without frequency.
+            freq_constr (:obj:`numpy.array`): Frequency of contraint functions.
+            ind_freq_constr (:obj:`numpy.array`): Indexes of constraint functions with frequency.
         """
         freq_constr = np.empty(len(constr_func))
         freq_constr.fill(np.nan)

@@ -2,8 +2,22 @@ from scipy import spatial
 import numpy as np
 
 class BoundConditions:
+    """ Definition of boundary conditions """
     def __init__(self, three_dim, nelx, nely, nelz, coord, load_matrix, constr_matrix):
-
+        """
+        Args:
+            three_dim (:obj:`bool`): True if it's used three dimensional mesh. It's not available yet.
+            nelx (:obj:`int`): Number of elements on the x-axis. 
+            nely (:obj:`int`): Number of elements on the y-axis. 
+            nelz (:obj:`int`): Number of elements on the z-axis. It's not available yet.
+            coord (:obj:`numpy.array`): mesh coordinates. 
+            load_matrix (:obj:`numpy.array`): It's a list of lists. The list can be:
+                * [x_coordinate, y_coordinate, force_applied_x, force_applied_y, force_value]
+                * [value_coordinate, column_to_compare, force_applied_x, force_applied_y, force_value, error_margin]
+            constr_matrix (:obj:`numpy.array`, optional): It's a list of lists. Defaults to None. 
+                * [x_coordinate, y_coordinate, constrain_disp_x, constrain_disp_y]
+                * [value_coordinate, column_to_compare, constrain_disp_x, constrain_disp_y, error_margin]
+        """
         self.three_dim = three_dim
         if self.three_dim:
             self.coord_np_matrix = [0,1,2]
@@ -49,83 +63,43 @@ class BoundConditions:
         # Load vector
         self.get_load_vector()
 
-    def get_matrices(self, matrix, force):
-        """ Gets the force matrix or the contraint matrix.
+    def get_matrices(self, matrix, load):
+        """ Gets the load matrix or the contraint matrix.
 
         Args:
-            matrix (:obj:`list`): List passed by the user. 
-            coord (:obj:`numpy.array`): Coordinates of the element.
-            force (:obj:`bool`): True if encountering force matrix.
+            matrix (:obj:`list`): List given by the user. 
+            load (:obj:`bool`): True if encountering load matrix.
 
         Returns:
-            load_matrix or constr_matrix.
-        """
-        if force:
-            index_by_coord, index_by_col, np_matrix = self.turn_dict_into_np(matrix, force=True)
-            nodes_coord, nodes_col = self.get_nodes(np_matrix, index_by_coord, index_by_col)
-            nodes_matrix = self.get_node_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, self.ind_nodes_matrix_load, self.ind_np_matrix_load, self.total_cols_load)
-        else:
-            index_by_coord, index_by_col, np_matrix = self.turn_dict_into_np(matrix, force=False)
-            nodes_coord, nodes_col = self.get_nodes(np_matrix, index_by_coord, index_by_col)
-            nodes_matrix = self.get_node_matrix(nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, self.ind_nodes_matrix_constr, self.ind_np_matrix_constr, self.total_cols_constr)
-        return nodes_matrix.astype(int)
-
-    def turn_dict_into_np(self, dicti_matrix, force):
-        """ Transforms dictionaries into numpy array.
-
-        Args:
-            dicti_matrix (:obj:`list`): List of dictionaries passed by the user.
-            force (:obj:`bool`): True if encountering force matrix.
-            
-        Returns:
-            numpy array.
+            nodes_matrix (:obj:`Numpy array`): Boundary conditions. It can be load or node displacement constraint.
         """
         index_by_coord = []
-        index_by_col   = []
-        matrix = []
-        for i, dict_row in enumerate(dicti_matrix):
-            if not("eps" in dict_row):
-                if force:
-                    if self.three_dim:
-                        aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["z_coord"], dict_row["x_direc"], dict_row["y_direc"], dict_row["z_direc"], dict_row["force"]]
-                    else:
-                        aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["x_direc"], dict_row["y_direc"], dict_row["force"], 0]  
-                else:
-                    if self.three_dim:
-                        aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["z_coord"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], dict_row["constrain_disp_z"]]
-                    else:
-                        aux = [dict_row["x_coord"], dict_row["y_coord"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], 0] 
+        index_by_col = []
+        for i, line in enumerate(matrix):
+            if np.isnan(line).any():
                 index_by_coord.append(i)
-            
-            elif "eps" in dict_row:
-                if force:
-                    if self.three_dim:
-                        aux = [dict_row["coord"], dict_row["axis"], dict_row["eps"], dict_row["x_direc"], dict_row["y_direc"], dict_row["z_direc"], dict_row["force"]]
-                    else:
-                        aux = [dict_row["coord"], dict_row["axis"], dict_row["x_direc"], dict_row["y_direc"], dict_row["force"], dict_row["eps"]] 
-                else:
-                    if self.three_dim:
-                        aux = [dict_row["coord"], dict_row["axis"], dict_row["eps"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], dict_row["constrain_disp_z"]]
-                    else:
-                        aux = [dict_row["coord"], dict_row["axis"], dict_row["constrain_disp_x"], dict_row["constrain_disp_y"], dict_row["eps"]]
+            else:
                 index_by_col.append(i)
-            
-            matrix.append(aux)
-
-        matrix_L = np.array(matrix)
-        return index_by_coord, index_by_col, matrix_L
+        if load:
+            nodes_coord, nodes_col = self.get_nodes(matrix, index_by_coord, index_by_col)
+            nodes_matrix = self.get_node_matrix(nodes_coord, nodes_col, matrix, index_by_coord, index_by_col, self.ind_nodes_matrix_load, self.ind_np_matrix_load, self.total_cols_load)
+        else:
+            nodes_coord, nodes_col = self.get_nodes(matrix, index_by_coord, index_by_col)
+            nodes_matrix = self.get_node_matrix(nodes_coord, nodes_col, matrix, index_by_coord, index_by_col, self.ind_nodes_matrix_constr, self.ind_np_matrix_constr, self.total_cols_constr)
+        return nodes_matrix.astype(int)
 
     def get_nodes(self, np_matrix, index_by_coord, index_by_col):
         """ Gets nodes by a coordinate or a column.
 
         Args:
             coord (:obj:`numpy.array`): Coordinates of the element.
-            np_matrix (:obj:`numpy.array`): List passed to an array.
-            index_by_coord (:obj:`list`): indices of elements passed by coordinates.
-            index_by_col (:obj:`list`): indices of elements passed by columns.
+            np_matrix (:obj:`numpy.array`): Boundary condition matrix.
+            index_by_coord (:obj:`list`): Indexes of elements given by coordinates.
+            index_by_col (:obj:`list`): Indexes of elements given by columns.
 
         Returns:
-            Nodes.
+            nodes_coord (:obj:`list`): Nodes of elements given by coordinates.
+            nodes_col (:obj:`list`): Nodes of elements given by columns.
         """
         nodes_coord = []
         nodes_col = []
@@ -143,11 +117,11 @@ class BoundConditions:
         """ Get node number by coordinate.
 
         Args:
-            coord (:obj:`numpy.array`): mesh coordinates.
-            coord_user (:obj:`numpy.array`): user coordinates.
+            coord (:obj:`numpy.array`): Mesh coordinates.
+            coord_user (:obj:`numpy.array`): Coordinate given by the user.
             
         Returns:
-            Nodes of the coordinates provided.
+            nodes (:obj:`numpy.array`):Nodes that match the given coordinate.
         """
         if self.three_dim:
             mesh_coord = self.coord[:, [1,2,3]]
@@ -159,34 +133,34 @@ class BoundConditions:
         return nodes
 
     def get_nodes_by_col(self, coord_user, eps, column):
-        """ Get node numbers that are equal to coord.
+        """ Get node numbers that are equal to one coordinate matrix item.
 
         Args:
-            coord (:obj:`numpy.array`): mesh coordinates.
-            coord_user (:obj:`numpy.array`): coordinates in one direction (x or y).
+            coord (:obj:`numpy.array`): Mesh coordinates.
+            coord_user (:obj:`numpy.array`): Coordinate in one direction (x or y).
             eps (:obj:`float`): Acceptable margin of difference.
             column (:obj:`int`): Direction to compare (x or y).
                 x = 1 and y = 2.
 
         Returns:
-            Nodes.
+            nodes (:obj:`numpy.array`): Array with nodes.
         """
         dif = np.abs(self.coord[:, column] - coord_user)
         mask = dif < eps
         return (self.coord[mask, 0]).astype('int')
 
     def get_node_matrix(self, nodes_coord, nodes_col, np_matrix, index_by_coord, index_by_col, ind1, ind2, total_cols):
-        """ Creates the node matrix. TODO: SE CHAMAVA GET_MATRIX E ESTA A MESMA COISA
+        """ Creates node matrix. TODO
 
         Args:
-            nodes_coord (:obj:`list`): Nodes passed by coordinate.
-            nodes_col (:obj:`list`): Nodes passed by column.
-            coord (:obj:`numpy.array`): Coordinates of the element.
-            matrix (:obj:`numpy.array`): List passed to an array.
-            index_by_coord (:obj:`list`): indices of elements passed by coordinates.
-            index_by_col (:obj:`list`): indices of elements passed by columns.
+            nodes_coord (:obj:`list`): Nodes given by coordinate.
+            nodes_col (:obj:`list`): Nodes given by column.
+            coord (:obj:`numpy.array`): Coordinates.
+            np_matrix (:obj:`numpy.array`): List given to an array.
+            index_by_coord (:obj:`list`): indices of elements given by coordinates.
+            index_by_col (:obj:`list`): indices of elements given by columns.
             ind1 (:obj:`int`): Indices of matrix with nodes.
-            ind2 (:obj:`int`): Indices of matrix passed by user.
+            ind2 (:obj:`int`): Indices of matrix given by the user.
             total_cols (:obj:`int`): Number of columns desired for the matrix.
 
         Returns:
@@ -215,7 +189,6 @@ class BoundConditions:
 
         Args:
             nodes_dir (:obj:`numpy.array`): matrix with node numbers.
-                
                 * x direction, y direction and z dicrfection can be -1, 0 or 1.
         
         Returns: 
@@ -236,15 +209,15 @@ class BoundConditions:
         return np.array(all_dofs, dtype='int')
     
     def remove_dofs(self, nelx, nely, nelz, del_dofs):
-        """ Delete specific DOFs from all DOFs. TODO MUDAR ESSE DOF PARA NODES
+        """ Delete specific nodes from all nodes.
         
         Args: 
             nelx (:obj:`int`): Number of elements on the x-axis.
             nely (:obj:`int`): Number of elements on the y-axis.
-            del_dofs (:obj:`numpy.array`): Array with DOFs to be removed.
+            del_nodes (:obj:`numpy.array`): Nodes to be removed.
         
         Returns:
-            Array without the DOFs removed.
+            Array without the nodes removed.
         """
         if self.three_dim:
             nodes = np.arange((nelx+1) * (nely + 1) * nelz * 3)
@@ -253,17 +226,7 @@ class BoundConditions:
         return np.delete(nodes, del_dofs)
 
     def get_load_vector(self):
-        """ Creates the force vector.
-
-        Args:
-            nelx (:obj:`int`): Number of elements on the x-axis.
-            nely (:obj:`int`): Number of elements on the y-axis.
-            nelz (:obj:`int`): Number of elements on the z-axis.
-            load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
-
-        Returns:
-            Loading vector.
-        """
+        """ Creates load vector. """
         self.load_vector = np.zeros(self.ngl, dtype=complex)
         if len(self.load_matrix) > 1:
             aux_load_matrix = self.load_matrix[np.argsort(self.load_matrix[:, 0])]
@@ -273,19 +236,24 @@ class BoundConditions:
         self.load_vector[force_ind] = self._duplicate_load(aux_load_matrix)
 
     def _duplicate_load(self, aux_load_matrix):
+        """ Duplicate load value.
+
+        Args:
+            aux_load_matrix (:obj:`numpy.array`): It can be a 2D or 3D matrix.
+        """
         if self.three_dim:
             return self._duplicate_load_3D(aux_load_matrix)
         else:
             return self._duplicate_load_2D(aux_load_matrix)
 
     def _duplicate_load_2D(self, aux_load_matrix):
-        """ Doubled force value for x direction = y direction = 1.
+        """ Duplicate load value for x direction = y direction = 1.
 
         Args:
             aux_load_matrix (:obj:`numpy.array`): The columns are respectively node, x direction, y direction, force value.
         
         Returns:
-            Load.
+            load_values (:obj:`numpy.array`): Load vector.
         """
         mask = ((abs(aux_load_matrix[:, 1]) == 1.) & (abs(aux_load_matrix[:, 2]) == 1.)).nonzero()[0]
         force_values = aux_load_matrix[:, 3]
@@ -299,13 +267,14 @@ class BoundConditions:
         return force_values
 
     def _duplicate_load_3D(self, aux_load_matrix):
-        """ Doubled force value.
+        """ Doubled load value for x direction = y direction = 1 or
+        x direction = y direction = z direction = 1.
 
         Args:
             aux_load_matrix (:obj:`numpy.array`): Load.
         
         Returns:
-            Load values.
+            load_vector (:obj:`numpy.array`): Load vector.
         """
         load_vector = aux_load_matrix[:, -1]
         aux = np.sum(abs(aux_load_matrix[:, 1:-1]), axis=1)
