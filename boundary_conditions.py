@@ -164,7 +164,7 @@ class BoundConditions:
             total_cols (:obj:`int`): Number of columns desired for the matrix.
 
         Returns:
-            matrix with nodes.
+            matrix (:obj:`numpy.array`): Load matrix with nodes.
         """
         if len(nodes_col) > 0:
             len_col = sum([len(listElem) for listElem in nodes_col])
@@ -240,6 +240,8 @@ class BoundConditions:
 
         Args:
             aux_load_matrix (:obj:`numpy.array`): It can be a 2D or 3D matrix.
+        Returns:
+            Load vector.
         """
         if self.three_dim:
             return self._duplicate_load_3D(aux_load_matrix)

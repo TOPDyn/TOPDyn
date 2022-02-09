@@ -47,7 +47,7 @@ if multiobj_bool:
 omega1_par = 2 * np.pi * param["freq"]
 
 ########## 2D #############
-mesh_2d = Mesh(False, None, param["mesh_file"], param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
+mesh_2d = Mesh(False, param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
 
 bc = BoundConditions(None, mesh_2d.nelx, mesh_2d.nely, None, mesh_2d.coord, load_matrix, node_constrain_matrix)
 

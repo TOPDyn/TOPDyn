@@ -28,7 +28,7 @@ if len(node_constrain_matrix.shape) == 1:
     node_constrain_matrix = node_constrain_matrix.reshape(1, -1)
 
 # PROCESS
-mesh_2d = Mesh(False, None, param["mesh_file"], param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
+mesh_2d = Mesh(False, param["nelx"], param["nely"], None, param["lx"], param["ly"], None)
 
 sys.stderr.write("Total complete: 10%\n")
 sys.stderr.flush()

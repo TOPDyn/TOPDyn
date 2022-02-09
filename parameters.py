@@ -286,7 +286,7 @@ class ParametersFEM2D(Parameters):
         self.dict_param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v,
                             "alpha":self.alpha, "beta":self.beta, "eta":self.eta, "freq":self.freq, "rho":self.rho,
                             "freqrsp":self.freqrsp, "freq_range":self.freq_range, "factor":self.factor,
-                            "node_plot":self.node_plot, "save":self.save, "mesh_file":None}
+                            "node_plot":self.node_plot, "save":self.save}
 
     def check_params(self):
         super().check_params()
@@ -304,6 +304,9 @@ class ParametersFEM2D(Parameters):
             if ast.literal_eval(self.y_coord_plot_btn.text()) > ast.literal_eval(self.ly_spin.text()):
                 warning = QtWidgets.QLabel("Node to plot: y coordinate exceeds mesh boundaries")
                 self.warnings.append(warning)
+            if not (self.x_dir_plot_btn.isChecked() or self.y_dir_plot_btn.isChecked()):
+                warning = QtWidgets.QLabel("Node to plot: select an Axis")
+                self.warnings.append(warning)
 
 class ParametersOpt(Parameters):
     def __init__(self):
@@ -317,7 +320,7 @@ class ParametersOpt(Parameters):
         super().create_dict_param()
         self.dict_param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
                             "alpha_par":self.alpha, "beta_par":self.beta, "eta_par":self.eta, "factor":self.factor, "freq":self.freq, 
-                            "freqrsp":self.freqrsp, "freq_range":self.freq_range, "save":self.save, "mesh_file":None, "mma":self.mma,
+                            "freqrsp":self.freqrsp, "freq_range":self.freq_range, "save":self.save, "mma":self.mma,
                             "fac_ratio":self.fac_ratio, "x_min_m":self.x_min_m, "x_min_k":self.x_min_k, "penal_k":self.penal_k,
                             "penal_m":self.penal_m, "constr_func":self.constr_func, "constr_values":self.constr_values,
                             "passive_coord":self.passive_coord, "modes":self.modes,"const_func":self.const_func,"n1":self.n1,
