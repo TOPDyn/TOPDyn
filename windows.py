@@ -268,8 +268,7 @@ save_figs_re = re.compile("Saving figures")
 
 def simple_percent_parser(output):
     """ Matches lines using the progress_re regex,
-    returning a single integer for the % progress.
-    """
+    returning a single integer for the % progress. """
     m = progress_re.search(output)
     if m:
         pc_complete = m.group(1)
@@ -277,40 +276,35 @@ def simple_percent_parser(output):
 
 def simple_update_parser(output):
     """ Matches lines using the update_data_re regex,
-    returning a bool.
-    """
+    returning a bool. """
     m = update_data_re.search(output)
     if m:
         return True
 
 def simple_freq_parser(output):
     """ Matches lines using the plot_freqresp_re regex,
-    returning a bool.
-    """
+    returning a bool. """
     m = plot_freqresp_re.search(output)
     if m:
         return True
 
 def simple_save_parser(output):
     """ Matches lines using the save_figs_re regex,
-    returning a bool.
-    """
+    returning a bool. """
     m = save_figs_re.search(output)
     if m:
         return True
 
 def simple_create_parser(output):
     """ Matches lines using the create_plot_re regex,
-    returning a bool.
-    """
+    returning a bool. """
     m = create_plot_re.search(output)
     if m:
         return True
 
 def simple_deform_parser(output):
     """ Matches lines using the mesh_deform_re regex,
-    returning a bool.
-    """
+    returning a bool. """
     m = mesh_deform_re.search(output)
     if m:
         return True
@@ -497,15 +491,15 @@ class WorkerPlot(QtCore.QThread):
             plot_2d = PlotsFem2d(coord, connect)
             disp_vector = plot_2d.change_disp_shape(disp_vector_org.real)
 
-            coord_U = plot_2d.apply_disp(disp_vector, self.parent.param.factor)
-            collection = plot_2d.build_collection(coord_U)
+            plot_2d.apply_disp(disp_vector, self.parent.param.factor)
+            plot_2d.build_collection()
 
             if self.parent.stop_thread:
                 self.parent.stop_thread = False
                 break
 
             self.parent.ax_mesh = self.parent.canvas_mesh.figure.subplots()
-            plot_2d.plot_collection(self.parent.ax_mesh, mesh_data["lx"], mesh_data["ly"], coord_U, collection, load_matrix, constr_matrix)
+            plot_2d.plot_collection(self.parent.ax_mesh, mesh_data["lx"], mesh_data["ly"], load_matrix, constr_matrix)
 
             if self.parent.stop_thread:
                 self.parent.stop_thread = False
@@ -824,14 +818,21 @@ class WindowsOptimization(SecondWindow):
 
             plot_mesh = PlotsFem2d(coord, connect)
             disp_vector = plot_mesh.change_disp_shape(disp_vector)
-            coord_U = plot_mesh.apply_disp(disp_vector, self.param.factor)
-            collection = plot_mesh.build_collection(coord_U)
+            plot_mesh.apply_disp(disp_vector, self.param.factor)
+
+            if (self.param.passive_type is not None) and (self.param.passive_type==0):
+                passive_el = True
+                passive_coord = self.param.passive_coord
+            else:
+                passive_el = False
+                passive_coord = None
+            plot_mesh.build_collection(passive_coord)
         
             self.canvas_mesh = FigureCanvas(plt.Figure())
             self.canvas_mesh.figure.tight_layout()
             ax_mesh = self.canvas_mesh.figure.subplots()
-            plot_mesh.plot_collection(ax_mesh, self.plot_opt.lx, self.plot_opt.ly, coord_U, collection, \
-                                        load_matrix, constr_matrix)
+            plot_mesh.plot_collection(ax_mesh, self.plot_opt.lx, self.plot_opt.ly, 
+                                        load_matrix, constr_matrix, passive_el)
 
             self.add_deformed_mesh_to_canvas_ui2()
 

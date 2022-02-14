@@ -1,6 +1,5 @@
 from PyQt5 import QtCore, QtWidgets
 import numpy as np
-import os
 import ast
 
 class Verification():
@@ -8,8 +7,7 @@ class Verification():
     def check_param(self, warnings, input_val, types, war):
         try:
             if input_val:
-                for type in types:
-                    isinstance(ast.literal_eval(input_val), type)
+                isinstance(ast.literal_eval(input_val), types)
             else:
                 warning = QtWidgets.QLabel(war)
                 warnings.append(warning)
@@ -217,16 +215,16 @@ class ParamLoad(Verification):
         self.warnings = []
         for i in range(len(self.load_type_btn)):
             if self.load_type_btn[i][0].isChecked():
-                self.check_param(self.warnings, self.load_coord_btn[i][0].text(), [int, float], 'x coordinate must be an integer or float')
-                self.check_param(self.warnings, self.load_coord_btn[i][1].text(), [int, float], 'y coordinate must be an integer or float')
+                self.check_param(self.warnings, self.load_coord_btn[i][0].text(), (int, float), 'x coordinate must be an integer or float')
+                self.check_param(self.warnings, self.load_coord_btn[i][1].text(), (int, float), 'y coordinate must be an integer or float')
             else:
                 if not (self.load_col_btn[-1][0].isChecked()) and not (self.load_col_btn[-1][1].isChecked()):
                     warning = QtWidgets.QLabel("select column")
                     self.warnings.append(warning)
-                self.check_param(self.warnings, self.load_coord_btn[i][2].text(), [int, float], 'coordinate must be an integer or float')
-                self.check_param(self.warnings, self.load_error_btn[i].text(), [int, float], 'error margin must be an integer or float')
+                self.check_param(self.warnings, self.load_coord_btn[i][2].text(), (int, float), 'coordinate must be an integer or float')
+                self.check_param(self.warnings, self.load_error_btn[i].text(), (int, float), 'error margin must be an integer or float')
             
-            self.check_param(self.warnings, self.load_value_btn[i].text(), [int, float], 'load value must be an integer or float')
+            self.check_param(self.warnings, self.load_value_btn[i].text(), (int, float), 'load value must be an integer or float')
 
     def check_values(self):
         self.warnings = []
@@ -462,14 +460,14 @@ class ParamNodeConstrain(Verification):
         self.warnings = []
         for i in range(len(self.node_constrain_type_btn)):
             if self.node_constrain_type_btn[i][0].isChecked():
-                self.check_param(self.warnings, self.node_constrain_coord_btn[i][0].text(), [int, float], 'x coordinate must be an integer or float')
-                self.check_param(self.warnings, self.node_constrain_coord_btn[i][1].text(), [int, float], 'y coordinate must be an integer or float')
+                self.check_param(self.warnings, self.node_constrain_coord_btn[i][0].text(), (int, float), 'x coordinate must be an integer or float')
+                self.check_param(self.warnings, self.node_constrain_coord_btn[i][1].text(), (int, float), 'y coordinate must be an integer or float')
             else:
                 if not (self.node_constrain_col_btn[-1][0].isChecked()) and not (self.node_constrain_col_btn[-1][1].isChecked()):
                     warning = QtWidgets.QLabel("select column")
                     self.warnings.append(warning)
-                self.check_param(self.warnings, self.node_constrain_coord_btn[i][2].text(), [int, float], 'coordinate must be an integer or float')
-                self.check_param(self.warnings, self.node_constrain_error_btn[i].text(), [int, float], 'error margin must be an integer or float')
+                self.check_param(self.warnings, self.node_constrain_coord_btn[i][2].text(), (int, float), 'coordinate must be an integer or float')
+                self.check_param(self.warnings, self.node_constrain_error_btn[i].text(), (int, float), 'error margin must be an integer or float')
 
     def set_size(self, lx, ly):
         self.lx = lx

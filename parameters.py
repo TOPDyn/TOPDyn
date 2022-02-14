@@ -83,32 +83,33 @@ class Parameters(Verification):
     def check_params(self):
         self.warnings = []
 
-        self.check_param(self.warnings, self.nelx_spin.text(), [int], 'Nelx must be an integer')
+        self.check_param(self.warnings, self.nelx_spin.text(), (int), 'Nelx must be an integer')
 
-        self.check_param(self.warnings, self.nely_spin.text(), [int], 'Nely must be an integer')
+        self.check_param(self.warnings, self.nely_spin.text(), (int, float), 'Nely must be an integer')
 
-        self.check_param(self.warnings, self.lx_spin.text(), [int, float], 'Lx must be an integer or float')
+        self.check_param(self.warnings, self.lx_spin.text(), (int, float), 'Lx must be an integer or float')
 
-        self.check_param(self.warnings, self.ly_spin.text(), [int, float], 'Ly must be an integer or float')
+        self.check_param(self.warnings, self.ly_spin.text(), (int, float), 'Ly must be an integer or float')
 
-        self.check_param(self.warnings, self.E_spin.text(), [int, float], "E must be an integer or float")
+        self.check_param(self.warnings, self.E_spin.text(), (int, float), "E must be an integer or float")
 
-        self.check_param(self.warnings, self.v_spin.text(), [int, float], 'v must be an integer or float')
+        self.check_param(self.warnings, self.v_spin.text(), (int, float), 'v must be an integer or float')
 
-        self.check_param(self.warnings, self.rho_spin.text(), [int, float], 'rho must be an integer or float')
+        self.check_param(self.warnings, self.rho_spin.text(), (int, float), 'rho must be an integer or float')
 
-        self.check_param(self.warnings, self.alpha_spin.text(), [int, float], 'Alpha must be an integer or float')
+        self.check_param(self.warnings, self.alpha_spin.text(), (int, float), 'Alpha must be an integer or float')
 
-        self.check_param(self.warnings, self.beta_spin.text(), [int, float], 'Beta must be an integer or float')
+        self.check_param(self.warnings, self.beta_spin.text(), (int, float), 'Beta must be an integer or float')
 
-        self.check_param(self.warnings, self.eta_spin.text(), [int, float], 'Eta must be an integer or float')
+        self.check_param(self.warnings, self.eta_spin.text(), (int, float), 'Eta must be an integer or float')
 
-        self.check_param(self.warnings, self.factor_spin.text(), [int, float], 'Factor must be an integer or float')
+        self.check_param(self.warnings, self.factor_spin.text(), (int, float), 'Factor must be an integer or float')
 
-        self.check_param(self.warnings, self.freq_spin.text(), [int], 'Frequency must be an integer')
+        self.check_param(self.warnings, self.freq_spin.text(), (int), 'Frequency must be an integer')
         
         if self.freqrsp_check.isChecked():
-            self.check_param(self.warnings, self.freq_range_spin.text(), [list], 'Frequency range must be a list')
+            self.check_param(self.warnings, self.freq_range_spin.text(), (list), 'Frequency range must be a list')
+            # TODO: PRECISARIA VERIFICAR SE TEM 3 PARAMETROS
 
     def create_dict_param(self):
         self.node_constrain.input_to_np()
@@ -152,14 +153,9 @@ class ParametersFEM2D(Parameters):
         self.x_dir_plot_btn = QtWidgets.QRadioButton("X")
         self.y_dir_plot_btn = QtWidgets.QRadioButton("Y")
 
-    def add_white_space(self, layout, updt):
-        if updt:
-            layout.addRow(QtWidgets.QLabel(''))
-
-    def add_btns(self, layout, updt=True):
+    def add_btns(self, layout):
         layout.addRow(QtWidgets.QLabel('Nelx'))
         layout.addRow(self.nelx_spin)
-        #self.add_white_space(layout, updt)
         
         layout.addRow(QtWidgets.QLabel('Nely'))
         layout.addRow(self.nely_spin)
@@ -291,8 +287,8 @@ class ParametersFEM2D(Parameters):
     def check_params(self):
         super().check_params()
         if self.freqrsp_check.isChecked():
-            self.check_param(self.warnings, self.x_coord_plot_btn.text(), [int, float], 'Node to plot: node coordinate must be an integer or float')
-            self.check_param(self.warnings, self.y_coord_plot_btn.text(), [int, float], 'Node to plot: node coordinate must be an integer or float')
+            self.check_param(self.warnings, self.x_coord_plot_btn.text(), (int, float), 'Node to plot: node coordinate must be an integer or float')
+            self.check_param(self.warnings, self.y_coord_plot_btn.text(), (int, float), 'Node to plot: node coordinate must be an integer or float')
         if len(self.warnings) == 0:
             self.check_node_plot()
 
@@ -320,12 +316,12 @@ class ParametersOpt(Parameters):
         super().create_dict_param()
         self.dict_param = {"nelx":self.nelx, "nely":self.nely, "lx":self.lx, "ly":self.ly, "E":self.E, "v":self.v, "rho":self.rho,
                             "alpha_par":self.alpha, "beta_par":self.beta, "eta_par":self.eta, "factor":self.factor, "freq":self.freq, 
-                            "freqrsp":self.freqrsp, "freq_range":self.freq_range, "save":self.save, "mma":self.mma,
+                            "freqrsp":self.freqrsp, "freq_range":self.freq_range, "save":self.save, "mma":self.mma, "n1":self.n1,
                             "fac_ratio":self.fac_ratio, "x_min_m":self.x_min_m, "x_min_k":self.x_min_k, "penal_k":self.penal_k,
                             "penal_m":self.penal_m, "constr_func":self.constr_func, "constr_values":self.constr_values,
-                            "passive_coord":self.passive_coord, "modes":self.modes,"const_func":self.const_func,"n1":self.n1,
+                            "passive_coord":self.passive_coord, "passive_type":self.passive_type, "const_func":self.const_func,
                             "func_name":self.func_name,"func_name2":self.func_name2,"freq2":self.freq2,"alpha_plot":self.alpha_plot,
-                            "beta_plot":self.beta_plot,"eta_plot":self.eta_plot,"max_iter":self.max_iter,
+                            "beta_plot":self.beta_plot,"eta_plot":self.eta_plot,"max_iter":self.max_iter, "modes":self.modes,
                             "save":self.const_func,"save":self.save,"dens_filter":self.dens_filter,"mesh_deform":self.mesh_deform}
 
     def create_btns(self):
@@ -339,7 +335,9 @@ class ParametersOpt(Parameters):
         self.penal_k_spin   = QtWidgets.QLineEdit() #p_par
         self.penal_m_spin   = QtWidgets.QLineEdit() #q_par
 
-        self.passive_coord_spin = QtWidgets.QLineEdit()    
+        self.passive_coord_spin = QtWidgets.QLineEdit()
+        self.passive_type0 = QtWidgets.QRadioButton("0")
+        self.passive_type1 = QtWidgets.QRadioButton("1")
         self.modes_spin = QtWidgets.QLineEdit()
         self.const_func_spin = QtWidgets.QLineEdit()
         self.n1_spin = QtWidgets.QLineEdit()
@@ -377,6 +375,9 @@ class ParametersOpt(Parameters):
     
     def add_btns(self, layout):
         layout.addRow(QtWidgets.QLabel('Optimization Method'))
+        opt_method = QtWidgets.QButtonGroup(layout)
+        opt_method.addButton(self.mma_radio)
+        opt_method.addButton(self.gcmma_radio)
         layout.addRow(self.mma_radio)
         layout.addRow(self.gcmma_radio)
 
@@ -425,8 +426,13 @@ class ParametersOpt(Parameters):
         layout.addRow(QtWidgets.QLabel('Eta'))
         layout.addRow(self.eta_spin)
 
-        layout.addRow(QtWidgets.QLabel('Passive Coordinates'))
-        layout.addRow(self.passive_coord_spin)
+        layout.addRow(QtWidgets.QLabel('Passive Elements'))
+        layout.addRow(QtWidgets.QLabel('Coordinates:'), self.passive_coord_spin)
+        passive_types = QtWidgets.QButtonGroup(layout)
+        passive_types.addButton(self.passive_type0)
+        passive_types.addButton(self.passive_type1)
+        layout.addRow(self.passive_type0)
+        layout.addRow(self.passive_type1)
 
         layout.addRow(QtWidgets.QLabel('Modes'))
         layout.addRow(self.modes_spin)
@@ -483,8 +489,10 @@ class ParametersOpt(Parameters):
 
         if self.passive_coord_spin.text():
             self.passive_coord = ast.literal_eval(self.passive_coord_spin.text())
+            self.passive_type = 1 if self.passive_type1.isChecked() else 0
         else: 
             self.passive_coord = None
+            self.passive_type = None
         if self.modes_spin.text():
             self.modes = ast.literal_eval(self.modes_spin.text())
         else:
@@ -587,6 +595,7 @@ class ParametersOpt(Parameters):
         self.eta_spin.setText('0')
 
         self.passive_coord_spin.setText('((0, 0.5), (0.95, 1))')
+        self.passive_type1.setChecked(True)
         self.const_func_spin.setText('100')
         self.n1_spin.setText('1')
         self.freq_spin.setText('10')
@@ -623,6 +632,7 @@ class ParametersOpt(Parameters):
 
         if self.passive_coord is not None:
             self.passive_coord_spin.setText(str(self.passive_coord))
+            self.passive_type1.setChecked(True) if self.passive_type == 1 else self.passive_type0.setChecked(True)
         if self.modes is not None:
             self.modes_spin.setText(str(self.modes))
         self.const_func_spin.setText(str(self.const_func))
@@ -681,24 +691,27 @@ class ParametersOpt(Parameters):
         super().check_params()
 
         if str(self.func_name2_box.currentText()) is not None:
-            self.check_param(self.warnings, self.freq2_spin.text(), [int], 'Multiobjective frequency function must be an integer')
+            self.check_param(self.warnings, self.freq2_spin.text(), (int), 'Multiobjective frequency function must be an integer')
 
-        self.check_param(self.warnings, self.x_min_m_spin.text(), [int, float], 'x_min_mass must be an integer or float')
+        self.check_param(self.warnings, self.x_min_m_spin.text(), (int, float), 'x_min_mass must be an integer or float')
 
-        self.check_param(self.warnings, self.x_min_k_spin.text(), [int, float], 'x_min_stif must be an integer or float')
+        self.check_param(self.warnings, self.x_min_k_spin.text(), (int, float), 'x_min_stif must be an integer or float')
 
-        self.check_param(self.warnings, self.penal_k_spin.text(), [int], 'Penal. stiffness must be an integer')
+        self.check_param(self.warnings, self.penal_k_spin.text(), (int), 'Penal. stiffness must be an integer')
 
-        self.check_param(self.warnings, self.penal_m_spin.text(), [int], 'Penal. mass must be an integer')
+        self.check_param(self.warnings, self.penal_m_spin.text(), (int), 'Penal. mass must be an integer')
 
-        self.check_param(self.warnings, self.const_func_spin.text(), [int, float], 'Constant Function must be an integer or float')
+        self.check_param(self.warnings, self.const_func_spin.text(), (int, float), 'Constant Function must be an integer or float')
 
-        self.check_param(self.warnings, self.n1_spin.text(), [int, float], 'Objective function weight must be an integer or float')
-
-        self.check_param(self.warnings, self.fac_ratio_spin.text(), [int, float], 'Ratio Factor must be an integer or float')
+        self.check_param(self.warnings, self.n1_spin.text(), (int, float), 'Objective function weight must be an integer or float')
+        if 'Objective function weight must be an integer or float' not in self.warnings:
+            if ast.literal_eval(self.n1_spin.text()) > 1 or ast.literal_eval(self.n1_spin.text()) < -1:
+                self.warnings.append(QtWidgets.QLabel("Objective function weight must be between -1 and 1"))
+        
+        self.check_param(self.warnings, self.fac_ratio_spin.text(), (int, float), 'Ratio Factor must be an integer or float')
 
         if self.modes_spin.text():
-            self.check_param(self.warnings, self.modes_spin.text(), [int], 'Modes must be an integer.')
+            self.check_param(self.warnings, self.modes_spin.text(), (int), 'Modes must be an integer.')
             #TODO: PRECISA VERIFICAR SE O NUMERO DE MODES É VALIDO.
   
         if self.passive_coord_spin.text():
@@ -716,15 +729,19 @@ class ParametersOpt(Parameters):
             if len(self.warnings) == 0:
                 aux_passive = ast.literal_eval(self.passive_coord_spin.text())
 
-                self.check_passive_coord(aux_passive, ast.literal_eval(self.lx_spin.text()), 'x')
-                self.check_passive_coord(aux_passive, ast.literal_eval(self.ly_spin.text()), 'y')
-            
-        self.check_param(self.warnings, self.max_iter_spin.text(), [int, float], 'Max. Iterations must be an integer or float')
+                self.check_passive_coord(aux_passive[0], ast.literal_eval(self.lx_spin.text()), 'x')
+                self.check_passive_coord(aux_passive[1], ast.literal_eval(self.ly_spin.text()), 'y')
+
+                aux_max_iter = ast.literal_eval(self.max_iter_spin.text())
+                if aux_max_iter <= 0:
+                    self.warnings.append(QtWidgets.QLabel("Max. Iterations must be a positive integer"))
+
+        self.check_param(self.warnings, self.max_iter_spin.text(), (int), 'Max. Iterations must be a positive integer')
 
         if self.freqrsp_check.isChecked():
-            self.check_param(self.warnings, self.alpha_plot_spin.text(), [int, float], 'Alpha Plot must be an integer or float')
-            self.check_param(self.warnings, self.beta_plot_spin.text(), [int, float], 'Beta Plot must be an integer or float')
-            self.check_param(self.warnings, self.eta_plot_spin.text(), [int, float], 'Eta Plot must be an integer or float')
+            self.check_param(self.warnings, self.alpha_plot_spin.text(), (int, float), 'Alpha Plot must be an integer or float')
+            self.check_param(self.warnings, self.beta_plot_spin.text(), (int, float), 'Beta Plot must be an integer or float')
+            self.check_param(self.warnings, self.eta_plot_spin.text(), (int, float), 'Eta Plot must be an integer or float')
 
     def check_passive_coord(self, passive_coord, coord, axis):
         if axis == 'x':
@@ -734,8 +751,8 @@ class ParametersOpt(Parameters):
             war1 = "Passive Coordinates on Y-Axis exceeds Ly."
             war2 = "Passive Coordinates on Y-Axis are invalid:"
           
-        if passive_coord[0][0] < passive_coord[0][1]:
-            if passive_coord[0][0] > coord or passive_coord[0][1] > coord:
+        if passive_coord[0] < passive_coord[1]:
+            if passive_coord[1] > coord:
                 self.warnings.append(QtWidgets.QLabel(war1))
         else:
             self.warnings.append(QtWidgets.QLabel(war2 + " The first value must be less than the second value."))
@@ -875,38 +892,38 @@ class ParametersOpt(Parameters):
         self.warnings_constraint = []
 
         if self.area_check.isChecked():
-            self.check_param(self.warnings_constraint, self.min_area_line.text(), [int, float], 'Area - min value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.min_area_line.text(), (int, float), 'Area - min value must be an integer or float')
             if self.max_area_line.text():
-                self.check_param(self.warnings_constraint, self.max_area_line.text(), [int, float], 'Area - max value must be an integer or float')
+                self.check_param(self.warnings_constraint, self.max_area_line.text(), (int, float), 'Area - max value must be an integer or float')
                    
         if self.r_ratio_check.isChecked():
-            self.check_param(self.warnings_constraint, self.min_r_ratio_line.text(), [int, float], 'Strain-to-kinetic energy ratio - min value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.min_r_ratio_line.text(), (int, float), 'Strain-to-kinetic energy ratio - min value must be an integer or float')
             if self.max_r_ratio_line.text():
-                self.check_param(self.warnings_constraint, self.max_r_ratio_line.text(), [int, float], 'Strain-to-kinetic energy ratio - max value must be an integer or float')
+                self.check_param(self.warnings_constraint, self.max_r_ratio_line.text(), (int, float), 'Strain-to-kinetic energy ratio - max value must be an integer or float')
 
         if self.compliance_check.isChecked():
-            self.check_param(self.warnings_constraint, self.min_compliance_line.text(), [int, float], 'Compliance - minimum value must be an integer or float')
-            self.check_param(self.warnings_constraint, self.freq_compliance_line.text(), [int, float], 'Compliance - frequency must be an integer or float')
+            self.check_param(self.warnings_constraint, self.min_compliance_line.text(), (int, float), 'Compliance - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_compliance_line.text(), (int, float), 'Compliance - frequency must be an integer or float')
             if self.max_compliance_line.text():
-                self.check_param(self.warnings_constraint, self.max_compliance_line.text(), [int, float], 'Compliance - maximum value must be an integer or float')
+                self.check_param(self.warnings_constraint, self.max_compliance_line.text(), (int, float), 'Compliance - maximum value must be an integer or float')
 
         if self.local_ep_check.isChecked():
-            self.check_param(self.warnings_constraint, self.min_local_ep_line.text(), [int, float], 'Local elastic potential energy - minimum value must be an integer or float')
-            self.check_param(self.warnings_constraint, self.freq_local_ep_line.text(), [int, float], 'Local elastic potential energy - frequency must be an integer or float')
+            self.check_param(self.warnings_constraint, self.min_local_ep_line.text(), (int, float), 'Local elastic potential energy - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_local_ep_line.text(), (int, float), 'Local elastic potential energy - frequency must be an integer or float')
             if self.max_local_ep_line.text():
-                self.check_param(self.warnings_constraint, self.max_local_ep_line.text(), [int, float], 'Local elastic potential energy - maximum value must be an integer or float')
+                self.check_param(self.warnings_constraint, self.max_local_ep_line.text(), (int, float), 'Local elastic potential energy - maximum value must be an integer or float')
 
         if self.local_ki_check.isChecked():
-            self.check_param(self.warnings_constraint, self.min_local_ki_line.text(), [int, float], 'Local kinetic energy - minimum value must be an integer or float')
-            self.check_param(self.warnings_constraint, self.freq_local_ki_line.text(), [int, float], 'Local kinetic energy - frequency must be an integer or float')
+            self.check_param(self.warnings_constraint, self.min_local_ki_line.text(), (int, float), 'Local kinetic energy - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_local_ki_line.text(), (int, float), 'Local kinetic energy - frequency must be an integer or float')
             if self.max_local_ki_line.text():
-                self.check_param(self.warnings_constraint, self.max_local_ki_line.text(), [int, float], 'Local kinetic energy - maximum value must be an integer or float')
+                self.check_param(self.warnings_constraint, self.max_local_ki_line.text(), (int, float), 'Local kinetic energy - maximum value must be an integer or float')
 
         if self.local_r_check.isChecked():
-            self.check_param(self.warnings_constraint, self.min_local_r_line.text(), [int, float], 'Local strain-to-kinetic energy ratio - minimum value must be an integer or float')
-            self.check_param(self.warnings_constraint, self.freq_local_r_line.text(), [int, float], 'Local strain-to-kinetic energy ratio - frequency must be an integer or float')
+            self.check_param(self.warnings_constraint, self.min_local_r_line.text(), (int, float), 'Local strain-to-kinetic energy ratio - minimum value must be an integer or float')
+            self.check_param(self.warnings_constraint, self.freq_local_r_line.text(), (int, float), 'Local strain-to-kinetic energy ratio - frequency must be an integer or float')
             if self.max_local_r_line.text():
-                self.check_param(self.warnings_constraint, self.max_local_r_line.text(), [int, float], 'Local strain-to-kinetic energy ratio - maximum value must be an integer or float')
+                self.check_param(self.warnings_constraint, self.max_local_r_line.text(), (int, float), 'Local strain-to-kinetic energy ratio - maximum value must be an integer or float')
 
     def update_constraint(self):
         self.area = self.area_check.isChecked()

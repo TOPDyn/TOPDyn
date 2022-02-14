@@ -8,9 +8,10 @@ class PlotsFem2d():
 
         self.coord = coord
         self.connect = connect
+
        
     def show_nodes(self):
-        """ Plot nodes of the mesh. TODO:ESSA FUNÇÃO SERA ALGUMA VEZ USADA? """
+        """ Plot nodes of the mesh. """
         ax = plt.axes()
         ax.scatter(self.coord[:,1], self.coord[:,2])
 
@@ -22,13 +23,13 @@ class PlotsFem2d():
         plt.show()
 
     def change_disp_shape(self, disp_vector):
-        """ Transform displacement vector in matrix.
+        """ Transform 1D displacement vector in 2D.
         
         Args:
-            disp_vector (:obj:`numpy.array`): Displacement.
+            disp_vector (:obj:`numpy.array`): 1 D displacement.
         
         Returns: 
-            Displacement of each axis.
+            new_U (:obj:`numpy.array`) 2D displacement.
         """
         new_U = np.empty((int(len(disp_vector)/2), 2))
         new_U[:,0] = disp_vector[::2]
@@ -37,19 +38,36 @@ class PlotsFem2d():
 
     def apply_disp(self, disp_vector, factor):
         """ Apply displacement to coordinates. 
+
         Args:
             disp_vector (:obj:`numpy.array`): Displacement.
-            coord (:obj:`numpy.array`): mesh coordinates.
+            coord (:obj:`numpy.array`): Mesh coordinates.
             factor (:obj:`float`): Factor to deform the mesh.
         
         Returns: 
-            Displaced mesh coordinates.
+            new_coord (:obj:`numpy.array`): Displaced mesh coordinates.
         """
-        new_coord = self.coord.copy()
-        new_coord[:, 1:] += disp_vector * factor
-        return new_coord
+        self.coord_U = self.coord.copy()
+        self.coord_U[:, 1:] += disp_vector * factor
 
-    def build_collection(self, coord_def, disp_vector=None):
+    def remove_nodes(self, passive_coordinate):
+        condition1 = np.all([passive_coordinate[0][0] <= self.coord_U[:,1], self.coord_U[:,1] <= passive_coordinate[0][1]], axis=0)
+        condition2 = np.all([passive_coordinate[1][0] <= self.coord_U[:,2], self.coord_U[:,2] <= passive_coordinate[1][1]], axis=0)
+        condition = np.all([condition1, condition2], axis=0)
+
+        # WHY NOT?
+        # condition = (passive_coordinate[0][0] <= coord[:,1] and coord[:,1] <= passive_coordinate[0][1]) or \
+        #             (passive_coordinate[1][0] <= coord[:,2] and coord[:,2] <= passive_coordinate[1][0])
+
+        self.passive_coord = self.coord_U[~condition, :]
+        passive_nodes = self.coord_U[condition, 0]
+        ind_cond = []
+        for i, row in enumerate(self.connect[:, 1:]):
+            if not (np.isin(row, passive_nodes).any()): #np.in1d(row, nodes).any() FASTER?
+                ind_cond.append(i)
+        self.passive_connect = self.connect[ind_cond, :]
+
+    def build_collection(self, passive_coordinates=None, disp_vector=None):
         """ Build quad mesh.
         
         Args:
@@ -59,10 +77,18 @@ class PlotsFem2d():
         Returns:
             Matplotlib collection object.
         """
-        x, y = coord_def[:, 1], coord_def[:, 2]
-        xy = np.c_[x, y]
-        squares = np.asarray(self.connect[:, 1:])
-        verts = xy[squares - 1]
+        if passive_coordinates is not None:
+            self.remove_nodes(passive_coordinates)
+            verts = np.empty((len(self.passive_connect), 4, 2))
+            for i, nodes in enumerate(self.passive_connect):
+                node_ordered = np.empty(4, dtype=int)
+                node_ordered[0] = np.where(self.passive_coord[:, 0] == nodes[1])[0]
+                node_ordered[1] = np.where(self.passive_coord[:, 0] == nodes[2])[0]
+                node_ordered[2] = np.where(self.passive_coord[:, 0] == nodes[3])[0]
+                node_ordered[3] = np.where(self.passive_coord[:, 0] == nodes[4])[0]
+                verts[i, :, :] = self.passive_coord[node_ordered, 1:]  
+        else:
+            verts = self.coord_U[:, 1:][self.connect[:, 1:] - 1]
         pc = cl.PolyCollection(verts)
         if disp_vector is not None:
             pc.set_array(disp_vector)
@@ -70,9 +96,9 @@ class PlotsFem2d():
         else:
             pc.set_edgecolor("black")
             pc.set_facecolor("None")
-        return pc
+        self.collection = pc
 
-    def plot_collection(self, ax, lx, ly, coord_def, pc, load_matrix=None, restri_matrix=None):
+    def plot_collection(self, ax, lx, ly, load_matrix=None, restri_matrix=None, passive_el=False):
         """ Plot mesh, force arrows and constrain nodes. 
         
         Args:
@@ -86,26 +112,31 @@ class PlotsFem2d():
         Returns:
             A figure object and a single Axes object from matplotlib.pyplot.
         """
-        ax.add_collection(pc)
+        ax.add_collection(self.collection)
         ax.autoscale()
         ax.set_aspect('equal')
-        x, y = coord_def[:, 1], coord_def[:, 2]
+        x, y = self.coord_U[:, 1], self.coord_U[:, 2]
         ax.plot(x, y, ls = "", color = "black")
         max_size, min_size = self._get_size(lx, ly)
-        size = 0.06 * coord_def[:, max_size].max() - coord_def[:, max_size].min()
-        
+        size = 0.06 * self.coord_U[:, max_size].max() - self.coord_U[:, max_size].min()
+        if passive_el:
+            coord_nodes = self.passive_coord[:,0].astype(int)
+            coord = self.passive_coord
+        else:
+            coord_nodes = None
+            coord = self.coord_U
         # Plot load arrows
         if load_matrix is not None:
-            ax = self._plot_load(ax, coord_def, load_matrix, min_size, size)
+            ax = self._plot_load(ax, coord, load_matrix, min_size, size, coord_nodes)
         
         # Plot restrict nodes 
         if restri_matrix is not None:
-            ax = self._plot_constr_nodes(ax, coord_def, restri_matrix)
+            ax = self._plot_constr_nodes(ax, coord, restri_matrix, coord_nodes)
         
         ax.set_xlabel('X Axis')
         ax.set_ylabel('Y Axis')
-        ax.set_xlim(coord_def[:, 1].min() - size, coord_def[:, 1].max() + size)
-        ax.set_ylim(coord_def[:, 2].min() - size, coord_def[:, 2].max() + size)   
+        ax.set_xlim(self.coord_U[:, 1].min() - size, self.coord_U[:, 1].max() + size)
+        ax.set_ylim(self.coord_U[:, 2].min() - size, self.coord_U[:, 2].max() + size)   
 
     def _get_size(self, lx, ly):
         """ Gets columns with maximum and minimum length.
@@ -124,7 +155,7 @@ class PlotsFem2d():
             min_size = 1
         return max_size, min_size
 
-    def _plot_load(self, ax, coord, load_matrix, min_size, size):
+    def _plot_load(self, ax, coord, load_matrix, min_size, size, coord_nodes):
         """ Add load vector to the plot of deformed mesh.
             
         Args:    
@@ -138,21 +169,40 @@ class PlotsFem2d():
             Matplotlib axes object.
         """
         factor = coord[:, min_size].max() - coord[:, min_size].min()
-        ind = (load_matrix[:, 0] - 1).astype('int')
-        for i in range(load_matrix.shape[0]): 
-            if load_matrix[i, 1] == 1:
-                ax.arrow(coord[ind[i], 1], coord[ind[i], 2], size, 0, shape='full', length_includes_head=True, width = factor * 0.01)
-            if load_matrix[i, 1] == -1:
-                ax.arrow(coord[ind[i], 1], coord[ind[i], 2], -size, 0, shape='full', length_includes_head=True, width = factor * 0.01)
+        for load in load_matrix:
+            if coord_nodes is not None:
+                aux = np.where(load[0] == coord_nodes)[0]
+                ind = aux[0] if len(aux) > 0 else False
+            else:
+                ind = int(load[0] - 1)
             
-            if load_matrix[i, 2] == -1:
-                ax.arrow(coord[ind[i], 1], coord[ind[i], 2], 0, -size, shape='full', length_includes_head=True, width = factor * 0.01)
-            
-            if load_matrix[i, 2] == 1:
-                ax.arrow(coord[ind[i], 1], coord[ind[i], 2], 0, size, shape='full', length_includes_head=True, width = factor * 0.01)
+            if ind:
+                if load[1] == 1:
+                    ax.arrow(coord[ind, 1], coord[ind, 2], size, 0, shape='full', length_includes_head=True, width = factor * 0.01)
+                if load[1] == -1:
+                    ax.arrow(coord[ind, 1], coord[ind, 2], -size, 0, shape='full', length_includes_head=True, width = factor * 0.01)
+                
+                if load[2] == -1:
+                    ax.arrow(coord[ind, 1], coord[ind, 2], 0, -size, shape='full', length_includes_head=True, width = factor * 0.01)
+                
+                if load[2] == 1:
+                    ax.arrow(coord[ind, 1], coord[ind, 2], 0, size, shape='full', length_includes_head=True, width = factor * 0.01)
         return ax
 
-    def _plot_constr_nodes(self, ax, coord, restri_matrix):
+    def get_constr_nodes(self, node_constr_matrix, type_constrain, coord_nodes):
+        """ Get nodes that doenst have passive elements """
+        if coord_nodes is not None:
+            matrix_nodes = node_constr_matrix[type_constrain, 0]
+            ind = []
+            for node in matrix_nodes:
+                aux = np.where(coord_nodes == node)[0]
+                if len(aux) > 0:
+                    ind.append(aux)
+        else:
+            ind = node_constr_matrix[type_constrain, 0] - 1
+        return ind
+
+    def _plot_constr_nodes(self, ax, coord, node_constr_matrix, coord_nodes):
         """ Add contrain nodes to the plot of deformed mesh.
             
         Args:    
@@ -163,19 +213,25 @@ class PlotsFem2d():
         Returns:
             Matplotlib axes object.
         """
-        both_restri = (restri_matrix[:, 1] == 1) & (restri_matrix[:, 2] == 1)
-        ind = restri_matrix[both_restri, 0] - 1
-        ax.scatter(coord[ind, 1], coord[ind, 2], marker=(3, 0, 0), s=120, color = 'red', linestyle='None')
-        dist = 0.01 * (coord[1,0] - coord[0,0])
-        ax.scatter(coord[ind, 1] - dist, coord[ind, 2], marker=(3, 0, 270), s=120, color = 'green', linestyle='None')
+        both_constrained = (node_constr_matrix[:, 1] == 1) & (node_constr_matrix[:, 2] == 1)
+        if both_constrained.any():
+            ind = self.get_constr_nodes(node_constr_matrix, both_constrained, coord_nodes)
+            if len(ind) > 0:
+                ax.scatter(coord[ind, 1], coord[ind, 2], marker=(3, 0, 0), s=120, color = 'red', linestyle='None')
+                dist = 0.01 * (coord[1,0] - coord[0,0])
+                ax.scatter(coord[ind, 1] - dist, coord[ind, 2], marker=(3, 0, 270), s=120, color = 'green', linestyle='None')
         
-        x_restri = (restri_matrix[:, 1] == 1) & (restri_matrix[:, 2] == 0)
-        ind = restri_matrix[x_restri, 0] - 1
-        ax.scatter(coord[ind, 1], coord[ind, 2], marker=(3, 0, 270), s=120, color = 'green', linestyle='None')
+        x_constrained = (node_constr_matrix[:, 1] == 1) & (node_constr_matrix[:, 2] == 0)
+        if x_constrained.any():
+            ind = ind = self.get_constr_nodes(self, node_constr_matrix, x_constrained, coord_nodes)
+            if len(ind) > 0:
+                ax.scatter(coord[ind, 1], coord[ind, 2], marker=(3, 0, 270), s=120, color = 'green', linestyle='None')
         
-        y_restri = (restri_matrix[:, 1] == 0) & (restri_matrix[:, 2] == 1)
-        ind = restri_matrix[y_restri, 0] - 1
-        plt.scatter(coord[ind, 1], coord[ind, 2], marker=(3, 0, 0), s=120, color = 'red', linestyle='None')
+        y_constrained = (node_constr_matrix[:, 1] == 0) & (node_constr_matrix[:, 2] == 1)
+        if y_constrained.any():
+            ind = ind = self.get_constr_nodes(self, node_constr_matrix, x_constrained, coord_nodes)
+            if len(ind) > 0:
+                ax.scatter(coord[ind, 1], coord[ind, 2], marker=(3, 0, 0), s=120, color = 'red', linestyle='None')
         return ax
 
     def plot_freq_rsp(self, ax, node, freq_range, disp_vector):

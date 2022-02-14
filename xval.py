@@ -47,7 +47,7 @@ class Xval:
             initial_xval = abs(constr_values[idx[0]])/100
         return initial_xval
     
-    def set_passive_el_xval(self, passive_el):
+    def set_passive_el_xval(self, passive_el, passive_type):
         """ Sets the values of passive elements.
 
         Args:
@@ -56,9 +56,10 @@ class Xval:
         Returns:
             Updated xval.
         """
-        self.xval[passive_el] = 1
+        aux = 1 if passive_type == 1 else 1e-4
+        self.xval[passive_el] = aux
       
-    def set_passive_el_xmin(self, xmin, passive_el):
+    def set_passive_el_xmin(self, xmin, passive_el, passive_type):
         """ Sets the values of passive elements.
 
         Args:
@@ -68,5 +69,6 @@ class Xval:
         Returns:
             Updated xmin.
         """
-        xmin[passive_el] = 0.99
+        aux = 0.99 if passive_type == 1 else 0
+        xmin[passive_el] = aux
         return xmin
