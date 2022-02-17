@@ -97,8 +97,8 @@ xmin = 0.00 * eeen.copy()
 xmax = 1 * eeen
 
 if param["passive_coord"] is not None:
-    xmin = xval_gcmma.set_passive_el_xmin(xmin, passive_el.elements)
-    xval_gcmma.set_passive_el_xval(passive_el.elements)
+    xmin = xval_gcmma.set_passive_el_xmin(xmin, passive_el.elements, param["passive_type"])
+    xval_gcmma.set_passive_el_xval(passive_el.elements, param["passive_type"])
 
 low = xmin.copy()
 upp = xmax.copy()
